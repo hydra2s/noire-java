@@ -18,7 +18,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-
+    implementation group: 'org.bytedeco', name: 'javacpp', version: '1.5.9-SNAPSHOT'
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-assimp"
     implementation "org.lwjgl:lwjgl-glfw"
@@ -32,8 +32,5 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-vma::$lwjglNatives"
-}
 
-test {
-    useJUnitPlatform()
 }
