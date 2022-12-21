@@ -21,22 +21,22 @@ public class InstanceObj extends BasicObj  {
     }
 
     //
-    public VkInstance instance;
+    public VkInstance instance = null;
 
     //
-    protected VkExtensionProperties.Buffer availableExtensions = null;
-    protected PointerBuffer extensions = null;
-    protected IntBuffer extensionAmount = null;
+    public VkExtensionProperties.Buffer availableExtensions = null;
+    public PointerBuffer extensions = null;
+    protected IntBuffer extensionAmount = IntBuffer.wrap(new int[]{0});
 
     //
-    protected VkLayerProperties.Buffer availableLayers = null;
-    protected PointerBuffer layers = null;
-    protected IntBuffer layersAmount = null;
+    public VkLayerProperties.Buffer availableLayers = null;
+    public PointerBuffer layers = null;
+    protected IntBuffer layersAmount = IntBuffer.wrap(new int[]{0});
 
     //
     protected PointerBuffer glfwExt = null;
-    protected VkInstanceCreateInfo instanceInfo = null;
-    protected VkApplicationInfo.Buffer appInfo = null;
+    public VkInstanceCreateInfo instanceInfo = null;
+    public VkApplicationInfo.Buffer appInfo = null;
 
     //
     public InstanceObj(Handle base, InstanceCInfo cInfo) {
