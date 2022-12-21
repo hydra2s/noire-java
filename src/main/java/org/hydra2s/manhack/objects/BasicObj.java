@@ -1,4 +1,4 @@
-package org.hydra2s.manhack;
+package org.hydra2s.manhack.objects;
 
 //
 import java.nio.LongBuffer;

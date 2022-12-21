@@ -1,4 +1,4 @@
-package org.hydra2s.manhack;
+package org.hydra2s.manhack.objects;
 
 // the main rendering class!!!
 public class RendererObj extends BasicObj  {

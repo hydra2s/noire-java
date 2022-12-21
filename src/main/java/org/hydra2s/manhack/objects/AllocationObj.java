@@ -1,4 +1,4 @@
-package org.hydra2s.manhack;
+package org.hydra2s.manhack.objects;
 
 public class AllocationObj extends BasicObj  {
 
@@ -6,14 +6,14 @@ public class AllocationObj extends BasicObj  {
         super(base, handler);
     }
 
-    public class BufferObj extends AllocationObj {
+    static public class BufferObj extends AllocationObj {
 
         public BufferObj(Handle base, Handle handler) {
             super(base, handler);
         }
     }
 
-    public class ImageObj extends AllocationObj {
+    static public class ImageObj extends AllocationObj {
 
         public ImageObj(Handle base, Handle handler) {
             super(base, handler);
