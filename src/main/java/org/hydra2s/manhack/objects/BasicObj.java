@@ -38,7 +38,7 @@ public class BasicObj {
 
     //
     protected Handle base = new Handle(0, 0);
-    protected Handle handler = new Handle(0, 0);
+    protected Handle handle = new Handle(0, 0);
     protected BasicCInfo cInfo = null;
 
     // 
@@ -48,9 +48,9 @@ public class BasicObj {
     public HashMap<Handle, BasicObj> handleMap = new HashMap<Handle, BasicObj>();
 
     //
-    public BasicObj(Handle base, Handle handler) {
+    public BasicObj(Handle base, Handle handle) {
         this.base = base;
-        this.handler = handler;
+        this.handle = handle;
     }
 
     //

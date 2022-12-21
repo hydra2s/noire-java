@@ -4,8 +4,8 @@ import org.hydra2s.manhack.descriptors.DeviceCInfo;
 
 public class DeviceObj extends BasicObj {
 
-    public DeviceObj(Handle base, Handle handler) {
-        super(base, handler);
+    public DeviceObj(Handle base, Handle handle) {
+        super(base, handle);
     }
 
     public DeviceObj(Handle base, DeviceCInfo cInfo) {

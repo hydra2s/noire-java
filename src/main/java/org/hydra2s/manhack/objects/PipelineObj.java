@@ -1,14 +1,14 @@
 package org.hydra2s.manhack.objects;
 
 public class PipelineObj extends BasicObj  {
-    public PipelineObj(Handle base, Handle handler) {
-        super(base, handler);
+    public PipelineObj(Handle base, Handle handle) {
+        super(base, handle);
     }
 
     public static class ComputePipelineObj extends PipelineObj {
 
-        public ComputePipelineObj(Handle base, Handle handler) {
-            super(base, handler);
+        public ComputePipelineObj(Handle base, Handle handle) {
+            super(base, handle);
             //TODO Auto-generated constructor stub
         }
         
@@ -16,8 +16,8 @@ public class PipelineObj extends BasicObj  {
 
     public static class GraphicsPipelineObj extends PipelineObj {
 
-        public GraphicsPipelineObj(Handle base, Handle handler) {
-            super(base, handler);
+        public GraphicsPipelineObj(Handle base, Handle handle) {
+            super(base, handle);
             //TODO Auto-generated constructor stub
         }
         

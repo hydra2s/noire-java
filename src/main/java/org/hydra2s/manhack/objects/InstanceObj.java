@@ -16,9 +16,12 @@ import org.lwjgl.vulkan.*;
 
 // An America!
 public class InstanceObj extends BasicObj  {
-    public InstanceObj(Handle base, Handle handler) {
-        super(base, handler);
+    public InstanceObj(Handle base, Handle handle) {
+        super(base, handle);
     }
+
+    //
+    public VkInstance instance;
 
     //
     protected VkExtensionProperties.Buffer availableExtensions = null;
@@ -32,7 +35,7 @@ public class InstanceObj extends BasicObj  {
 
     //
     protected PointerBuffer glfwExt = null;
-    protected VkInstanceCreateInfo.Buffer instanceInfo = null;
+    protected VkInstanceCreateInfo instanceInfo = null;
     protected VkApplicationInfo.Buffer appInfo = null;
 
     //
@@ -62,7 +65,7 @@ public class InstanceObj extends BasicObj  {
         VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.create(this.extensionAmount.get(0)));
 
         // TODO: Handle VkResult!!
-        VK10.vkCreateInstance(VkInstanceCreateInfo.create(1)
+        VK10.vkCreateInstance(this.instanceInfo = VkInstanceCreateInfo.create(1)
             .pApplicationInfo((this.appInfo = VkApplicationInfo.create(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
                 .pApplicationName(MemoryUtil.memASCII("ManhackTest"))
@@ -72,6 +75,10 @@ public class InstanceObj extends BasicObj  {
                 .applicationVersion(VK10.VK_MAKE_VERSION(1, 0, 0))
             ).get())
             .ppEnabledExtensionNames(this.extensions)
-            .ppEnabledLayerNames(this.layers).get(), null, (this.handler = new Handle(0)).ptr());
+            .ppEnabledLayerNames(this.layers).get(), null, (this.handle = new Handle(0)).ptr());
+        
+        //
+        BasicObj.globalHandleMap.put(this.handle.get(), this);
+        this.instance = new VkInstance(this.handle.get(), this.instanceInfo);
     }
 }
