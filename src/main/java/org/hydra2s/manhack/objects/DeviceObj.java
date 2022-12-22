@@ -114,7 +114,7 @@ public class DeviceObj extends BasicObj {
                 .pQueueCreateInfos(this.queueFamiliesCInfo)
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers)
-                .get(), null, (this.handle = new Handle(2)).ptr());
+                .get(), null, (this.handle = new Handle("Device")).ptr());
         BasicObj.globalHandleMap.put(this.handle.get(), this);
 
         //

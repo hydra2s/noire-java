@@ -93,7 +93,7 @@ public class InstanceObj extends BasicObj {
                 .pApplicationInfo(this.appInfo.get(0))
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers).get();
-        VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle(0)).ptr());
+        VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr());
 
         //
         BasicObj.globalHandleMap.put(this.handle.get(), this);
@@ -108,7 +108,7 @@ public class InstanceObj extends BasicObj {
 
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
             for (int I = 0; I < this.physicalDeviceAmount.capacity(); I++) {
-                this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new Handle(this.physicalDevices.get(I), 1)));
+                this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new Handle("PhysicalDevice", this.physicalDevices.get(I))));
             }
         }
         return this.physicalDevicesObj;

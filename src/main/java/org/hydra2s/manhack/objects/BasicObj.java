@@ -21,8 +21,8 @@ public class BasicObj {
     }
 
     //
-    protected Handle base = new Handle(0, 0);
-    protected Handle handle = new Handle(0, 0);
+    protected Handle base = new Handle("unknown", 0);
+    protected Handle handle = new Handle("unknown", 0);
     protected BasicCInfo cInfo = null;
 
     //
@@ -50,26 +50,26 @@ public class BasicObj {
 
     public static class Handle {
         protected PointerBuffer handle = null;
-        protected int type = 0;
+        protected String type = "unknown";
 
-        public Handle(int type) {
+        public Handle(String type) {
             this.handle = PointerBuffer.allocateDirect(1);
             this.handle.put(0, 0);
             this.type = type;
         }
 
-        public Handle(PointerBuffer handle2, int type) {
+        public Handle(String type, PointerBuffer handle2) {
             this.handle = handle2;
             this.type = type;
         }
 
-        public Handle(long handle, int type) {
+        public Handle(String type, long handle) {
             this.handle = PointerBuffer.allocateDirect(1);
             this.handle.put(0, handle);
             this.type = type;
         }
 
-        public int getType() {
+        public String getType() {
             return this.type;
         }
 

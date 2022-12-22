@@ -82,7 +82,7 @@ public class PipelineLayoutObj extends BasicObj  {
 
         //
         this.pConstRange = VkPushConstantRange.create(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
-        vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.create().pSetLayouts(this.descriptorLayout.getLongBuffer(3)).pPushConstantRanges(this.pConstRange), null, (this.handle = new Handle(3)).ptr().getLongBuffer(1));
+        vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.create().pSetLayouts(this.descriptorLayout.getLongBuffer(3)).pPushConstantRanges(this.pConstRange), null, (this.handle = new Handle("PipelineLayout")).ptr().getLongBuffer(1));
 
         //
 
