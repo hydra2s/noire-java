@@ -1,5 +1,7 @@
 package org.hydra2s.manhack.descriptors;
 
+import java.util.ArrayList;
+
 public class DeviceCInfo extends BasicCInfo {
 
     //
@@ -9,6 +11,6 @@ public class DeviceCInfo extends BasicCInfo {
     }
 
     //
-    public QueueFamilyCInfo[] queueFamilies = new QueueFamilyCInfo[]{};
+    public ArrayList<QueueFamilyCInfo> queueFamilies = new ArrayList<QueueFamilyCInfo>();
 
 }

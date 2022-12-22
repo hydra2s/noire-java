@@ -1,11 +1,35 @@
 package org.hydra2s.manhack.objects;
 
 //
-import java.nio.IntBuffer;
+
 import org.lwjgl.vulkan.*;
 
+import java.nio.IntBuffer;
+
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTMultiDraw.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTMutableDescriptorType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTPipelineRobustness.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTRobustness2.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTShaderAtomicFloat.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTShaderAtomicFloat2.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTShaderImageAtomicInt64.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTTransformFeedback.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRFragmentShaderBarycentric.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRRayQuery.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRRayTracingMaintenance1.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRWorkgroupMemoryExplicitLayout.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+import static org.lwjgl.vulkan.VK12.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+
 //
-public class PhysicalDeviceObj extends BasicObj  {
+public class PhysicalDeviceObj extends BasicObj {
 
     //
     public VkPhysicalDeviceTransformFeedbackFeaturesEXT deviceTransformFeedbackFeatures;
@@ -33,7 +57,7 @@ public class PhysicalDeviceObj extends BasicObj  {
     public VkPhysicalDeviceProperties2 deviceProperties;
     public VkQueueFamilyProperties.Buffer queueFamilyProperties = null;
 
-    // 
+    //
     public VkLayerProperties.Buffer layers = null;
     public VkExtensionProperties.Buffer extensions = null;
     public VkPhysicalDevice physicalDevice = null;
@@ -42,64 +66,53 @@ public class PhysicalDeviceObj extends BasicObj  {
     protected IntBuffer queueFamilyCount;
     protected IntBuffer extensionCount;
 
-    //
-    public static class SurfaceCapability {
-        protected IntBuffer presentModeCount = IntBuffer.allocate(1);
-        protected IntBuffer formatCount = IntBuffer.allocate(1);
-        public IntBuffer surfaceSupport = IntBuffer.allocate(1);
-        public IntBuffer presentModes = null;
-        public VkSurfaceCapabilities2KHR capabilities2 = null;
-        public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;
-        public SurfaceCapability() {};
-    };
-
-    //
+        //
     public PhysicalDeviceObj(Handle base, Handle handle) {
         super(base, handle);
 
         //
-        var instanceObj = (InstanceObj)BasicObj.globalHandleMap.get(base.get());
+        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
         this.physicalDevice = new VkPhysicalDevice(handle.get(), instanceObj.instance);
         BasicObj.globalHandleMap.put(handle.get(), this);
 
         // TODO: unify into one object
-        this.deviceTransformFeedbackFeatures = VkPhysicalDeviceTransformFeedbackFeaturesEXT.create();
+        this.deviceTransformFeedbackFeatures = VkPhysicalDeviceTransformFeedbackFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT);
         //this.deviceMutableDescriptorFeaturesV = VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE.create().pNext(this.deviceTransformFeedbackFeatures.address());
-        this.deviceMutableDescriptorFeatures = VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT.create().pNext(this.deviceTransformFeedbackFeatures.address());
-        this.deviceWorkgroupMemoryExplicitFeatures = VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR.create().pNext(this.deviceMutableDescriptorFeatures.address());
-        this.deviceRayTracingMaintenance1Features = VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR.create().pNext(this.deviceWorkgroupMemoryExplicitFeatures.address());
-        this.deviceShaderClockFeatures = VkPhysicalDeviceShaderClockFeaturesKHR.create().pNext(this.deviceRayTracingMaintenance1Features.address());
-        this.deviceImageAtomicInt64Features = VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT.create().pNext(this.deviceShaderClockFeatures.address());
-        this.deviceAtomicFloat2Features = VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT.create().pNext(this.deviceImageAtomicInt64Features.address());
-        this.deviceAtomicFloatFeatures = VkPhysicalDeviceShaderAtomicFloatFeaturesEXT.create().pNext(this.deviceAtomicFloat2Features.address());
-        this.devicePipelineRobustnessFeatures = VkPhysicalDevicePipelineRobustnessFeaturesEXT.create().pNext(this.deviceAtomicFloatFeatures.address());
-        this.deviceMultiDrawFeatures = VkPhysicalDeviceMultiDrawFeaturesEXT.create().pNext(this.devicePipelineRobustnessFeatures.address());
-        this.deviceBarycentricFeatures = VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR.create().pNext(this.deviceMultiDrawFeatures.address());
-        this.deviceMeshShaderFeatures = VkPhysicalDeviceMeshShaderFeaturesEXT.create().pNext(this.deviceBarycentricFeatures.address());
-        this.deviceDescriptorBufferFeatures = VkPhysicalDeviceDescriptorBufferFeaturesEXT.create().pNext(this.deviceMeshShaderFeatures.address());
-        this.deviceVertexInputFeatures = VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.create().pNext(this.deviceDescriptorBufferFeatures.address());
-        this.deviceRobustness2Features = VkPhysicalDeviceRobustness2FeaturesEXT.create().pNext(this.deviceVertexInputFeatures.address());
-        this.deviceRayQueryFeatures = VkPhysicalDeviceRayQueryFeaturesKHR.create().pNext(this.deviceRobustness2Features.address());
-        this.deviceAccelerationStructureFeaturs = VkPhysicalDeviceAccelerationStructureFeaturesKHR.create().pNext(this.deviceRayQueryFeatures.address());
-        this.deviceFeatures11 = VkPhysicalDeviceVulkan11Features.create().pNext(this.deviceAccelerationStructureFeaturs.address());
-        this.deviceFeatures12 = VkPhysicalDeviceVulkan12Features.create().pNext(this.deviceFeatures11.address());
-        this.deviceFeatures13 = VkPhysicalDeviceVulkan13Features.create().pNext(this.deviceFeatures12.address());
-        this.deviceFeatures = VkPhysicalDeviceFeatures2.create().pNext(this.deviceFeatures13.address());
+        this.deviceMutableDescriptorFeatures = VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT.create().pNext(this.deviceTransformFeedbackFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT);
+        this.deviceWorkgroupMemoryExplicitFeatures = VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR.create().pNext(this.deviceMutableDescriptorFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR);
+        this.deviceRayTracingMaintenance1Features = VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR.create().pNext(this.deviceWorkgroupMemoryExplicitFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR);
+        this.deviceShaderClockFeatures = VkPhysicalDeviceShaderClockFeaturesKHR.create().pNext(this.deviceRayTracingMaintenance1Features.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR);
+        this.deviceImageAtomicInt64Features = VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT.create().pNext(this.deviceShaderClockFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT);
+        this.deviceAtomicFloat2Features = VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT.create().pNext(this.deviceImageAtomicInt64Features.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT);
+        this.deviceAtomicFloatFeatures = VkPhysicalDeviceShaderAtomicFloatFeaturesEXT.create().pNext(this.deviceAtomicFloat2Features.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT);
+        this.devicePipelineRobustnessFeatures = VkPhysicalDevicePipelineRobustnessFeaturesEXT.create().pNext(this.deviceAtomicFloatFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES_EXT);
+        this.deviceMultiDrawFeatures = VkPhysicalDeviceMultiDrawFeaturesEXT.create().pNext(this.devicePipelineRobustnessFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT);
+        this.deviceBarycentricFeatures = VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR.create().pNext(this.deviceMultiDrawFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR);
+        this.deviceMeshShaderFeatures = VkPhysicalDeviceMeshShaderFeaturesEXT.create().pNext(this.deviceBarycentricFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+        this.deviceDescriptorBufferFeatures = VkPhysicalDeviceDescriptorBufferFeaturesEXT.create().pNext(this.deviceMeshShaderFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT);
+        this.deviceVertexInputFeatures = VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT.create().pNext(this.deviceDescriptorBufferFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT);
+        this.deviceRobustness2Features = VkPhysicalDeviceRobustness2FeaturesEXT.create().pNext(this.deviceVertexInputFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT);
+        this.deviceRayQueryFeatures = VkPhysicalDeviceRayQueryFeaturesKHR.create().pNext(this.deviceRobustness2Features.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR);
+        this.deviceAccelerationStructureFeaturs = VkPhysicalDeviceAccelerationStructureFeaturesKHR.create().pNext(this.deviceRayQueryFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR);
+        this.deviceFeatures11 = VkPhysicalDeviceVulkan11Features.create().pNext(this.deviceAccelerationStructureFeaturs.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
+        this.deviceFeatures12 = VkPhysicalDeviceVulkan12Features.create().pNext(this.deviceFeatures11.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
+        this.deviceFeatures13 = VkPhysicalDeviceVulkan13Features.create().pNext(this.deviceFeatures12.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
+        this.deviceFeatures = VkPhysicalDeviceFeatures2.create().pNext(this.deviceFeatures13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
 
         //
-        this.deviceDescriptorBufferProperties = VkPhysicalDeviceDescriptorBufferPropertiesEXT.create();
-        this.deviceProperties = VkPhysicalDeviceProperties2.create().pNext(this.deviceDescriptorBufferProperties.address());
+        this.deviceDescriptorBufferProperties = VkPhysicalDeviceDescriptorBufferPropertiesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES);
+        this.deviceProperties = VkPhysicalDeviceProperties2.create().pNext(this.deviceDescriptorBufferProperties.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
 
         //
         VK11.vkGetPhysicalDeviceProperties2(this.physicalDevice, this.deviceProperties);
         VK11.vkGetPhysicalDeviceFeatures2(this.physicalDevice, this.deviceFeatures);
 
         //
-        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount = IntBuffer.allocate(1), null);
+        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount = memAllocInt(1), null);
         VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount, this.queueFamilyProperties = VkQueueFamilyProperties.create(this.queueFamilyCount.get(0)));
 
         //
-        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount = IntBuffer.allocate(1), null);
+        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount = memAllocInt(1), null);
         VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount, this.extensions = VkExtensionProperties.create(this.extensionCount.get(0)));
     }
 
@@ -112,14 +125,28 @@ public class PhysicalDeviceObj extends BasicObj  {
         if (capability.surfaceSupport.get(0) > 0) {
             org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceCapabilities2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.capabilities2 = VkSurfaceCapabilities2KHR.create());
             org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, null);
-            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = IntBuffer.allocate(capability.presentModeCount.get()));
-            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.formatCount = IntBuffer.allocate(1), null);
+            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = memAllocInt(capability.presentModeCount.get()));
+            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.formatCount = memAllocInt(1), null);
             org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.formatCount, capability.formats2 = VkSurfaceFormat2KHR.create(capability.formatCount.get(0)));
         }
 
         //
         return capability;
     }
+
+//
+    public static class SurfaceCapability {
+        public IntBuffer surfaceSupport = memAllocInt(1);
+        protected IntBuffer presentModeCount = memAllocInt(1);
+        protected IntBuffer formatCount = memAllocInt(1);
+        public IntBuffer presentModes = null;
+        public VkSurfaceCapabilities2KHR capabilities2 = null;
+        public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;
+
+        public SurfaceCapability() {
+        }
+
+}
 
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
