@@ -31,6 +31,12 @@ public class AllocationCInfo extends BasicCInfo {
     public class ImageCInfo extends AllocationCInfo  {
         public VkExtent3D extent3D = VkExtent3D.create().width(1).height(1).depth(1);
         public int usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+        public int mipLevels = 1;
+        public int arrayLayers = 1;
+        public int samples = VK_SAMPLE_COUNT_1_BIT;
+        public int tiling = VK_IMAGE_TILING_OPTIMAL;
+        public int format = VK_FORMAT_R8G8B8A8_UNORM;
+
 
         public ImageCInfo() {
             this.image = memAllocPointer(1);
