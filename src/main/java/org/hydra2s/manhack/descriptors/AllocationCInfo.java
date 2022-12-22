@@ -6,6 +6,7 @@ import org.lwjgl.vulkan.VkMemoryRequirements;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
 
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+import static org.lwjgl.vulkan.VK10.*;
 
 public class AllocationCInfo extends BasicCInfo {
     public VkMemoryRequirements memoryRequirements = null;
@@ -19,6 +20,7 @@ public class AllocationCInfo extends BasicCInfo {
 
     public class BufferCInfo extends AllocationCInfo {
         public long size = 0;
+        public int usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 
         public BufferCInfo() {
@@ -28,7 +30,7 @@ public class AllocationCInfo extends BasicCInfo {
 
     public class ImageCInfo extends AllocationCInfo  {
         public VkExtent3D extent3D = VkExtent3D.create().width(1).height(1).depth(1);
-
+        public int usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
 
         public ImageCInfo() {
             this.image = memAllocPointer(1);
