@@ -38,7 +38,7 @@ public class AllocationObj extends BasicObj {
 
 
     // TODO: special support for ImageView
-    void cmdCopyImageToImage(VkCommandBuffer cmdBuf, long image, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
+    public AllocationObj cmdCopyImageToImage(VkCommandBuffer cmdBuf, long image, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -85,10 +85,13 @@ public class AllocationObj extends BasicObj {
         //
         vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.create().dstImage(dstImage).dstImageLayout(dstImageLayout).srcImage(srcImage).srcImageLayout(srcImageLayout).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pImageMemoryBarriers(imageMemoryBarrier));
+
+        //
+        return this;
     }
 
     // TODO: special support for ImageView
-    void cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long buffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
+    public AllocationObj cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long buffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -130,10 +133,13 @@ public class AllocationObj extends BasicObj {
         //
         vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.create().srcImage(srcImage).srcImageLayout(imageLayout).dstBuffer(dstBuffer).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+
+        //
+        return this;
     }
 
     // TODO: special support for ImageView
-    void cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long image, int imageLayout, VkBufferImageCopy2.Buffer regions) {
+    public AllocationObj cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long image, int imageLayout, VkBufferImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -175,10 +181,13 @@ public class AllocationObj extends BasicObj {
         //
         vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.create().srcBuffer(srcBuffer).dstImage(dstImage).dstImageLayout(imageLayout).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+
+        //
+        return this;
     }
 
     //
-    void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
+    public AllocationObj cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -211,6 +220,9 @@ public class AllocationObj extends BasicObj {
         //
         vkCmdCopyBuffer2(cmdBuf, VkCopyBufferInfo2.create().srcBuffer(srcBuffer).dstBuffer(dstBuffer).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pBufferMemoryBarriers(memoryBarriers));
+
+        //
+        return this;
     }
 
 
@@ -286,7 +298,24 @@ public class AllocationObj extends BasicObj {
             vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create());
         }
 
+        // TODO: special support for ImageView
+        public ImageObj transitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
+            //
+            var memoryBarrier = VkImageMemoryBarrier2.create(1)
+                    .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+                    .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                    .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                    .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                    .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                    .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                    .oldLayout(oldLayout)
+                    .newLayout(newLayout)
+                    .subresourceRange(subresourceRange)
+                    .image(this.handle.get());
 
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pImageMemoryBarriers(memoryBarrier));
+            return this;
+        }
     }
 
 }
