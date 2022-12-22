@@ -134,7 +134,7 @@ public class PhysicalDeviceObj extends BasicObj {
         return capability;
     }
 
-//
+    //
     public static class SurfaceCapability {
         public IntBuffer surfaceSupport = memAllocInt(1);
         protected IntBuffer presentModeCount = memAllocInt(1);
@@ -143,10 +143,8 @@ public class PhysicalDeviceObj extends BasicObj {
         public VkSurfaceCapabilities2KHR capabilities2 = null;
         public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;
 
-        public SurfaceCapability() {
-        }
-
-}
+        public SurfaceCapability() {}
+    }
 
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
@@ -156,6 +154,23 @@ public class PhysicalDeviceObj extends BasicObj {
             }
         }
         return queueIndex;
+    }
+
+    public int getMemoryTypeIndex(int typeFilter, int propertyFlag, int ignoreFlags, long size) {
+        var memoryBudget = VkPhysicalDeviceMemoryBudgetPropertiesEXT.create();
+        var memoryProperties2 = VkPhysicalDeviceMemoryProperties2.create().pNext(memoryBudget);
+        var memoryProperties = memoryProperties2.memoryProperties();
+        vkGetPhysicalDeviceMemoryProperties2(this.physicalDevice, memoryProperties2);
+        for (var I = 0; I < memoryProperties.memoryTypeCount(); ++I) {
+            var prop = memoryProperties.memoryTypes().get(I);
+            if (
+                    (typeFilter & (1 << I)) > 0 &&
+                            (prop.propertyFlags() & propertyFlag) == propertyFlag &&
+                            (prop.propertyFlags() & ignoreFlags) == 0 &&
+                            memoryBudget.heapBudget().get(prop.heapIndex()) >= size
+            ) { return I; }
+        };
+        return -1;
     }
 
 }
