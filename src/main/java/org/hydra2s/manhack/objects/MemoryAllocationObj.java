@@ -1,6 +1,6 @@
 package org.hydra2s.manhack.objects;
 
-import org.hydra2s.manhack.descriptors.AllocationCInfo;
+import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
@@ -16,7 +16,7 @@ import static org.lwjgl.vulkan.VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.VK12.vkGetBufferDeviceAddress;
 import static org.lwjgl.vulkan.VK13.*;
 
-public class AllocationObj extends BasicObj {
+public class MemoryAllocationObj extends BasicObj {
 
     //
     public long memoryOffset = 0;
@@ -28,17 +28,17 @@ public class AllocationObj extends BasicObj {
     public VkMemoryRequirements2 memoryRequirements2 = null;
 
     //
-    public AllocationObj(Handle base, Handle handle) {
+    public MemoryAllocationObj(Handle base, Handle handle) {
         super(base, handle);
     }
-    public AllocationObj(Handle base, AllocationCInfo handle) {
+    public MemoryAllocationObj(Handle base, MemoryAllocationCInfo handle) {
         super(base, handle);
     }
 
 
 
     // TODO: special support for ImageView
-    public AllocationObj cmdCopyImageToImage(VkCommandBuffer cmdBuf, long image, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
+    public MemoryAllocationObj cmdCopyImageToImage(VkCommandBuffer cmdBuf, long image, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -91,7 +91,7 @@ public class AllocationObj extends BasicObj {
     }
 
     // TODO: special support for ImageView
-    public AllocationObj cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long buffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
+    public MemoryAllocationObj cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long buffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -139,7 +139,7 @@ public class AllocationObj extends BasicObj {
     }
 
     // TODO: special support for ImageView
-    public AllocationObj cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long image, int imageLayout, VkBufferImageCopy2.Buffer regions) {
+    public MemoryAllocationObj cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long image, int imageLayout, VkBufferImageCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -187,7 +187,7 @@ public class AllocationObj extends BasicObj {
     }
 
     //
-    public AllocationObj cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
+    public MemoryAllocationObj cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -228,15 +228,15 @@ public class AllocationObj extends BasicObj {
 
 
     //
-    static public class BufferObj extends AllocationObj {
+    static public class BufferObjMemory extends MemoryAllocationObj {
         public VkBufferCreateInfo createInfo = null;
         public long deviceAddress = 0L;
 
-        public BufferObj(Handle base, Handle handle) {
+        public BufferObjMemory(Handle base, Handle handle) {
             super(base, handle);
         }
 
-        public BufferObj(Handle base, AllocationCInfo.BufferCInfo cInfo) {
+        public BufferObjMemory(Handle base, MemoryAllocationCInfo.BufferCInfoMemory cInfo) {
             super(base, cInfo);
 
             //
@@ -263,14 +263,14 @@ public class AllocationObj extends BasicObj {
     }
 
     //
-    static public class ImageObj extends AllocationObj {
+    static public class ImageObjMemory extends MemoryAllocationObj {
         public VkImageCreateInfo createInfo = null;
-        public ImageObj(Handle base, Handle handle) {
+        public ImageObjMemory(Handle base, Handle handle) {
             super(base, handle);
         }
 
 
-        public ImageObj(Handle base, AllocationCInfo.ImageCInfo cInfo) {
+        public ImageObjMemory(Handle base, MemoryAllocationCInfo.ImageCInfoMemory cInfo) {
             super(base, cInfo);
 
             //
@@ -299,7 +299,7 @@ public class AllocationObj extends BasicObj {
         }
 
         // TODO: special support for ImageView
-        public ImageObj transitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
+        public ImageObjMemory transitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
             //
             var memoryBarrier = VkImageMemoryBarrier2.create(1)
                     .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)

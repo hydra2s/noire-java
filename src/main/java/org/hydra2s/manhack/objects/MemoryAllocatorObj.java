@@ -1,7 +1,7 @@
 package org.hydra2s.manhack.objects;
 
 //
-import org.hydra2s.manhack.descriptors.AllocationCInfo;
+import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocatorCInfo;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkMemoryAllocateFlagsInfo;
@@ -32,7 +32,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             deviceObj.handleMap.put(this.handle, this);
         }
 
-        public DeviceMemoryObj(Handle base, AllocationCInfo cInfo) {
+        public DeviceMemoryObj(Handle base, MemoryAllocationCInfo cInfo) {
             super(base, cInfo);
 
             //
@@ -98,26 +98,26 @@ public class MemoryAllocatorObj extends BasicObj  {
     };
 
     //
-    public AllocationObj allocateMemory(AllocationCInfo cInfo, AllocationObj allocationObj) {
+    public MemoryAllocationObj allocateMemory(MemoryAllocationCInfo cInfo, MemoryAllocationObj memoryAllocationObj) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
         //
-        if (allocationObj.isBuffer) { cInfo.buffer = allocationObj.handle.ptr(); };
-        if (allocationObj.isImage) { cInfo.image = allocationObj.handle.ptr(); };
+        if (memoryAllocationObj.isBuffer) { cInfo.buffer = memoryAllocationObj.handle.ptr(); };
+        if (memoryAllocationObj.isImage) { cInfo.image = memoryAllocationObj.handle.ptr(); };
 
         //
         var deviceMemory = new DeviceMemoryObj(this.base, cInfo);
 
         //
-        allocationObj.memoryOffset = 0L;
-        allocationObj.deviceMemory = deviceMemory.handle.ptr();
+        memoryAllocationObj.memoryOffset = 0L;
+        memoryAllocationObj.deviceMemory = deviceMemory.handle.ptr();
 
         //
-        if (allocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, allocationObj.handle.get(), deviceMemory.handle.get(), allocationObj.memoryOffset); };
-        if (allocationObj.isImage) { vkBindImageMemory(deviceObj.device, allocationObj.handle.get(), deviceMemory.handle.get(), allocationObj.memoryOffset); };
+        if (memoryAllocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, memoryAllocationObj.handle.get(), deviceMemory.handle.get(), memoryAllocationObj.memoryOffset); };
+        if (memoryAllocationObj.isImage) { vkBindImageMemory(deviceObj.device, memoryAllocationObj.handle.get(), deviceMemory.handle.get(), memoryAllocationObj.memoryOffset); };
 
         //
-        return allocationObj;
+        return memoryAllocationObj;
     }
 }

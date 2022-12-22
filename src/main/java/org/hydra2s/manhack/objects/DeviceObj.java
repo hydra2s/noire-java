@@ -72,7 +72,7 @@ public class DeviceObj extends BasicObj {
         );
 
         //
-        var deviceExtensions = extbuf.stream().filter((Ep) -> {
+        var deviceExtensions = (List<Long>)(extbuf.stream().filter((Ep) -> {
             Boolean found = false;
             for (int K = 0; K < physicalDeviceObj.extensions.capacity(); K++) {
                 String X = MemoryUtil.memASCII(physicalDeviceObj.extensions.get(K).extensionName());
@@ -83,7 +83,7 @@ public class DeviceObj extends BasicObj {
                 }
             }
             return found;
-        }).toList();
+        }).toList());
 
         // Extensions
         this.extensions = PointerBuffer.allocateDirect(deviceExtensions.size());
