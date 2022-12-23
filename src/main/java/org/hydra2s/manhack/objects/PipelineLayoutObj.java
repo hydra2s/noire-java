@@ -164,6 +164,10 @@ public class PipelineLayoutObj extends BasicObj  {
 
         //
         var allocationCInfo = new MemoryAllocationCInfo();
+        allocationCInfo.isHost = true;
+        allocationCInfo.isDevice = true;
+
+        //
         var resourceBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
         var samplerBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
         var uniformBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
