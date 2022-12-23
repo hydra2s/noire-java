@@ -85,6 +85,19 @@ public class BasicObj {
             return this.handle.address(0);
         }
 
+        @Override
+        public boolean equals(Object o) {
+            return this.handle.get(0) == ((Handle)o).get() && this.type.equals(((Handle)o).getType());
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + this.type.hashCode();
+            result = prime * result + Long.hashCode(this.get());
+            return result;
+        }
     }
 
 }

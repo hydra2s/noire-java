@@ -2,29 +2,31 @@ package org.hydra2s.manhack.objects;
 
 //
 import org.hydra2s.manhack.descriptors.ImageViewCInfo;
+import org.lwjgl.vulkan.VkDescriptorImageInfo;
+import org.lwjgl.vulkan.VkImageSubresourceLayers;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 
 //
 import static org.lwjgl.vulkan.VK10.*;
 
-//
+// aka, known as ImageSubresourceRange
 public class ImageViewObj extends BasicObj {
     public VkImageViewCreateInfo createInfo = null;
-    public int imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     public int DSC_ID = -1;
 
-
+    // aka, known as ImageSubresourceRange
     public ImageViewObj(Handle base, Handle handle) {
         super(base, handle);
     }
 
+    // aka, known as ImageSubresourceRange
     public ImageViewObj(Handle base, ImageViewCInfo cInfo) {
         super(base, cInfo);
 
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var imageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(cInfo.image);
+        var imageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image));
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
 
@@ -36,5 +38,25 @@ public class ImageViewObj extends BasicObj {
 
         //
         vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.create().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new Handle("ImageView")).ptr().getLongBuffer(1));
+        deviceObj.handleMap.put(this.handle, this);
+
+        //
+        if (cInfo.pipelineLayout > 0) {
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+            this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
+            descriptorsObj.writeDescriptors();
+        }
     }
+
+    //
+    public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
+        return VkImageSubresourceLayers.create()
+                .aspectMask(this.createInfo.subresourceRange().aspectMask())
+                .mipLevel(mipLevel)
+                .baseArrayLayer(this.createInfo.subresourceRange().baseArrayLayer())
+                .layerCount(this.createInfo.subresourceRange().layerCount());
+    }
+
+    // TODO: copy between ImageView and buffers, images or imageViews
+    // TODO: transition image layouts in ImageView (subresourceRange)
 }

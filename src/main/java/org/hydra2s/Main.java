@@ -2,8 +2,10 @@ package org.hydra2s;
 
 import org.hydra2s.manhack.descriptors.DeviceCInfo;
 import org.hydra2s.manhack.descriptors.InstanceCInfo;
+import org.hydra2s.manhack.descriptors.PipelineLayoutCInfo;
 import org.hydra2s.manhack.objects.DeviceObj;
 import org.hydra2s.manhack.objects.InstanceObj;
+import org.hydra2s.manhack.objects.PipelineLayoutObj;
 
 //
 public class Main {
@@ -30,9 +32,11 @@ public class Main {
         var logicalDevice = new DeviceObj(physicalDevice.getHandle(), logicalDeviceCInfo);
 
         //
-        System.out.println(instance.getHandle().get());
-        System.out.println(physicalDevice.getHandle().get());
-        System.out.println(logicalDevice.getHandle().get());
+        var descriptorSetCInfo = new PipelineLayoutCInfo();
+        var descriptorSet = new PipelineLayoutObj(logicalDevice.getHandle(), descriptorSetCInfo);
+
+        //
+
     }
 
 }

@@ -10,7 +10,6 @@ import java.util.stream.IntStream;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK10.VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 import static org.lwjgl.vulkan.VK11.vkGetBufferMemoryRequirements2;
 import static org.lwjgl.vulkan.VK11.vkGetImageMemoryRequirements2;
 import static org.lwjgl.vulkan.VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -264,17 +263,17 @@ public class MemoryAllocationObj extends BasicObj {
             super(base, handle);
         }
 
-        public BufferObj(Handle base, MemoryAllocationCInfo.BufferCInfoMemory cInfo) {
+        public BufferObj(Handle base, MemoryAllocationCInfo.BufferCInfo cInfo) {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
             vkCreateBuffer(deviceObj.device, this.createInfo = VkBufferCreateInfo.create()
-                    .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
-                    .size(cInfo.size)
+                            .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
+                            .size(cInfo.size)
                     .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
                     .sharingMode(VK_SHARING_MODE_EXCLUSIVE),
                     null,
@@ -299,17 +298,17 @@ public class MemoryAllocationObj extends BasicObj {
         }
 
 
-        public ImageObj(Handle base, MemoryAllocationCInfo.ImageCInfoMemory cInfo) {
+        public ImageObj(Handle base, MemoryAllocationCInfo.ImageCInfo cInfo) {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
             vkCreateImage(deviceObj.device, this.createInfo = VkImageCreateInfo.create()
-                    .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
-                    .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)
+                            .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
+                            .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)
                     .extent(cInfo.extent3D)
                     .imageType(cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D))
                     .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
@@ -344,6 +343,7 @@ public class MemoryAllocationObj extends BasicObj {
                     .subresourceRange(subresourceRange)
                     .image(this.handle.get());
 
+            //
             vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
             return this;
         }
