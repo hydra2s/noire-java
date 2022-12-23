@@ -1,13 +1,16 @@
 package org.hydra2s.manhack.objects;
 
+//
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
+//
 import java.nio.ByteBuffer;
 import java.util.stream.IntStream;
 
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+//
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.vkGetBufferMemoryRequirements2;
@@ -16,6 +19,7 @@ import static org.lwjgl.vulkan.VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.VK12.vkGetBufferDeviceAddress;
 import static org.lwjgl.vulkan.VK13.*;
 
+//
 public class MemoryAllocationObj extends BasicObj {
 
     //
@@ -272,12 +276,12 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             vkCreateBuffer(deviceObj.device, this.createInfo = VkBufferCreateInfo.create()
-                            .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
-                            .size(cInfo.size)
+                    .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
+                    .size(cInfo.size)
                     .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
                     .sharingMode(VK_SHARING_MODE_EXCLUSIVE),
                     null,
-                    (this.handle = new Handle("Buffer")).ptr().getLongBuffer(1)
+                    memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr()), 1)
             );
 
             //
@@ -320,7 +324,7 @@ public class MemoryAllocationObj extends BasicObj {
                     .format(cInfo.format)
                     .tiling(cInfo.tiling),
                     null,
-                    (this.handle = new Handle("Image")).ptr().getLongBuffer(1)
+                    memLongBuffer(memAddress((this.handle = new Handle("Image")).ptr()), 1)
             );
 
             //

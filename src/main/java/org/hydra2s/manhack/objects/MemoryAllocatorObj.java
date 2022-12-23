@@ -27,13 +27,12 @@ public class MemoryAllocatorObj extends BasicObj  {
             super(base, handle);
 
             //
-            this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
-
-            //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocationObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
+            this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
             deviceObj.handleMap.put(this.handle, this);
         }
 
@@ -41,7 +40,8 @@ public class MemoryAllocatorObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocationObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
@@ -85,7 +85,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                         .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
                         .flags(cInfo.buffer != null ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0)
                         .pNext(VkMemoryDedicatedAllocateInfo.create().sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
-                        .address()), null, (this.handle = new Handle("DeviceMemory")).ptr().getLongBuffer(1));
+                        .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1));
 
             //
             deviceObj.handleMap.put(this.handle, this);
@@ -113,16 +113,17 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
     }
 
+    //
     public MemoryAllocatorObj(Handle base, Handle handle) {
         super(base, handle);
+        BasicObj.globalHandleMap.put(this.handle.get(), this);
     }
 
+    //
     public MemoryAllocatorObj(Handle base, MemoryAllocatorCInfo cInfo) {
         super(base, cInfo);
-
-        //
         this.handle = new Handle("MemoryAllocator", MemoryUtil.memAddress(memAllocLong(1)));
-
+        BasicObj.globalHandleMap.put(this.handle.get(), this);
     };
 
     //
@@ -135,15 +136,12 @@ public class MemoryAllocatorObj extends BasicObj  {
         if (memoryAllocationObj.isImage) { cInfo.image = memoryAllocationObj.handle.ptr(); };
 
         //
-        var deviceMemory = new DeviceMemoryObj(this.base, cInfo);
-
-        //
         memoryAllocationObj.memoryOffset = 0L;
-        memoryAllocationObj.deviceMemory = deviceMemory.handle.ptr();
+        memoryAllocationObj.deviceMemory = (new DeviceMemoryObj(this.handle, cInfo)).handle.ptr();
 
         //
-        if (memoryAllocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, memoryAllocationObj.handle.get(), deviceMemory.handle.get(), memoryAllocationObj.memoryOffset); };
-        if (memoryAllocationObj.isImage) { vkBindImageMemory(deviceObj.device, memoryAllocationObj.handle.get(), deviceMemory.handle.get(), memoryAllocationObj.memoryOffset); };
+        if (memoryAllocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
+        if (memoryAllocationObj.isImage) { vkBindImageMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
 
         //
         return memoryAllocationObj;
