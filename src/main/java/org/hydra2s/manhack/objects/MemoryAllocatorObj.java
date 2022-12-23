@@ -3,15 +3,20 @@ package org.hydra2s.manhack.objects;
 //
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocatorCInfo;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkMemoryAllocateFlagsInfo;
 import org.lwjgl.vulkan.VkMemoryAllocateInfo;
 import org.lwjgl.vulkan.VkMemoryDedicatedAllocateInfo;
 
 //
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import java.nio.ByteBuffer;
+
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRBufferDeviceAddress.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
 
 //
 public class MemoryAllocatorObj extends BasicObj  {
@@ -73,15 +78,38 @@ public class MemoryAllocatorObj extends BasicObj  {
             //
             vkAllocateMemory(deviceObj.device, this.allocInfo =
                 VkMemoryAllocateInfo.create()
+                    .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                     .memoryTypeIndex(memoryTypeIndex)
                     .allocationSize(cInfo.memoryRequirements.size())
                     .pNext(VkMemoryAllocateFlagsInfo.create()
+                        .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
                         .flags(cInfo.buffer != null ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0)
-                        .pNext(VkMemoryDedicatedAllocateInfo.create().address())
+                        .pNext(VkMemoryDedicatedAllocateInfo.create().sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
                         .address()), null, (this.handle = new Handle("DeviceMemory")).ptr().getLongBuffer(1));
 
             //
             deviceObj.handleMap.put(this.handle, this);
+        }
+
+        public ByteBuffer map(long byteLength, long byteOffset) {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+
+            //
+            PointerBuffer dataPtr = memAllocPointer(1);
+            long BO = byteOffset;
+            long BS = byteLength != 0 ? byteLength : Math.min(((VkMemoryAllocateInfo)this.allocInfo).allocationSize(), byteLength);
+
+            //
+            vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr);
+            return memByteBufferNT2(dataPtr.get(0));
+        }
+
+        public void unmap() {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+
+            vkUnmapMemory(deviceObj.device, this.handle.get());
         }
     }
 
