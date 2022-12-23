@@ -2,14 +2,15 @@ package org.hydra2s.manhack.objects;
 
 //
 import org.hydra2s.manhack.descriptors.ImageViewCInfo;
-import org.lwjgl.vulkan.VkDescriptorImageInfo;
-import org.lwjgl.vulkan.VkImageSubresourceLayers;
-import org.lwjgl.vulkan.VkImageViewCreateInfo;
+import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
+import org.lwjgl.vulkan.*;
 
 //
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_IMAGE_COPY_2;
 
 // aka, known as ImageSubresourceRange
 public class ImageViewObj extends BasicObj {
@@ -54,11 +55,116 @@ public class ImageViewObj extends BasicObj {
     public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
         return VkImageSubresourceLayers.create()
                 .aspectMask(this.createInfo.subresourceRange().aspectMask())
-                .mipLevel(mipLevel)
+                .mipLevel(this.createInfo.subresourceRange().baseMipLevel() + mipLevel)
                 .baseArrayLayer(this.createInfo.subresourceRange().baseArrayLayer())
                 .layerCount(this.createInfo.subresourceRange().layerCount());
     }
 
-    // TODO: copy between ImageView and buffers, images or imageViews
-    // TODO: transition image layouts in ImageView (subresourceRange)
+    // TODO: unidirectional support
+    public ImageViewObj cmdCopyBufferToImageView(
+            VkCommandBuffer cmdBuf,
+
+            // TODO: multiple one support
+            VkExtent3D extent,
+            VkOffset3D dstOffset,
+            int dstMipLevel,
+
+            // TODO: structured one support
+            long srcBuffer,
+            long srcOffset
+    ) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+        var srcBufferObj = (MemoryAllocationObj.BufferObj)deviceObj.handleMap.get(new Handle("Buffer", srcBuffer));
+
+        //
+        srcBufferObj.cmdCopyBufferToImage(cmdBuf, ((ImageViewCInfo)cInfo).image,
+                ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.create(1)
+                        .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
+                        .bufferOffset(srcOffset)
+                        .imageOffset(dstOffset).imageExtent(extent)
+                        .imageSubresource(this.subresourceLayers(dstMipLevel))
+        );
+
+        //
+        return this;
+    }
+
+    // TODO: unidirectional support
+    public ImageViewObj cmdCopyImageViewToImageView(
+        VkCommandBuffer cmdBuf,
+
+        // TODO: multiple one support
+        VkExtent3D extent,
+        VkOffset3D dstOffset,
+        int dstMipLevel,
+
+        // TODO: structured one support
+        long srcImageView,
+        VkOffset3D srcOffset,
+        int srcMipLevel
+    ) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+
+        //
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView));
+        var srcImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)srcImageViewObj.cInfo).image));
+        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+
+        //
+        this.cmdCopyImageToImageView(cmdBuf, extent, dstOffset, dstMipLevel, ((ImageViewCInfo)srcImageViewObj.cInfo).image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, srcOffset, srcImageViewObj.subresourceLayers(srcMipLevel));
+
+        //
+        return this;
+    }
+
+    // TODO: unidirectional support
+    public ImageViewObj cmdCopyImageToImageView(
+        VkCommandBuffer cmdBuf,
+
+        // TODO: multiple one support
+        VkExtent3D extent,
+        VkOffset3D dstOffset,
+        int dstMipLevel,
+
+        // TODO: structured one support
+        long srcImage,
+        int srcImageLayout,
+        VkOffset3D srcOffset,
+        VkImageSubresourceLayers srcSubresource
+    ) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+        var srcImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", srcImage));
+
+        //
+        srcImageObj.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)cInfo).image, srcImageLayout,
+            ((ImageViewCInfo)cInfo).imageLayout, VkImageCopy2.create(1)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
+                .extent(extent)
+                .dstOffset(dstOffset)
+                .srcOffset(srcOffset)
+                .dstSubresource(this.subresourceLayers(dstMipLevel))
+                .srcSubresource(srcSubresource));
+
+        //
+        return this;
+    }
+
+    // simpler than traditional image
+    public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+
+        //
+        dstImageObj.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).imageLayout, dstImageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
+        ((ImageViewCInfo)cInfo).imageLayout = dstImageLayout;
+
+        //
+        return this;
+    }
 }

@@ -76,9 +76,9 @@ public class AccelerationStructureObj extends BasicObj {
                 var geometryI = cInfo.geometries.get(I);
                 if (geometryI.vertexBinding != null) {
                     triangles
+                        .vertexData(VkDeviceOrHostAddressConstKHR.create().deviceAddress(geometryI.vertexBinding.address))
                         .vertexFormat(geometryI.vertexBinding.format)
                         .vertexStride(geometryI.vertexBinding.stride)
-                        .vertexData(VkDeviceOrHostAddressConstKHR.create().deviceAddress(geometryI.vertexBinding.address))
                         .maxVertex(geometryI.vertexBinding.vertexCount);
                 }
                 if (geometryI.indexBinding != null) {
@@ -118,8 +118,8 @@ public class AccelerationStructureObj extends BasicObj {
 
         //
         var ASBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-        ASBufferCreateInfo.size = this.buildSizeInfo.accelerationStructureSize();
-        ASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+            ASBufferCreateInfo.size = this.buildSizeInfo.accelerationStructureSize();
+            ASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         this.ASStorageBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASBufferCreateInfo));
         this.ASStorageBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
@@ -134,8 +134,8 @@ public class AccelerationStructureObj extends BasicObj {
 
         //
         var ASScratchCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-        ASScratchCreateInfo.size = Math.max(this.buildSizeInfo.buildScratchSize(), this.buildSizeInfo.updateScratchSize());
-        ASScratchCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+            ASScratchCreateInfo.size = Math.max(this.buildSizeInfo.buildScratchSize(), this.buildSizeInfo.updateScratchSize());
+            ASScratchCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         this.ASScratchBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASScratchCreateInfo));
         this.ASScratchBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)

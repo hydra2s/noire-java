@@ -332,8 +332,8 @@ public class MemoryAllocationObj extends BasicObj {
         }
 
         // TODO: special support for ImageView
-        public ImageObj transitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
-            //
+        public ImageObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
+            // TODO: correct stage and access per every imageLayout, it should increase some FPS
             var memoryBarrier = VkImageMemoryBarrier2.create(1)
                     .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
                     .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
