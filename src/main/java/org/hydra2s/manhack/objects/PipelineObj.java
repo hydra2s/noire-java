@@ -67,7 +67,7 @@ public class PipelineObj extends BasicObj  {
             }
 
             //
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
 
@@ -77,20 +77,18 @@ public class PipelineObj extends BasicObj  {
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.handle.get());
             vkCmdDispatch(cmdBuf, dispatch.width(), dispatch.height(), dispatch.depth());
-            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pMemoryBarriers(VkMemoryBarrier2.create(1)
-                    .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
-                    .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                    .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                    .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
 
             //
             return this;
         }
-        
     }
 
     public static class GraphicsPipelineObj extends PipelineObj {
-
         public VkPipelineShaderStageCreateInfo.Buffer shaderStageInfo = null;
         public VkPipelineVertexInputStateCreateInfo vertexInputInfo = null;
         public VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateInfo = null;
@@ -107,13 +105,14 @@ public class PipelineObj extends BasicObj  {
         public VkPipelineDepthStencilStateCreateInfo depthStencilState = null;
         public VkGraphicsPipelineCreateInfo.Buffer createInfo = null;
 
-
+        //
         public GraphicsPipelineObj(Handle base, Handle handle) {
             super(base, handle);
             //TODO Auto-generated constructor stub
 
         }
 
+        //
         public GraphicsPipelineObj(Handle base, PipelineCInfo.GraphicsPipelineCInfo cInfo) {
             super(base, cInfo);
 
