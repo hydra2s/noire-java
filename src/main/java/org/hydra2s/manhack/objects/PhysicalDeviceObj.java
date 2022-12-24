@@ -8,6 +8,7 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTMemoryBudget.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTMultiDraw.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTMutableDescriptorType.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT;
@@ -157,8 +158,8 @@ public class PhysicalDeviceObj extends BasicObj {
     }
 
     public int getMemoryTypeIndex(int typeFilter, int propertyFlag, int ignoreFlags, long size) {
-        var memoryBudget = VkPhysicalDeviceMemoryBudgetPropertiesEXT.create();
-        var memoryProperties2 = VkPhysicalDeviceMemoryProperties2.create().pNext(memoryBudget);
+        var memoryBudget = VkPhysicalDeviceMemoryBudgetPropertiesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT);
+        var memoryProperties2 = VkPhysicalDeviceMemoryProperties2.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2).pNext(memoryBudget.address());
         var memoryProperties = memoryProperties2.memoryProperties();
         vkGetPhysicalDeviceMemoryProperties2(this.physicalDevice, memoryProperties2);
         for (var I = 0; I < memoryProperties.memoryTypeCount(); ++I) {

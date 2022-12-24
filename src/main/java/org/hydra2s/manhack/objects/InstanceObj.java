@@ -60,7 +60,7 @@ public class InstanceObj extends BasicObj {
 
         // Layers
         this.layers = PointerBuffer.allocateDirect(1);
-        this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memASCII("VK_LAYER_KHRONOS_validation")));
+        this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_validation")));
 
         //
         this.layersAmount = memAllocInt(1);
@@ -70,9 +70,9 @@ public class InstanceObj extends BasicObj {
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
         this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 1);
-        this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memASCII("VK_KHR_get_surface_capabilities2")));
+        this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_get_surface_capabilities2")));
         for (int i=0;i<this.glfwExt.limit();i++) {
-            this.extensions.put(i+1, MemoryUtil.memAddress(MemoryUtil.memASCII(this.glfwExt.getStringUTF8(i))));
+            this.extensions.put(i+1, MemoryUtil.memAddress(MemoryUtil.memUTF8(this.glfwExt.getStringUTF8(i))));
         }
 
         //
@@ -83,8 +83,8 @@ public class InstanceObj extends BasicObj {
         // TODO: Handle VkResult!!
         this.appInfo = VkApplicationInfo.create(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
-                .pApplicationName(MemoryUtil.memASCII("ManhackTest"))
-                .pEngineName(MemoryUtil.memASCII("Manhack"))
+                .pApplicationName(MemoryUtil.memUTF8("ManhackTest"))
+                .pEngineName(MemoryUtil.memUTF8("Manhack"))
                 .apiVersion(VK13.VK_API_VERSION_1_3)
                 .engineVersion(VK10.VK_MAKE_VERSION(1, 0, 0))
                 .applicationVersion(VK10.VK_MAKE_VERSION(1, 0, 0));

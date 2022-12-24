@@ -45,7 +45,7 @@ public class MemoryAllocationObj extends BasicObj {
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(this.deviceMemory);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
 
         return deviceMemoryObj.map(byteLength, this.memoryOffset + byteOffset);
     }
@@ -54,7 +54,7 @@ public class MemoryAllocationObj extends BasicObj {
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(this.deviceMemory);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
 
         deviceMemoryObj.unmap();
     }
@@ -285,7 +285,7 @@ public class MemoryAllocationObj extends BasicObj {
             );
 
             //
-            vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create());
+            vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
         }
 
         public long getDeviceAddress() {
@@ -328,7 +328,7 @@ public class MemoryAllocationObj extends BasicObj {
             );
 
             //
-            vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2).image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create());
+            vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2).image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
         }
 
         // TODO: special support for ImageView

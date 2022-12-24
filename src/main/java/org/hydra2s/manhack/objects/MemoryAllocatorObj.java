@@ -27,20 +27,21 @@ public class MemoryAllocatorObj extends BasicObj  {
             super(base, handle);
 
             //
-            var memoryAllocatorObj = (MemoryAllocationObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
             this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
             deviceObj.handleMap.put(this.handle, this);
+            memoryAllocatorObj.handleMap.put(this.handle, this);
         }
 
         public DeviceMemoryObj(Handle base, MemoryAllocationCInfo cInfo) {
             super(base, cInfo);
 
             //
-            var memoryAllocatorObj = (MemoryAllocationObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
@@ -92,7 +93,8 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public ByteBuffer map(long byteLength, long byteOffset) {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
@@ -106,7 +108,8 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public void unmap() {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             vkUnmapMemory(deviceObj.device, this.handle.get());
@@ -134,6 +137,8 @@ public class MemoryAllocatorObj extends BasicObj  {
         //
         if (memoryAllocationObj.isBuffer) { cInfo.buffer = memoryAllocationObj.handle.ptr(); };
         if (memoryAllocationObj.isImage) { cInfo.image = memoryAllocationObj.handle.ptr(); };
+        cInfo.memoryRequirements2 = memoryAllocationObj.memoryRequirements2;
+        cInfo.memoryRequirements = cInfo.memoryRequirements2.memoryRequirements();
 
         //
         memoryAllocationObj.memoryOffset = 0L;
