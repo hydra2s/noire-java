@@ -6,11 +6,15 @@ import org.lwjgl.vulkan.*;
 
 //
 import java.nio.ByteBuffer;
-import java.util.logging.Handler;
+import java.nio.IntBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
+import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
 
@@ -54,6 +58,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
+            deviceObj.handleMap.put(this.handle, this);
         }
 
         public ComputePipelineObj cmdDispatch(VkCommandBuffer cmdBuf, VkExtent3D dispatch, ByteBuffer pushConstRaw, int pushConstByteOffset) {
@@ -86,9 +91,136 @@ public class PipelineObj extends BasicObj  {
 
     public static class GraphicsPipelineObj extends PipelineObj {
 
+        public VkPipelineShaderStageCreateInfo.Buffer shaderStageInfo = null;
+        public VkPipelineVertexInputStateCreateInfo vertexInputInfo = null;
+        public VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateInfo = null;
+        public VkPipelineViewportStateCreateInfo viewportStateInfo = null;
+        public VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterInfo = null;
+        public VkPipelineRasterizationStateCreateInfo rasterizationInfo = null;
+        public VkPipelineMultisampleStateCreateInfo multisampleInfo = null;
+        public VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = null;
+        public VkPipelineColorBlendStateCreateInfo colorBlendInfo = null;
+        public VkPipelineRenderingCreateInfoKHR dynamicRenderingPipelineInfo = null;
+        public IntBuffer attachmentFormats = null;
+        public IntBuffer dynamicStates = null;
+        public VkPipelineDynamicStateCreateInfo dynamicStateInfo = null;
+        public VkPipelineDepthStencilStateCreateInfo depthStencilState = null;
+        public VkGraphicsPipelineCreateInfo.Buffer createInfo = null;
+
+
         public GraphicsPipelineObj(Handle base, Handle handle) {
             super(base, handle);
             //TODO Auto-generated constructor stub
+
+        }
+
+        public GraphicsPipelineObj(Handle base, PipelineCInfo.GraphicsPipelineCInfo cInfo) {
+            super(base, cInfo);
+
+            //
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
+
+            //
+            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
+            cInfo.sourceMap.forEach((stage, source)->{
+                this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
+            });
+
+            //
+            this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+            this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+            this.viewportStateInfo = VkPipelineViewportStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+            this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
+            this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
+            this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+            this.colorBlendAttachment = VkPipelineColorBlendAttachmentState.create(1);
+            this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
+            this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+            this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+            this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+            this.createInfo = VkGraphicsPipelineCreateInfo.create(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+            this.dynamicStates = memAllocInt(3);
+            this.attachmentFormats = memAllocInt(1);
+
+            //
+            this.inputAssemblyStateInfo
+                .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+
+            //
+            this.inputAssemblyStateInfo
+                .primitiveRestartEnable(false);
+
+            //
+            this.conservativeRasterInfo
+                .conservativeRasterizationMode(VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
+
+            //
+            this.rasterizationInfo
+                .pNext(this.conservativeRasterInfo.address())
+                .depthClampEnable(false)
+                .rasterizerDiscardEnable(false)
+                .polygonMode(VK_POLYGON_MODE_FILL)
+                .cullMode(VK_CULL_MODE_NONE)
+                .frontFace(VK_FRONT_FACE_CLOCKWISE)
+                .depthBiasEnable(false)
+                .depthBiasConstantFactor(0.0F)
+                .depthBiasClamp(0.0F)
+                .depthBiasSlopeFactor(0.0F)
+                .lineWidth(1.0F);
+
+            //
+            this.multisampleInfo
+                .rasterizationSamples(VK_SAMPLE_COUNT_1_BIT)
+                .minSampleShading(1.0F)
+                .alphaToCoverageEnable(false)
+                .alphaToOneEnable(false);
+
+            //
+            this.colorBlendInfo.logicOpEnable(false)
+                .logicOp(VK_LOGIC_OP_NO_OP)
+                .pAttachments(this.colorBlendAttachment)
+                .blendConstants(memAllocFloat(4).put(0, 0.0F).put(1, 0.0F).put(2, 0.0F).put(3, 0.0F));
+
+            //
+            //this.attachmentFormats.put();
+            this.dynamicRenderingPipelineInfo
+                .pColorAttachmentFormats(this.attachmentFormats);
+
+            //
+            this.dynamicStates
+                .put(0, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
+                .put(1, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
+                .put(2, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+
+            //
+            this.depthStencilState.depthTestEnable(true)
+                .depthWriteEnable(true)
+                .depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL)
+                .depthBoundsTestEnable(true)
+                .stencilTestEnable(false)
+                .minDepthBounds(0.0F)
+                .maxDepthBounds(1.0F);
+
+            //
+            this.createInfo
+                .pNext(this.dynamicRenderingPipelineInfo)
+                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
+                .pStages(this.shaderStageInfo)
+                .pVertexInputState(this.vertexInputInfo)
+                .pColorBlendState(this.colorBlendInfo)
+                .pDepthStencilState(this.depthStencilState)
+                .pViewportState(this.viewportStateInfo)
+                .pInputAssemblyState(this.inputAssemblyStateInfo)
+                .pRasterizationState(this.rasterizationInfo)
+                .pMultisampleState(this.multisampleInfo)
+                .pDynamicState(this.dynamicStateInfo)
+                .layout(cInfo.pipelineLayout);
+
+            //
+            vkCreateGraphicsPipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
+            deviceObj.handleMap.put(this.handle, this);
         }
         
     }
