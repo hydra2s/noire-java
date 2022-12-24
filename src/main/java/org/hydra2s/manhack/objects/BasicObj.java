@@ -21,8 +21,8 @@ public class BasicObj {
     }
 
     //
-    protected Handle base = new Handle("unknown", 0);
-    protected Handle handle = new Handle("unknown", 0);
+    protected Handle base = new Handle("Unknown", 0);
+    protected Handle handle = new Handle("Unknown", 0);
     protected BasicCInfo cInfo = null;
 
     //

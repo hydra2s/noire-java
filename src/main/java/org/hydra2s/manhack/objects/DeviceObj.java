@@ -8,6 +8,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
@@ -17,7 +18,7 @@ import java.util.Objects;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
-import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+import static org.lwjgl.vulkan.VK10.*;
 
 //
 public class DeviceObj extends BasicObj {
@@ -131,6 +132,14 @@ public class DeviceObj extends BasicObj {
     //
     public DeviceObj(Handle base, Handle handle) {
         super(base, handle);
+    }
+
+    //
+    public long createShaderModule(ByteBuffer shaderSrc){
+        var shaderModuleInfo = VkShaderModuleCreateInfo.create().sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO).pCode(shaderSrc);
+        var shaderModule = memAllocLong(1);
+        vkCreateShaderModule(device, shaderModuleInfo, null, shaderModule);
+        return shaderModule.get(0);
     }
 
     //
