@@ -1,6 +1,8 @@
 package org.hydra2s.manhack.objects;
 
 //
+import com.lodborg.intervaltree.Interval;
+import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.manhack.descriptors.AccelerationStructureCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.vulkan.*;
@@ -161,7 +163,7 @@ public class AccelerationStructureObj extends BasicObj {
         deviceObj.handleMap.put(this.handle, this);
 
         //
-        this.deviceAddress = this.deviceAddress == 0 ? (this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()))) : this.deviceAddress;
+        this.deviceAddress = this.getDeviceAddress();
         this.geometryBuildInfo.dstAccelerationStructure(this.handle.get());
         this.geometryBuildInfo.scratchData(VkDeviceOrHostAddressKHR.create().deviceAddress(this.ASScratchBuffer.getDeviceAddress()));
     }
@@ -169,7 +171,12 @@ public class AccelerationStructureObj extends BasicObj {
     //
     public long getDeviceAddress() {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        return this.deviceAddress == 0 ? (this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()))) : this.deviceAddress;
+        if (this.deviceAddress == 0) {
+            this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()));
+            deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.buildSizeInfo.accelerationStructureSize(), Interval.Bounded.CLOSED));
+            deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
+        }
+        return this.deviceAddress;
     }
 
     //

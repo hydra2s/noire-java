@@ -2,6 +2,7 @@ package org.hydra2s.manhack.objects;
 
 //
 
+import com.lodborg.intervaltree.IntervalTree;
 import org.hydra2s.manhack.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
@@ -30,6 +31,17 @@ public class BasicObj {
 
     // TODO: make correct hashmap
     public HashMap<Handle, BasicObj> handleMap = new HashMap<Handle, BasicObj>();
+
+    // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
+    public IntervalTree<Long> addressMap = new IntervalTree<>();
+    public HashMap<Long, Long> rootMap = new HashMap<Long, Long>();
+
+    // WARNING! May fail up to null
+    public long getHandleByAddress(long deviceAddress) {
+        var interval = addressMap.query(deviceAddress);
+        var handle = rootMap.get(interval.stream().findFirst().orElse(null).getStart());
+        return handle;
+    }
 
     //
     public BasicObj(Handle base, Handle handle) {

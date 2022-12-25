@@ -1,6 +1,9 @@
 package org.hydra2s.manhack.objects;
 
 //
+import com.lodborg.intervaltree.IntegerInterval;
+import com.lodborg.intervaltree.Interval;
+import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
@@ -293,9 +296,15 @@ public class MemoryAllocationObj extends BasicObj {
             vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
         }
 
+        //
         public long getDeviceAddress() {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            return this.deviceAddress == 0 ? (this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.create().sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()))) : this.deviceAddress;
+            if (this.deviceAddress == 0) {
+                this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.create().sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
+                deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.createInfo.size(), Interval.Bounded.CLOSED));
+                deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
+            }
+            return this.deviceAddress;
         }
     }
 
@@ -313,13 +322,18 @@ public class MemoryAllocationObj extends BasicObj {
             //
             var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var extent = cInfo.extent3D;
+            var imageType = cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D);
+            var arrayLayers = Math.max(cInfo.arrayLayers, 1);
 
             //
             this.createInfo = VkImageCreateInfo.create()
                 .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
-                .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)
+                .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT |
+                    (((imageType == VK_IMAGE_TYPE_3D)) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0) |
+                    (((arrayLayers % 6) == 0 && extent.height() == extent.width()) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0))
                 .extent(cInfo.extent3D)
-                .imageType(cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D))
+                .imageType(imageType)
                 .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
                 .mipLevels(cInfo.mipLevels)
                 .arrayLayers(cInfo.arrayLayers)
