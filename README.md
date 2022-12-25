@@ -1,6 +1,6 @@
 # 👩‍🎤 Noire.java 👩‍🎤
 
-New renderer engine for Java and Minecraft mod.
+New renderer engine for Java and Minecraft mod. Also, this is, probably, final project of and in my life (i.e. finale of my 2023 year).
 
 ## Features
 
