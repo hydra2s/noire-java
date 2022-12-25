@@ -20,7 +20,7 @@ import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
 
-// TODO: finish up projecting
+//
 public class SwapChainObj extends BasicObj  {
     public LongBuffer images = null;
     public IntBuffer amountOfImagesInSwapchain = memAllocInt(1);
