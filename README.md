@@ -1,6 +1,15 @@
-# 🦾 Noire.java 🦾
+# 👩‍🎤 Noire.java 👩‍🎤
 
 New renderer engine for Java and Minecraft mod.
+
+## Features
+
+- 📱 Minimalism
+- 📱 Simpler
+- 📱 Vulkan API 1.3.235
+- 📱 RTX support
+- 📱 Unified memory
+- 📱 Few draw call per many models
 
 ## Part of [manhack](https://github.com/hydra2s/manhack) project
 
