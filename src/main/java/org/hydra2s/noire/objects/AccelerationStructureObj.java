@@ -1,10 +1,10 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
-import org.hydra2s.manhack.descriptors.AccelerationStructureCInfo;
-import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
+import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.vulkan.*;
 
 //

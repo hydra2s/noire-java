@@ -1,7 +1,7 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.manhack.descriptors.SamplerCInfo;
+import org.hydra2s.noire.descriptors.SamplerCInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 //

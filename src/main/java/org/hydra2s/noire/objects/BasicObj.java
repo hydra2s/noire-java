@@ -1,9 +1,9 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
 
 import com.lodborg.intervaltree.IntervalTree;
-import org.hydra2s.manhack.descriptors.BasicCInfo;
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.util.HashMap;

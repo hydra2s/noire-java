@@ -1,7 +1,7 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.manhack.descriptors.PipelineCInfo;
+import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.lwjgl.vulkan.*;
 
 //

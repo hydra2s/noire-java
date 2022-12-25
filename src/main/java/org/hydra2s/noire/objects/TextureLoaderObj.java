@@ -1,4 +1,4 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
 public class TextureLoaderObj extends BasicObj {

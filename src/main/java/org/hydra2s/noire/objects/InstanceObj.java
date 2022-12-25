@@ -1,7 +1,7 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.manhack.descriptors.InstanceCInfo;
+import org.hydra2s.noire.descriptors.InstanceCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryUtil;

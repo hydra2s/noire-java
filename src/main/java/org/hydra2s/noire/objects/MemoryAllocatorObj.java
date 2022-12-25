@@ -1,8 +1,8 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.manhack.descriptors.MemoryAllocatorCInfo;
+import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkMemoryAllocateFlagsInfo;

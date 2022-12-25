@@ -1,10 +1,10 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.manhack.descriptors.BasicCInfo;
-import org.hydra2s.manhack.descriptors.DeviceCInfo;
-import org.hydra2s.manhack.descriptors.DeviceCInfo.QueueFamilyCInfo;
+import org.hydra2s.noire.descriptors.BasicCInfo;
+import org.hydra2s.noire.descriptors.DeviceCInfo;
+import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;

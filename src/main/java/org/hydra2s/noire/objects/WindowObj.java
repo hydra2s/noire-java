@@ -1,7 +1,7 @@
-package org.hydra2s.manhack.objects;
+package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.manhack.descriptors.WindowCInfo;
+import org.hydra2s.noire.descriptors.WindowCInfo;
 import org.lwjgl.vulkan.VkExtent2D;
 
 //
