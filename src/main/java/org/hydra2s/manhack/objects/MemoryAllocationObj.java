@@ -267,11 +267,12 @@ public class MemoryAllocationObj extends BasicObj {
         public long deviceAddress = 0L;
 
         public BufferObj(Handle base, Handle handle) {
-            super(base, handle);
+            super(base, handle); this.isBuffer = true;
         }
 
         public BufferObj(Handle base, MemoryAllocationCInfo.BufferCInfo cInfo) {
             super(base, cInfo);
+            this.isBuffer = true;
 
             //
             var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
@@ -312,12 +313,13 @@ public class MemoryAllocationObj extends BasicObj {
     static public class ImageObj extends MemoryAllocationObj {
         public VkImageCreateInfo createInfo = null;
         public ImageObj(Handle base, Handle handle) {
-            super(base, handle);
+            super(base, handle); this.isImage = true;
         }
 
 
         public ImageObj(Handle base, MemoryAllocationCInfo.ImageCInfo cInfo) {
             super(base, cInfo);
+            this.isImage = true;
 
             //
             var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
