@@ -1,6 +1,12 @@
 package org.hydra2s.manhack.descriptors;
 
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkQueue;
+
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.HashMap;
+import java.util.function.Function;
 
 import static org.hydra2s.manhack.descriptors.VkFormatCompatibilityClass.*;
 import static org.lwjgl.vulkan.EXTConditionalRendering.*;
@@ -538,6 +544,16 @@ public class BasicCInfo {
         };
 
         return pipelineStageMask;
+    };
+
+    //
+    public static class SubmitCmd extends BasicCInfo {
+        public VkQueue queue = null;
+        public VkCommandBuffer cmdBuf = null;
+        public IntBuffer dstStageMask = null;
+        public LongBuffer waitSemaphores = null;
+        public LongBuffer signalSemaphores = null;
+        public Function<LongBuffer, Integer> onDone = null;
     };
 
 }

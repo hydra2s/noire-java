@@ -171,16 +171,6 @@ public class DeviceObj extends BasicObj {
         return this.queueFamilies.get(queueFamilyIndex).cmdPool.get(0);
     }
 
-    //
-    public static class SubmitCmd extends BasicCInfo {
-        public VkQueue queue = null;
-        public VkCommandBuffer cmdBuf = null;
-        public IntBuffer dstStageMask = null;
-        public LongBuffer waitSemaphores = null;
-        public LongBuffer signalSemaphores = null;
-        public Function<LongBuffer, Integer> onDone = null;
-    }
-
     // use it when a polling
     public DeviceObj processing() {
         this.whenDone.forEach((F)->F.apply(null));
@@ -188,7 +178,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public LongBuffer submitCommand(SubmitCmd cmd) {
+    public LongBuffer submitCommand(BasicCInfo.SubmitCmd cmd) {
         LongBuffer fence = memAllocLong(1);
         vkCreateFence(this.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
         vkQueueSubmit(cmd.queue, VkSubmitInfo.create(1)
@@ -223,7 +213,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public LongBuffer submitOnce(SubmitCmd submitCmd, long commandPool, Function<VkCommandBuffer, Integer> fn) {
+    public LongBuffer submitOnce(BasicCInfo.SubmitCmd submitCmd, long commandPool, Function<VkCommandBuffer, Integer> fn) {
         //
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.create()
                 .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
