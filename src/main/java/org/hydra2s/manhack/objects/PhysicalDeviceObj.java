@@ -9,6 +9,7 @@ import java.nio.IntBuffer;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTMemoryBudget.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTMultiDraw.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTI_DRAW_FEATURES_EXT;
@@ -35,30 +36,32 @@ import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3
 public class PhysicalDeviceObj extends BasicObj {
 
     //
-    public VkPhysicalDeviceTransformFeedbackFeaturesEXT deviceTransformFeedbackFeatures;
-    public VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT deviceMutableDescriptorFeatures;
-    public VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR deviceWorkgroupMemoryExplicitFeatures;
-    public VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR deviceRayTracingMaintenance1Features;
-    public VkPhysicalDeviceShaderClockFeaturesKHR deviceShaderClockFeatures;
-    public VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT deviceImageAtomicInt64Features;
-    public VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustness2Features;
-    public VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT deviceVertexInputFeatures;
-    public VkPhysicalDeviceDescriptorBufferFeaturesEXT deviceDescriptorBufferFeatures;
-    public VkPhysicalDeviceMeshShaderFeaturesEXT deviceMeshShaderFeatures;
-    public VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR deviceBarycentricFeatures;
-    public VkPhysicalDeviceMultiDrawFeaturesEXT deviceMultiDrawFeatures;
-    public VkPhysicalDevicePipelineRobustnessFeaturesEXT devicePipelineRobustnessFeatures;
-    public VkPhysicalDeviceShaderAtomicFloatFeaturesEXT deviceAtomicFloatFeatures;
-    public VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT deviceAtomicFloat2Features;
-    public VkPhysicalDeviceRayQueryFeaturesKHR deviceRayQueryFeatures;
-    public VkPhysicalDeviceAccelerationStructureFeaturesKHR deviceAccelerationStructureFeaturs;
-    public VkPhysicalDeviceVulkan11Features deviceFeatures11;
-    public VkPhysicalDeviceVulkan12Features deviceFeatures12;
-    public VkPhysicalDeviceVulkan13Features deviceFeatures13;
-    public VkPhysicalDeviceFeatures2 deviceFeatures;
-    public VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescriptorBufferProperties;
-    public VkPhysicalDeviceProperties2 deviceProperties;
+    public VkPhysicalDeviceImage2DViewOf3DFeaturesEXT device2DViewOf3DFeatures = null;
+    public VkPhysicalDeviceTransformFeedbackFeaturesEXT deviceTransformFeedbackFeatures = null;
+    public VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT deviceMutableDescriptorFeatures = null;
+    public VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR deviceWorkgroupMemoryExplicitFeatures = null;
+    public VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR deviceRayTracingMaintenance1Features = null;
+    public VkPhysicalDeviceShaderClockFeaturesKHR deviceShaderClockFeatures = null;
+    public VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT deviceImageAtomicInt64Features = null;
+    public VkPhysicalDeviceRobustness2FeaturesEXT deviceRobustness2Features = null;
+    public VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT deviceVertexInputFeatures = null;
+    public VkPhysicalDeviceDescriptorBufferFeaturesEXT deviceDescriptorBufferFeatures = null;
+    public VkPhysicalDeviceMeshShaderFeaturesEXT deviceMeshShaderFeatures = null;
+    public VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR deviceBarycentricFeatures = null;
+    public VkPhysicalDeviceMultiDrawFeaturesEXT deviceMultiDrawFeatures = null;
+    public VkPhysicalDevicePipelineRobustnessFeaturesEXT devicePipelineRobustnessFeatures = null;
+    public VkPhysicalDeviceShaderAtomicFloatFeaturesEXT deviceAtomicFloatFeatures = null;
+    public VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT deviceAtomicFloat2Features = null;
+    public VkPhysicalDeviceRayQueryFeaturesKHR deviceRayQueryFeatures = null;
+    public VkPhysicalDeviceAccelerationStructureFeaturesKHR deviceAccelerationStructureFeaturs = null;
+    public VkPhysicalDeviceVulkan11Features deviceFeatures11 = null;
+    public VkPhysicalDeviceVulkan12Features deviceFeatures12 = null;
+    public VkPhysicalDeviceVulkan13Features deviceFeatures13 = null;
+    public VkPhysicalDeviceFeatures2 deviceFeatures = null;
+    public VkPhysicalDeviceDescriptorBufferPropertiesEXT deviceDescriptorBufferProperties = null;
+    public VkPhysicalDeviceProperties2 deviceProperties = null;
     public VkQueueFamilyProperties.Buffer queueFamilyProperties = null;
+
 
     //
     public VkLayerProperties.Buffer layers = null;
@@ -79,7 +82,8 @@ public class PhysicalDeviceObj extends BasicObj {
         BasicObj.globalHandleMap.put(handle.get(), this);
 
         // TODO: unify into one object
-        this.deviceTransformFeedbackFeatures = VkPhysicalDeviceTransformFeedbackFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT);
+        this.device2DViewOf3DFeatures = VkPhysicalDeviceImage2DViewOf3DFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT);
+        this.deviceTransformFeedbackFeatures = VkPhysicalDeviceTransformFeedbackFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT).pNext(this.device2DViewOf3DFeatures.address());
         //this.deviceMutableDescriptorFeaturesV = VkPhysicalDeviceMutableDescriptorTypeFeaturesVALVE.create().pNext(this.deviceTransformFeedbackFeatures.address());
         this.deviceMutableDescriptorFeatures = VkPhysicalDeviceMutableDescriptorTypeFeaturesEXT.create().pNext(this.deviceTransformFeedbackFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT);
         this.deviceWorkgroupMemoryExplicitFeatures = VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR.create().pNext(this.deviceMutableDescriptorFeatures.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR);

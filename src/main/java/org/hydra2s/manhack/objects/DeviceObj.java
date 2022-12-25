@@ -73,6 +73,7 @@ public class DeviceObj extends BasicObj {
             MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_transform_feedback")),
             MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float2")), // broken support in NVIDIA
             MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_memory_budget")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_image_2d_view_of_3d")),
             MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_VALVE_mutable_descriptor_type"))
         );
 
