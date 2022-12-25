@@ -93,6 +93,7 @@ public class ImageSetObj extends BasicObj  {
             } }));
         }
 
+        //
         this.handle = new Handle("ImageSet", MemoryUtil.memAddress(memAllocLong(1)));
         deviceObj.handleMap.put(this.handle, this);
     }

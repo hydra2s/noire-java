@@ -92,18 +92,18 @@ public class MemoryAllocationObj extends BasicObj {
         // TODO: support a correct buffer size
         IntStream.range(0, regions.capacity()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate).image(dstImage).oldLayout(dstImageLayout).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.create()
-                    .aspectMask(regions.get(I).dstSubresource().aspectMask())
-                    .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
-                    .baseMipLevel(regions.get(I).dstSubresource().mipLevel())
-                    .layerCount(regions.get(I).dstSubresource().layerCount())
-                    .levelCount(1)
+                .aspectMask(regions.get(I).dstSubresource().aspectMask())
+                .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
+                .baseMipLevel(regions.get(I).dstSubresource().mipLevel())
+                .layerCount(regions.get(I).dstSubresource().layerCount())
+                .levelCount(1)
             );
             imageMemoryBarrier.put(I*2+1, readMemoryBarrierTemplate).image(srcImage).oldLayout(srcImageLayout).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.create()
-                    .aspectMask(regions.get(I).srcSubresource().aspectMask())
-                    .baseArrayLayer(regions.get(I).srcSubresource().baseArrayLayer())
-                    .baseMipLevel(regions.get(I).srcSubresource().mipLevel())
-                    .layerCount(regions.get(I).srcSubresource().layerCount())
-                    .levelCount(1)
+                .aspectMask(regions.get(I).srcSubresource().aspectMask())
+                .baseArrayLayer(regions.get(I).srcSubresource().baseArrayLayer())
+                .baseMipLevel(regions.get(I).srcSubresource().mipLevel())
+                .layerCount(regions.get(I).srcSubresource().layerCount())
+                .levelCount(1)
             );
         });
 
@@ -275,14 +275,19 @@ public class MemoryAllocationObj extends BasicObj {
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
-            vkCreateBuffer(deviceObj.device, this.createInfo = VkBufferCreateInfo.create()
-                    .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
-                    .size(cInfo.size)
-                    .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-                    .sharingMode(VK_SHARING_MODE_EXCLUSIVE),
-                    null,
-                    memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr()), 1)
-            );
+            this.createInfo = VkBufferCreateInfo.create()
+                .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
+                .size(cInfo.size)
+                .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+                .sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+
+            //
+            if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
+                vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr()), 1));
+            } else {
+                this.handle = new Handle("Buffer", cInfo.buffer.get(0));
+            }
+            deviceObj.handleMap.put(this.handle, this);
 
             //
             vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
@@ -310,22 +315,27 @@ public class MemoryAllocationObj extends BasicObj {
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
-            vkCreateImage(deviceObj.device, this.createInfo = VkImageCreateInfo.create()
-                            .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
-                            .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)
-                    .extent(cInfo.extent3D)
-                    .imageType(cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D))
-                    .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-                    .mipLevels(cInfo.mipLevels)
-                    .arrayLayers(cInfo.arrayLayers)
-                    .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-                    .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                    .samples(cInfo.samples)
-                    .format(cInfo.format)
-                    .tiling(cInfo.tiling),
-                    null,
-                    memLongBuffer(memAddress((this.handle = new Handle("Image")).ptr()), 1)
-            );
+            this.createInfo = VkImageCreateInfo.create()
+                .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
+                .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT)
+                .extent(cInfo.extent3D)
+                .imageType(cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D))
+                .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+                .mipLevels(cInfo.mipLevels)
+                .arrayLayers(cInfo.arrayLayers)
+                .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                .samples(cInfo.samples)
+                .format(cInfo.format)
+                .tiling(cInfo.tiling);
+
+            //
+            if (cInfo.image == null || cInfo.image.get(0) == 0) {
+                vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
+            } else {
+                this.handle = new Handle("Image", cInfo.image.get(0));
+            }
+            deviceObj.handleMap.put(this.handle, this);
 
             //
             vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2).image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
