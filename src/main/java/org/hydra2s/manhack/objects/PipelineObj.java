@@ -252,6 +252,9 @@ public class PipelineObj extends BasicObj  {
             }
 
             //
+            int layerCount = fbLayout.layerCounts.stream().min(Integer::compare).get();
+
+            //
             boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
             boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
             boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
@@ -263,7 +266,7 @@ public class PipelineObj extends BasicObj  {
                 .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
                 .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
                 .viewMask(0x0)
-                .layerCount(fbLayout.layerCount)
+                .layerCount(layerCount)
                 .renderArea(fbLayout.scissor)
             );
 
@@ -283,12 +286,12 @@ public class PipelineObj extends BasicObj  {
             if (multiDraw != null) {
                 vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
             } else {
-                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.create(1).baseArrayLayer(0).layerCount(fbLayout.layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
                 if (hasDepthStencil) {
                     vkCmdClearAttachments(cmdBuf, VkClearAttachment.create(1)
                         .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
                         .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
-                        .colorAttachment(0), VkClearRect.create(1).baseArrayLayer(0).layerCount(fbLayout.layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                        .colorAttachment(0), VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
                 }
             }
             vkCmdEndRendering(cmdBuf);

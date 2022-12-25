@@ -55,7 +55,7 @@ public class ImageSetObj extends BasicObj  {
             //
             var fI = I;
             var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
-                arrayLayers = cInfo.layerCount*3;
+                arrayLayers = cInfo.layerCounts.get(fI)*3;
                 format = cInfo.formats.get(fI);
                 mipLevels = 1;
                 extent3D = cInfo.extents.get(fI);
@@ -73,7 +73,7 @@ public class ImageSetObj extends BasicObj  {
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
                 type = "storage";
-                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount*0).baseArrayLayer(cInfo.layerCount);
+                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*0).baseArrayLayer(cInfo.layerCounts.get(fI));
             } }));
 
             //
@@ -81,7 +81,7 @@ public class ImageSetObj extends BasicObj  {
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
                 type = "sampled";
-                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount*1).baseArrayLayer(cInfo.layerCount);
+                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*1).baseArrayLayer(cInfo.layerCounts.get(fI));
             } }));
 
             //
@@ -89,7 +89,7 @@ public class ImageSetObj extends BasicObj  {
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
                 type = "sampled";
-                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount*2).baseArrayLayer(cInfo.layerCount);
+                subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*2).baseArrayLayer(cInfo.layerCounts.get(fI));
             } }));
         }
 
@@ -158,6 +158,9 @@ public class ImageSetObj extends BasicObj  {
             super(base, cInfo);
 
             //
+            int layerCount = cInfo.layerCounts.stream().min(Integer::compare).get();
+
+            //
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
                 var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
@@ -171,7 +174,7 @@ public class ImageSetObj extends BasicObj  {
 
                 //
                 var imageCInfo = new MemoryAllocationCInfo.ImageCInfo() {{
-                    arrayLayers = cInfo.layerCount * 2;
+                    arrayLayers = layerCount * 2;
                     format = cInfo.depthStencilFormat;
                     mipLevels = 1;
                     extent3D = VkExtent3D.create().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
@@ -189,7 +192,11 @@ public class ImageSetObj extends BasicObj  {
                         pipelineLayout = cInfo.pipelineLayout;
                         image = depthStencilImage.handle.get();
                         type = "sampled";
-                        subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount * 0).baseArrayLayer(cInfo.layerCount);
+                        subresourceRange = VkImageSubresourceRange.create()
+                            .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
+                            .levelCount(1)
+                            .baseArrayLayer(layerCount * 0)
+                            .baseArrayLayer(layerCount);
                     }
                 });
 
@@ -199,7 +206,7 @@ public class ImageSetObj extends BasicObj  {
                         pipelineLayout = cInfo.pipelineLayout;
                         image = depthStencilImage.handle.get();
                         type = "sampled";
-                        subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount * 1).baseArrayLayer(cInfo.layerCount);
+                        subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(layerCount * 1).baseArrayLayer(layerCount);
                     }
                 });
             }

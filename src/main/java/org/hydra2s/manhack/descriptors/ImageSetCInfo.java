@@ -15,11 +15,11 @@ import static org.lwjgl.vulkan.VK13.VK_ACCESS_2_MEMORY_READ_BIT;
 //
 public class ImageSetCInfo extends BasicCInfo  {
     //
-    public int layerCount = 1;
     public long pipelineLayout = 0L;
     public long memoryAllocator = 0L;
 
     //
+    public ArrayList<Integer> layerCounts = new ArrayList<Integer>();
     public IntBuffer formats = null;
     public VkRenderingAttachmentInfo.Buffer attachmentInfos = null;
     public VkPipelineColorBlendAttachmentState.Buffer blendAttachments = null;

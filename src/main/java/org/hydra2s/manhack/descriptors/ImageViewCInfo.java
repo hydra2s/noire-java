@@ -15,9 +15,9 @@ public class ImageViewCInfo extends BasicCInfo  {
     public int imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     public VkComponentMapping compontentMapping = VkComponentMapping.create()
-            .r(VK_COMPONENT_SWIZZLE_R)
-            .g(VK_COMPONENT_SWIZZLE_G)
-            .b(VK_COMPONENT_SWIZZLE_B)
-            .a(VK_COMPONENT_SWIZZLE_A);
+        .r(VK_COMPONENT_SWIZZLE_R)
+        .g(VK_COMPONENT_SWIZZLE_G)
+        .b(VK_COMPONENT_SWIZZLE_B)
+        .a(VK_COMPONENT_SWIZZLE_A);
 
 }

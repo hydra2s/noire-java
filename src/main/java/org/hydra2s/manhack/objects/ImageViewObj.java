@@ -1,16 +1,14 @@
 package org.hydra2s.manhack.objects;
 
 //
-import org.hydra2s.manhack.descriptors.ImageViewCInfo;
-import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.manhack.descriptors.*;
 import org.lwjgl.vulkan.*;
 
 //
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_IMAGE_COPY_2;
+import static org.lwjgl.vulkan.VK13.*;
 
 // aka, known as ImageSubresourceRange
 public class ImageViewObj extends BasicObj {
@@ -49,6 +47,8 @@ public class ImageViewObj extends BasicObj {
             this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
             descriptorsObj.writeDescriptors();
         }
+
+
     }
 
     //
@@ -66,20 +66,18 @@ public class ImageViewObj extends BasicObj {
             .layerCount(subresourceRange.layerCount());
     }
 
-
-
     // TODO: unidirectional support
     public ImageViewObj cmdCopyBufferToImageView(
-            VkCommandBuffer cmdBuf,
+        VkCommandBuffer cmdBuf,
 
-            // TODO: multiple one support
-            VkExtent3D extent,
-            VkOffset3D dstOffset,
-            int dstMipLevel,
+        // TODO: multiple one support
+        VkExtent3D extent,
+        VkOffset3D dstOffset,
+        int dstMipLevel,
 
-            // TODO: structured one support
-            long srcBuffer,
-            long srcOffset
+        // TODO: structured one support
+        long srcBuffer,
+        long srcOffset
     ) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
@@ -166,13 +164,27 @@ public class ImageViewObj extends BasicObj {
         return ((ImageViewCInfo)cInfo).imageLayout;
     }
 
-    // simpler than traditional image
-    public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout) {
+    //
+    public ImageViewObj cmdTransitionBarrierFromInitial(VkCommandBuffer cmdBuf) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
         var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
 
         //
+        dstImageObj.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_UNDEFINED, ((ImageViewCInfo)cInfo).imageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
+
+        //
+        return this;
+    }
+
+    // simpler than traditional image
+    public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout, boolean fromInitial) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+
+        //
+        if (fromInitial) { this.cmdTransitionBarrierFromInitial(cmdBuf); };
         dstImageObj.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).imageLayout, dstImageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
         ((ImageViewCInfo)cInfo).imageLayout = dstImageLayout;
 
