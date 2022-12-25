@@ -112,14 +112,19 @@ public class AccelerationStructureObj extends BasicObj {
         vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(1), this.primitiveCount, this.buildSizeInfo);
 
         //
-        var allocationCInfo = new MemoryAllocationCInfo();
-        allocationCInfo.isHost = false;
-        allocationCInfo.isDevice = true;
+        var allocationCInfo = new MemoryAllocationCInfo(){{
+            isHost = false;
+            isDevice = true;
+        }};
 
         //
-        var ASBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-            ASBufferCreateInfo.size = this.buildSizeInfo.accelerationStructureSize();
-            ASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        var buildSizeInfo = this.buildSizeInfo;
+        var ASBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo() {{
+            size = buildSizeInfo.accelerationStructureSize();
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        }};
+
+        //
         this.ASStorageBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASBufferCreateInfo));
         this.ASStorageBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
@@ -133,9 +138,12 @@ public class AccelerationStructureObj extends BasicObj {
             .size(ASBufferCreateInfo.size);
 
         //
-        var ASScratchCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-            ASScratchCreateInfo.size = Math.max(this.buildSizeInfo.buildScratchSize(), this.buildSizeInfo.updateScratchSize());
-            ASScratchCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        var ASScratchCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+            size = Math.max(buildSizeInfo.buildScratchSize(), buildSizeInfo.updateScratchSize());
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+        }};
+
+        //
         this.ASScratchBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASScratchCreateInfo));
         this.ASScratchBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
@@ -151,6 +159,8 @@ public class AccelerationStructureObj extends BasicObj {
         //
         vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(ASBufferCreateInfo.size).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
         deviceObj.handleMap.put(this.handle, this);
+
+        //
         this.deviceAddress = this.deviceAddress == 0 ? (this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()))) : this.deviceAddress;
         this.geometryBuildInfo.dstAccelerationStructure(this.handle.get());
         this.geometryBuildInfo.scratchData(VkDeviceOrHostAddressKHR.create().deviceAddress(this.ASScratchBuffer.getDeviceAddress()));

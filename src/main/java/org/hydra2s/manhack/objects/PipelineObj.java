@@ -177,13 +177,13 @@ public class PipelineObj extends BasicObj  {
             //
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
-                .pAttachments(cInfo.fbLayout.colorBlendAttachments)
+                .pAttachments(cInfo.fbLayout.blendAttachments)
                 .blendConstants(memAllocFloat(4).put(0, 0.0F).put(1, 0.0F).put(2, 0.0F).put(3, 0.0F));
 
             //
             //this.attachmentFormats.put();
             this.dynamicRenderingPipelineInfo
-                .pColorAttachmentFormats(cInfo.fbLayout.colorFormats);
+                .pColorAttachmentFormats(cInfo.fbLayout.formats);
 
             //
             this.dynamicStates

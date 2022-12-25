@@ -60,10 +60,10 @@ public class ImageViewObj extends BasicObj {
     public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
         var subresourceRange = this.subresourceRange();
         return VkImageSubresourceLayers.create()
-                .aspectMask(subresourceRange.aspectMask())
-                .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
-                .baseArrayLayer(subresourceRange.baseArrayLayer())
-                .layerCount(subresourceRange.layerCount());
+            .aspectMask(subresourceRange.aspectMask())
+            .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
+            .baseArrayLayer(subresourceRange.baseArrayLayer())
+            .layerCount(subresourceRange.layerCount());
     }
 
 
@@ -88,11 +88,11 @@ public class ImageViewObj extends BasicObj {
 
         //
         srcBufferObj.cmdCopyBufferToImage(cmdBuf, ((ImageViewCInfo)cInfo).image,
-                ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.create(1)
-                        .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
-                        .bufferOffset(srcOffset)
-                        .imageOffset(dstOffset).imageExtent(extent)
-                        .imageSubresource(this.subresourceLayers(dstMipLevel))
+            ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.create(1)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
+                .bufferOffset(srcOffset)
+                .imageOffset(dstOffset).imageExtent(extent)
+                .imageSubresource(this.subresourceLayers(dstMipLevel))
         );
 
         //

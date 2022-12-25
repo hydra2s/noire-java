@@ -32,7 +32,7 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     }
 
     //
-    public class ImageCInfo extends MemoryAllocationCInfo {
+    public static class ImageCInfo extends MemoryAllocationCInfo {
         public VkExtent3D extent3D = VkExtent3D.create().width(1).height(1).depth(1);
         public int usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
         public int mipLevels = 1;

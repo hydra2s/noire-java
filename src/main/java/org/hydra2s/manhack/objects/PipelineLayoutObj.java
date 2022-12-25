@@ -112,12 +112,6 @@ public class PipelineLayoutObj extends BasicObj  {
         this.descriptorLayout = memAllocPointer(3);
 
         //
-
-        //
-
-        //
-
-        //
         this.mutableDescriptorTypes = memAllocInt(2).put(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE).put(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
         this.mutableDescriptorLists = VkMutableDescriptorTypeListEXT.create(1).pDescriptorTypes(this.mutableDescriptorTypes);
         this.mutableDescriptorInfo = VkMutableDescriptorTypeCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT).pMutableDescriptorTypeLists(this.mutableDescriptorLists);
@@ -168,21 +162,20 @@ public class PipelineLayoutObj extends BasicObj  {
         allocationCInfo.isDevice = true;
 
         //
-        var resourceBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-        var samplerBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-        var uniformBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo();
-
-        //
-        uniformBufferCreateInfo.size = this.uniformBufferSize;
-        uniformBufferCreateInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-
-        //
-        resourceBufferCreateInfo.size = this.sizes.get(0);
-        resourceBufferCreateInfo.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-
-        //
-        samplerBufferCreateInfo.size = this.sizes.get(1);
-        samplerBufferCreateInfo.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+        var sizes = this.sizes;
+        var uniformBufferSize = this.uniformBufferSize;
+        var resourceBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+            size = sizes.get(0);
+            usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+        }};
+        var samplerBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+            size = sizes.get(1);
+            usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+        }};
+        var uniformBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo() {{
+            size = uniformBufferSize;
+            usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+        }};
 
         //
         this.resourceDescriptorBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, resourceBufferCreateInfo));
@@ -213,17 +206,17 @@ public class PipelineLayoutObj extends BasicObj  {
         //
         for (var I=0;I<Math.min(this.resources.size(), 1024);I++) {
             vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.create()
-                    .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                    .type(((ImageViewCInfo) deviceObj.handleMap.get(this.resources.get(I)).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-                    .data(VkDescriptorDataEXT.create().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets.get(0) + RSIZE * I), RSIZE));
+                .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
+                .type(((ImageViewCInfo) deviceObj.handleMap.get(this.resources.get(I)).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                .data(VkDescriptorDataEXT.create().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets.get(0) + RSIZE * I), RSIZE));
         }
 
         //
         for (var I=0;I<Math.min(this.samplers.size(), 256);I++) {
             vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.create()
-                    .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                    .type(VK_DESCRIPTOR_TYPE_SAMPLER)
-                    .data(VkDescriptorDataEXT.create().pSampler(this.samplers.get(I))), SMAP.slice((int) (this.offsets.get(1) + SSIZE * I), SSIZE));
+                .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
+                .type(VK_DESCRIPTOR_TYPE_SAMPLER)
+                .data(VkDescriptorDataEXT.create().pSampler(this.samplers.get(I))), SMAP.slice((int) (this.offsets.get(1) + SSIZE * I), SSIZE));
         }
 
         //
