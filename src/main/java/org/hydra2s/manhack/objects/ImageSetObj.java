@@ -48,9 +48,10 @@ public class ImageSetObj extends BasicObj  {
         //
         for (var I=0;I<cInfo.formats.capacity();I++) {
             //
-            var allocationCInfo = new MemoryAllocationCInfo();
-            allocationCInfo.isHost = false;
-            allocationCInfo.isDevice = true;
+            var allocationCInfo = new MemoryAllocationCInfo() {{
+                isHost = false;
+                isDevice = true;
+            }};
 
             //
             var fI = I;
