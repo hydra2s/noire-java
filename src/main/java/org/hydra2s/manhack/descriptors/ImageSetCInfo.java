@@ -41,7 +41,8 @@ public class ImageSetCInfo extends BasicCInfo  {
         // planned a auto-detection
         public int depthStencilFormat = 0;
         public VkRenderingAttachmentInfo depthStencilAttachmentInfo = null;
-        public VkRect2D renderArea = null;
+        public VkRect2D scissor = null;
+        public VkViewport viewport = null;
 
         //
         public VkImageMemoryBarrier2 depthStencilBarrier = VkImageMemoryBarrier2.create()

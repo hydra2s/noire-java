@@ -14,7 +14,9 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
+import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
 
@@ -122,6 +124,12 @@ public class PipelineObj extends BasicObj  {
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
 
             //
+            var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
+            boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+
+            //
             this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
             cInfo.sourceMap.forEach((stage, source)->{
                 this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
@@ -177,13 +185,13 @@ public class PipelineObj extends BasicObj  {
             //
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
-                .pAttachments(cInfo.fbLayout.blendAttachments)
+                .pAttachments(fbLayout.blendAttachments)
                 .blendConstants(memAllocFloat(4).put(0, 0.0F).put(1, 0.0F).put(2, 0.0F).put(3, 0.0F));
 
             //
             //this.attachmentFormats.put();
             this.dynamicRenderingPipelineInfo
-                .pColorAttachmentFormats(cInfo.fbLayout.formats);
+                .pColorAttachmentFormats(fbLayout.formats);
 
             //
             this.dynamicStates
@@ -218,6 +226,75 @@ public class PipelineObj extends BasicObj  {
             //
             vkCreateGraphicsPipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
             deviceObj.handleMap.put(this.handle, this);
+        }
+
+        //
+        public GraphicsPipelineObj cmdDraw(VkCommandBuffer cmdBuf, VkMultiDrawInfoEXT.Buffer multiDraw, long imageSet, ByteBuffer pushConstRaw, int pushConstByteOffset) {
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout));
+            var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", imageSet));
+
+            //
+            var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
+            var fbClearC = VkClearAttachment.create(fbLayout.formats.capacity());
+            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.capacity());
+            for (var I=0;I<fbLayout.formats.capacity();I++) {
+                fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+                fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
+                fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
+                fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
+                fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+
+                fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
+                fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
+                fbClearC.get(I).colorAttachment(I);
+            }
+
+            //
+            boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+
+            //
+            vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.create()
+                .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
+                .pColorAttachments(fbLayout.attachmentInfos)
+                .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
+                .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
+                .viewMask(0x0)
+                .layerCount(fbLayout.layerCount)
+                .renderArea(fbLayout.scissor)
+            );
+
+            //
+            if (pushConstRaw != null) {
+                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, pushConstByteOffset, pushConstRaw);
+            }
+
+            //
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
+
+            //
+            vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
+            vkCmdSetVertexInputEXT(cmdBuf, null, null);
+            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.create(1).put(0, fbLayout.scissor));
+            vkCmdSetViewportWithCount(cmdBuf, VkViewport.create(1).put(0, fbLayout.viewport));
+            if (multiDraw != null) {
+                vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
+            } else {
+                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.create(1).baseArrayLayer(0).layerCount(fbLayout.layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                if (hasDepthStencil) {
+                    vkCmdClearAttachments(cmdBuf, VkClearAttachment.create(1)
+                        .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
+                        .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
+                        .colorAttachment(0), VkClearRect.create(1).baseArrayLayer(0).layerCount(fbLayout.layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                }
+            }
+            vkCmdEndRendering(cmdBuf);
+
+            //
+            return this;
         }
         
     }

@@ -162,6 +162,10 @@ public class ImageViewObj extends BasicObj {
         return this;
     }
 
+    public int getImageLayout() {
+        return ((ImageViewCInfo)cInfo).imageLayout;
+    }
+
     // simpler than traditional image
     public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());

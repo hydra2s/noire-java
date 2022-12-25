@@ -4,6 +4,7 @@ package org.hydra2s.manhack.objects;
 import org.hydra2s.manhack.descriptors.ImageSetCInfo;
 import org.hydra2s.manhack.descriptors.ImageViewCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
@@ -15,6 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 //
+import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -90,6 +92,9 @@ public class ImageSetObj extends BasicObj  {
                 subresourceRange = VkImageSubresourceRange.create().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCount*2).baseArrayLayer(cInfo.layerCount);
             } }));
         }
+
+        this.handle = new Handle("ImageSet", MemoryUtil.memAddress(memAllocLong(1)));
+        deviceObj.handleMap.put(this.handle, this);
     }
 
     //
@@ -169,7 +174,7 @@ public class ImageSetObj extends BasicObj  {
                     arrayLayers = cInfo.layerCount * 2;
                     format = cInfo.depthStencilFormat;
                     mipLevels = 1;
-                    extent3D = VkExtent3D.create().width(cInfo.renderArea.extent().width()).height(cInfo.renderArea.extent().height()).depth(1);
+                    extent3D = VkExtent3D.create().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
                     tiling = VK_IMAGE_TILING_OPTIMAL;
                     samples = VK_SAMPLE_COUNT_1_BIT;
                     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -208,7 +213,7 @@ public class ImageSetObj extends BasicObj  {
             //
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
-                var extent = VkExtent3D.create().width(cInfo.renderArea.extent().width()).height(cInfo.renderArea.extent().height()).depth(1);
+                var extent = VkExtent3D.create().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
 
                 //
                 this.currentDepthStencilImageView.cmdCopyImageViewToImageView(cmdBuf, extent,
