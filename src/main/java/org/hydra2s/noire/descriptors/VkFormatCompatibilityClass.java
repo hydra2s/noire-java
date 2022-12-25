@@ -1,3 +1,3 @@
-package org.hydra2s.manhack.descriptors;
+package org.hydra2s.noire.descriptors;
 
 

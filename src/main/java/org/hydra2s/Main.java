@@ -1,13 +1,13 @@
 package org.hydra2s;
 
-import org.hydra2s.manhack.descriptors.DeviceCInfo;
-import org.hydra2s.manhack.descriptors.InstanceCInfo;
-import org.hydra2s.manhack.descriptors.MemoryAllocatorCInfo;
-import org.hydra2s.manhack.descriptors.PipelineLayoutCInfo;
-import org.hydra2s.manhack.objects.DeviceObj;
-import org.hydra2s.manhack.objects.InstanceObj;
-import org.hydra2s.manhack.objects.MemoryAllocatorObj;
-import org.hydra2s.manhack.objects.PipelineLayoutObj;
+import org.hydra2s.noire.descriptors.DeviceCInfo;
+import org.hydra2s.noire.descriptors.InstanceCInfo;
+import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
+import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
+import org.hydra2s.noire.objects.DeviceObj;
+import org.hydra2s.noire.objects.InstanceObj;
+import org.hydra2s.noire.objects.MemoryAllocatorObj;
+import org.hydra2s.noire.objects.PipelineLayoutObj;
 
 //
 public class Main {

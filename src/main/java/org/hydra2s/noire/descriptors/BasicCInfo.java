@@ -1,4 +1,4 @@
-package org.hydra2s.manhack.descriptors;
+package org.hydra2s.noire.descriptors;
 
 //
 import org.lwjgl.vulkan.*;
@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 //
-import static org.hydra2s.manhack.descriptors.BasicCInfo.VkFormatCompatibilityClass.*;
+import static org.hydra2s.noire.descriptors.BasicCInfo.VkFormatCompatibilityClass.*;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTConditionalRendering.VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
 import static org.lwjgl.vulkan.EXTTransformFeedback.VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;

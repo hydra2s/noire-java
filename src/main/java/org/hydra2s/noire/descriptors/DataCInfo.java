@@ -1,4 +1,4 @@
-package org.hydra2s.manhack.descriptors;
+package org.hydra2s.noire.descriptors;
 
 //
 import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SFLOAT;

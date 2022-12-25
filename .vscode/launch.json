@@ -6,7 +6,7 @@
             "name": "Launch Main",
             "request": "launch",
             "mainClass": "org.hydra2s.Main",
-            "projectName": "manhack",
+            "projectName": "noire",
             "classPaths": ["$Auto", "$Runtime", "${workspaceFolder}"]
         }
     ]
