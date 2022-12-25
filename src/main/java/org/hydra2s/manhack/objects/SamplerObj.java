@@ -1,9 +1,10 @@
 package org.hydra2s.manhack.objects;
 
+//
 import org.hydra2s.manhack.descriptors.SamplerCInfo;
-import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.vkCreateSampler;

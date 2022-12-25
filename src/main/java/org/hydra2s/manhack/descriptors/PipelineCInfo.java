@@ -1,8 +1,10 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
+//
 public class PipelineCInfo extends BasicCInfo  {
 
     public long pipelineLayout = 0;

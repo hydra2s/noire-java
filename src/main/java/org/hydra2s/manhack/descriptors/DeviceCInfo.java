@@ -1,7 +1,9 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import java.util.ArrayList;
 
+//
 public class DeviceCInfo extends BasicCInfo {
 
     //

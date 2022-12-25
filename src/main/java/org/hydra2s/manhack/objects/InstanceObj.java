@@ -1,16 +1,17 @@
 package org.hydra2s.manhack.objects;
 
 //
-
 import org.hydra2s.manhack.descriptors.InstanceCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
+//
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 
+//
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;

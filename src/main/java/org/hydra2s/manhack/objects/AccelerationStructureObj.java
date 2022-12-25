@@ -13,13 +13,9 @@ import java.util.stream.IntStream;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.KHRSynchronization2.*;
-import static org.lwjgl.vulkan.VK12.VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-import static org.lwjgl.vulkan.VK12.vkGetBufferDeviceAddress;
 import static org.lwjgl.vulkan.VK13.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
 
 // TODO: deferred allocation support
 public class AccelerationStructureObj extends BasicObj {

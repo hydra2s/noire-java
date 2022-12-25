@@ -10,7 +10,6 @@ import java.util.ArrayList;
 //
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK13.*;
-import static org.lwjgl.vulkan.VK13.VK_ACCESS_2_MEMORY_READ_BIT;
 
 //
 public class ImageSetCInfo extends BasicCInfo  {

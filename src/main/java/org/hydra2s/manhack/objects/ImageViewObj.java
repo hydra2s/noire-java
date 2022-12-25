@@ -1,14 +1,15 @@
 package org.hydra2s.manhack.objects;
 
 //
-import org.hydra2s.manhack.descriptors.*;
+
+import org.hydra2s.manhack.descriptors.ImageViewCInfo;
 import org.lwjgl.vulkan.*;
 
-//
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_IMAGE_COPY_2;
 
 // aka, known as ImageSubresourceRange
 public class ImageViewObj extends BasicObj {

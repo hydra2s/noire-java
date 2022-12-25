@@ -1,5 +1,6 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import org.lwjgl.vulkan.VkComponentMapping;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
 

@@ -1,6 +1,7 @@
 package org.hydra2s.manhack.objects;
 
 //
+
 import org.hydra2s.manhack.descriptors.ImageSetCInfo;
 import org.hydra2s.manhack.descriptors.ImageViewCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
@@ -10,12 +11,10 @@ import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
 import org.lwjgl.vulkan.VkOffset3D;
 
-//
 import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-//
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.VK10.*;
 

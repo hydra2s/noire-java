@@ -12,7 +12,8 @@ import java.nio.LongBuffer;
 //
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.system.MemoryUtil.memAllocLong;
 
 //
 public class WindowObj extends BasicObj  {

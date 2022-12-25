@@ -1,7 +1,9 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import static org.lwjgl.vulkan.VK10.VK_FORMAT_R32G32B32_SFLOAT;
 
+//
 public class DataCInfo extends BasicCInfo {
     public long address = 0L;
     public int vertexCount = 0;

@@ -1,13 +1,16 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkMemoryRequirements;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.VK10.*;
 
+//
 public class MemoryAllocationCInfo extends BasicCInfo {
     public VkMemoryRequirements memoryRequirements = null;
     public VkMemoryRequirements2 memoryRequirements2 = null;

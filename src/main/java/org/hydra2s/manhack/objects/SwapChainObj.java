@@ -4,7 +4,6 @@ package org.hydra2s.manhack.objects;
 import org.hydra2s.manhack.descriptors.ImageViewCInfo;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.manhack.descriptors.SwapChainCInfo;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
 //

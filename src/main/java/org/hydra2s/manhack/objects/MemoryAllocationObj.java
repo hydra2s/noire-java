@@ -1,7 +1,6 @@
 package org.hydra2s.manhack.objects;
 
 //
-import com.lodborg.intervaltree.IntegerInterval;
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.manhack.descriptors.MemoryAllocationCInfo;

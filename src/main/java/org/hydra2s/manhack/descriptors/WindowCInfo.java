@@ -1,9 +1,8 @@
 package org.hydra2s.manhack.descriptors;
 
+//
 import org.lwjgl.vulkan.VkExtent2D;
-
 import java.nio.FloatBuffer;
-
 import static org.lwjgl.system.MemoryUtil.memAllocFloat;
 
 public class WindowCInfo extends BasicCInfo {

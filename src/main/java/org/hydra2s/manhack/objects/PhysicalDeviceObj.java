@@ -1,12 +1,13 @@
 package org.hydra2s.manhack.objects;
 
 //
-
 import org.hydra2s.manhack.descriptors.BasicCInfo;
 import org.lwjgl.vulkan.*;
 
+//
 import java.nio.IntBuffer;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT;
@@ -27,7 +28,7 @@ import static org.lwjgl.vulkan.KHRRayQuery.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY
 import static org.lwjgl.vulkan.KHRRayTracingMaintenance1.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRWorkgroupMemoryExplicitLayout.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
-import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -72,7 +73,7 @@ public class PhysicalDeviceObj extends BasicObj {
     protected IntBuffer queueFamilyCount;
     protected IntBuffer extensionCount;
 
-        //
+    //
     public PhysicalDeviceObj(Handle base, Handle handle) {
         super(base, handle);
 
@@ -123,9 +124,11 @@ public class PhysicalDeviceObj extends BasicObj {
         VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount, this.extensions = VkExtensionProperties.create(this.extensionCount.get(0)));
     }
 
+
+
     //
-    public SurfaceCapability getSurfaceInfo(long surface, int queueFamilyIndex) {
-        SurfaceCapability capability = new SurfaceCapability();
+    public BasicCInfo.SurfaceCapability getSurfaceInfo(long surface, int queueFamilyIndex) {
+        BasicCInfo.SurfaceCapability capability = new BasicCInfo.SurfaceCapability();
 
         //
         org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport);
@@ -139,20 +142,9 @@ public class PhysicalDeviceObj extends BasicObj {
 
         //
         return capability;
-    }
+    };
 
     //
-    public static class SurfaceCapability {
-        public IntBuffer surfaceSupport = memAllocInt(1);
-        protected IntBuffer presentModeCount = memAllocInt(1);
-        protected IntBuffer formatCount = memAllocInt(1);
-        public IntBuffer presentModes = null;
-        public VkSurfaceCapabilities2KHR capabilities2 = null;
-        public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;
-
-        public SurfaceCapability() {}
-    }
-
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
         for (int I=0;I<this.queueFamilyCount.get();I++) {
@@ -181,16 +173,8 @@ public class PhysicalDeviceObj extends BasicObj {
     }
 
     //
-    static public class FormatProperties {
-        VkFormatProperties3 properties3 = null;
-        VkFormatProperties2 properties2 = null;
-        VkFormatProperties properties = null;
-        BasicCInfo.VULKAN_FORMAT_INFO info = null;
-    };
-
-    //
-    public FormatProperties getFormatProperties(int format) {
-        var formatProperties = new FormatProperties();
+    public BasicCInfo.FormatProperties getFormatProperties(int format) {
+        var formatProperties = new BasicCInfo.FormatProperties();
         formatProperties.properties3 = VkFormatProperties3.create().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3);
         formatProperties.properties2 = VkFormatProperties2.create().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2);
         vkGetPhysicalDeviceFormatProperties2(this.physicalDevice, format, formatProperties.properties2);
