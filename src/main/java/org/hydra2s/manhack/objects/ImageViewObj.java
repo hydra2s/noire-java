@@ -52,13 +52,21 @@ public class ImageViewObj extends BasicObj {
     }
 
     //
-    public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
-        return VkImageSubresourceLayers.create()
-                .aspectMask(this.createInfo.subresourceRange().aspectMask())
-                .mipLevel(this.createInfo.subresourceRange().baseMipLevel() + mipLevel)
-                .baseArrayLayer(this.createInfo.subresourceRange().baseArrayLayer())
-                .layerCount(this.createInfo.subresourceRange().layerCount());
+    public VkImageSubresourceRange subresourceRange() {
+        return this.createInfo.subresourceRange();
     }
+
+    //
+    public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
+        var subresourceRange = this.subresourceRange();
+        return VkImageSubresourceLayers.create()
+                .aspectMask(subresourceRange.aspectMask())
+                .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
+                .baseArrayLayer(subresourceRange.baseArrayLayer())
+                .layerCount(subresourceRange.layerCount());
+    }
+
+
 
     // TODO: unidirectional support
     public ImageViewObj cmdCopyBufferToImageView(

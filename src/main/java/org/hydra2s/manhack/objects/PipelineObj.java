@@ -96,10 +96,10 @@ public class PipelineObj extends BasicObj  {
         public VkPipelineRasterizationConservativeStateCreateInfoEXT conservativeRasterInfo = null;
         public VkPipelineRasterizationStateCreateInfo rasterizationInfo = null;
         public VkPipelineMultisampleStateCreateInfo multisampleInfo = null;
-        public VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = null;
+        //public VkPipelineColorBlendAttachmentState.Buffer colorBlendAttachment = null;
         public VkPipelineColorBlendStateCreateInfo colorBlendInfo = null;
         public VkPipelineRenderingCreateInfoKHR dynamicRenderingPipelineInfo = null;
-        public IntBuffer attachmentFormats = null;
+        //public IntBuffer attachmentFormats = null;
         public IntBuffer dynamicStates = null;
         public VkPipelineDynamicStateCreateInfo dynamicStateInfo = null;
         public VkPipelineDepthStencilStateCreateInfo depthStencilState = null;
@@ -134,14 +134,12 @@ public class PipelineObj extends BasicObj  {
             this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
             this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
             this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-            this.colorBlendAttachment = VkPipelineColorBlendAttachmentState.create(1);
             this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
             this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
             this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
             this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             this.createInfo = VkGraphicsPipelineCreateInfo.create(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             this.dynamicStates = memAllocInt(3);
-            this.attachmentFormats = memAllocInt(1);
 
             //
             this.inputAssemblyStateInfo
@@ -179,13 +177,13 @@ public class PipelineObj extends BasicObj  {
             //
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
-                .pAttachments(this.colorBlendAttachment)
+                .pAttachments(cInfo.fbLayout.colorBlendAttachments)
                 .blendConstants(memAllocFloat(4).put(0, 0.0F).put(1, 0.0F).put(2, 0.0F).put(3, 0.0F));
 
             //
             //this.attachmentFormats.put();
             this.dynamicRenderingPipelineInfo
-                .pColorAttachmentFormats(this.attachmentFormats);
+                .pColorAttachmentFormats(cInfo.fbLayout.colorFormats);
 
             //
             this.dynamicStates

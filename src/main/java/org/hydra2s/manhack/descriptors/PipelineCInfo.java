@@ -13,6 +13,7 @@ public class PipelineCInfo extends BasicCInfo  {
 
     static public class GraphicsPipelineCInfo extends PipelineCInfo  {
         public HashMap<Integer, ByteBuffer> sourceMap = new HashMap<Integer, ByteBuffer>();
+        public FramebufferCInfo.FBLayout fbLayout = new FramebufferCInfo.FBLayout();
     }
 
 }

@@ -158,10 +158,12 @@ public class DeviceObj extends BasicObj {
     }
 
     // TODO: pre-compute queues in families
-    PointerBuffer getQueue(int queueFamilyIndex, int queueIndex) {
+    public PointerBuffer getQueue(int queueFamilyIndex, int queueIndex) {
         var queue = PointerBuffer.allocateDirect(1);
         VK10.vkGetDeviceQueue(this.device, queueFamilyIndex, queueIndex, queue);
         return queue;
     }
+
+
 
 }

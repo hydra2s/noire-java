@@ -2,6 +2,7 @@ package org.hydra2s.manhack.objects;
 
 //
 
+import org.hydra2s.manhack.descriptors.BasicCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
@@ -27,6 +28,7 @@ import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_
 import static org.lwjgl.vulkan.KHRWorkgroupMemoryExplicitLayout.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
 import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 import static org.lwjgl.vulkan.VK12.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
 
 //
@@ -172,6 +174,25 @@ public class PhysicalDeviceObj extends BasicObj {
             ) { return I; }
         };
         return -1;
+    }
+
+    //
+    static public class FormatProperties {
+        VkFormatProperties3 properties3 = null;
+        VkFormatProperties2 properties2 = null;
+        VkFormatProperties properties = null;
+        BasicCInfo.VULKAN_FORMAT_INFO info = null;
+    };
+
+    //
+    public FormatProperties getFormatProperties(int format) {
+        var formatProperties = new FormatProperties();
+        formatProperties.properties3 = VkFormatProperties3.create().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3);
+        formatProperties.properties2 = VkFormatProperties2.create().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2);
+        vkGetPhysicalDeviceFormatProperties2(this.physicalDevice, format, formatProperties.properties2);
+        formatProperties.properties = formatProperties.properties2.formatProperties();
+        formatProperties.info = BasicCInfo.vk_format_table.get(format);
+        return formatProperties;
     }
 
 }
