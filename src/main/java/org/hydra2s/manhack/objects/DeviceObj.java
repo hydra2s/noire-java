@@ -2,6 +2,7 @@ package org.hydra2s.manhack.objects;
 
 //
 
+import org.hydra2s.manhack.descriptors.BasicCInfo;
 import org.hydra2s.manhack.descriptors.DeviceCInfo;
 import org.hydra2s.manhack.descriptors.DeviceCInfo.QueueFamilyCInfo;
 import org.lwjgl.PointerBuffer;
@@ -11,13 +12,11 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -26,6 +25,9 @@ public class DeviceObj extends BasicObj {
     public IntBuffer queueFamilyIndices = null;
     //
     protected IntBuffer layersAmount = memAllocInt(1).put(0, 0);
+
+    //
+    public ArrayList<Function<LongBuffer, Integer>> whenDone = new ArrayList<Function<LongBuffer, Integer>>();
 
     //
     public PointerBuffer layers = null;
@@ -158,12 +160,88 @@ public class DeviceObj extends BasicObj {
     }
 
     // TODO: pre-compute queues in families
-    public PointerBuffer getQueue(int queueFamilyIndex, int queueIndex) {
+    public VkQueue getQueue(int queueFamilyIndex, int queueIndex) {
         var queue = PointerBuffer.allocateDirect(1);
         VK10.vkGetDeviceQueue(this.device, queueFamilyIndex, queueIndex, queue);
-        return queue;
+        return new VkQueue(queue.get(0), this.device);
     }
 
+    //
+    public long getCommandPool(int queueFamilyIndex) {
+        return this.queueFamilies.get(queueFamilyIndex).cmdPool.get(0);
+    }
 
+    //
+    public static class SubmitCmd extends BasicCInfo {
+        public VkQueue queue = null;
+        public VkCommandBuffer cmdBuf = null;
+        public IntBuffer dstStageMask = null;
+        public LongBuffer waitSemaphores = null;
+        public LongBuffer signalSemaphores = null;
+        public Function<LongBuffer, Integer> onDone = null;
+    }
+
+    // use it when a polling
+    public DeviceObj processing() {
+        this.whenDone.forEach((F)->F.apply(null));
+        return this;
+    }
+
+    //
+    public LongBuffer submitCommand(SubmitCmd cmd) {
+        LongBuffer fence = memAllocLong(1);
+        vkCreateFence(this.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
+        vkQueueSubmit(cmd.queue, VkSubmitInfo.create(1)
+            .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
+            .pWaitDstStageMask(cmd.dstStageMask)
+            .pSignalSemaphores(cmd.signalSemaphores)
+            .pWaitSemaphores(cmd.waitSemaphores), fence.get(0));
+
+        //
+        var ref = new Object() { Function<LongBuffer, Integer> deallocProcess = null; };
+        this.whenDone.add(ref.deallocProcess = (_null_)->{
+            int status = vkGetFenceStatus(this.device, fence.get(0));
+            if (status != VK_NOT_READY) {
+                this.whenDone.remove(ref.deallocProcess);
+                return cmd.onDone.apply(fence);
+            }
+            return status;
+        });
+
+        //
+        return fence;
+    }
+
+    //
+    public VkCommandBuffer allocateCommand(long commandPool) {
+        PointerBuffer commands = memAllocPointer(1);
+        vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.create()
+            .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
+            .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+            .commandPool(commandPool), commands);
+        return new VkCommandBuffer(commands.get(0), this.device);
+    }
+
+    //
+    public LongBuffer submitOnce(SubmitCmd submitCmd, long commandPool, Function<VkCommandBuffer, Integer> fn) {
+        //
+        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.create()
+                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+                .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+        fn.apply(submitCmd.cmdBuf);
+        vkEndCommandBuffer(submitCmd.cmdBuf);
+
+        //
+        var _onDone = submitCmd.onDone;
+        submitCmd.onDone = (fenceI)->{
+            var status = _onDone != null ? _onDone.apply(fenceI) : vkGetFenceStatus(this.device, fenceI.get(0));
+            vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
+            vkDestroyFence(this.device, fenceI.get(0), null); fenceI.put(0, 0);
+            return status;
+        };
+
+        //
+        return submitCommand(submitCmd);
+    }
 
 }
