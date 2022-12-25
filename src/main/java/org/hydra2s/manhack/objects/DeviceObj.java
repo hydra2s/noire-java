@@ -43,6 +43,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public HashMap<Integer, QueueFamily> queueFamilies = new HashMap<Integer, QueueFamily>();
+
     //
     public DeviceObj(Handle base, DeviceCInfo cInfo) {
         super(base, cInfo);
@@ -50,29 +51,29 @@ public class DeviceObj extends BasicObj {
         //
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(base.get());
         List<Long> extbuf = Arrays.asList(
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_swapchain")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_deferred_host_operations")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_acceleration_structure")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_query")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_conservative_rasterization")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_extended_dynamic_state3")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_robustness2")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_vertex_input_dynamic_state")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_descriptor_buffer")), // needs termination code here
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_multi_draw")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_fragment_shader_barycentric")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mesh_shader")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_pipeline_robustness")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_image_atomic_int64")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_shader_clock")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_tracing_maintenance1")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_workgroup_memory_explicit_layout")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mutable_descriptor_type")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_transform_feedback")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float2")), // broken support in NVIDIA
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_memory_budget")),
-                MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_VALVE_mutable_descriptor_type"))
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_swapchain")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_deferred_host_operations")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_acceleration_structure")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_query")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_conservative_rasterization")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_extended_dynamic_state3")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_robustness2")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_vertex_input_dynamic_state")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_descriptor_buffer")), // needs termination code here
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_multi_draw")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_fragment_shader_barycentric")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mesh_shader")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_pipeline_robustness")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_image_atomic_int64")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_shader_clock")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_tracing_maintenance1")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_workgroup_memory_explicit_layout")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mutable_descriptor_type")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_transform_feedback")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float2")), // broken support in NVIDIA
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_memory_budget")),
+            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_VALVE_mutable_descriptor_type"))
         );
 
         //
@@ -213,7 +214,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public LongBuffer submitOnce(BasicCInfo.SubmitCmd submitCmd, long commandPool, Function<VkCommandBuffer, Integer> fn) {
+    public LongBuffer submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         //
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.create()
                 .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
