@@ -29,7 +29,7 @@ public class WindowObj extends BasicObj  {
         var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwCreateWindowSurface(instanceObj.instance, (this.handle = new Handle("Window", glfwCreateWindow(cInfo.size.width(), cInfo.size.height(), "ManhackWindow", 0L, 0L))).get(), null, this.surface = memAllocLong(1));
+        glfwCreateWindowSurface(instanceObj.instance, (this.handle = new Handle("Window", glfwCreateWindow(cInfo.size.width(), cInfo.size.height(), "NoireWindow", 0L, 0L))).get(), null, this.surface = memAllocLong(1));
         BasicObj.globalHandleMap.put(handle.get(), this);
     }
 

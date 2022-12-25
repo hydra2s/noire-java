@@ -84,8 +84,8 @@ public class InstanceObj extends BasicObj {
         // TODO: Handle VkResult!!
         this.appInfo = VkApplicationInfo.create(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
-                .pApplicationName(MemoryUtil.memUTF8("ManhackTest"))
-                .pEngineName(MemoryUtil.memUTF8("Manhack"))
+                .pApplicationName(MemoryUtil.memUTF8("NoireTest"))
+                .pEngineName(MemoryUtil.memUTF8("Noire"))
                 .apiVersion(VK13.VK_API_VERSION_1_3)
                 .engineVersion(VK10.VK_MAKE_VERSION(1, 0, 0))
                 .applicationVersion(VK10.VK_MAKE_VERSION(1, 0, 0));
