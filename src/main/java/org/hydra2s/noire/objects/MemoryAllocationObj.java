@@ -110,8 +110,8 @@ public class MemoryAllocationObj extends BasicObj {
         });
 
         //
-        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.create().dstImage(dstImage).dstImageLayout(dstImageLayout).srcImage(srcImage).srcImageLayout(srcImageLayout).pRegions(regions));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pImageMemoryBarriers(imageMemoryBarrier));
+        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage).dstImageLayout(dstImageLayout).srcImage(srcImage).srcImageLayout(srcImageLayout).pRegions(regions));
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
         return this;
@@ -160,8 +160,8 @@ public class MemoryAllocationObj extends BasicObj {
         });
 
         //
-        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.create().srcImage(srcImage).srcImageLayout(imageLayout).dstBuffer(dstBuffer).pRegions(regions));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImage(srcImage).srcImageLayout(imageLayout).dstBuffer(dstBuffer).pRegions(regions));
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
         return this;
@@ -210,8 +210,8 @@ public class MemoryAllocationObj extends BasicObj {
         });
 
         //
-        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.create().srcBuffer(srcBuffer).dstImage(dstImage).dstImageLayout(imageLayout).pRegions(regions));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).srcBuffer(srcBuffer).dstImage(dstImage).dstImageLayout(imageLayout).pRegions(regions));
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
         return this;
@@ -220,20 +220,20 @@ public class MemoryAllocationObj extends BasicObj {
     //
     public MemoryAllocationObj cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
         //
-        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
+        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
         //
-        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
+        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -261,6 +261,7 @@ public class MemoryAllocationObj extends BasicObj {
 
 
     //
+    // DEFAULT IS ResizableBAR!
     static public class BufferObj extends MemoryAllocationObj {
         public VkBufferCreateInfo createInfo = null;
         public long deviceAddress = 0L;
@@ -305,6 +306,26 @@ public class MemoryAllocationObj extends BasicObj {
                 deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
             }
             return this.deviceAddress;
+        }
+
+        // for `map()` or copy operations
+        // Resizable BAR!
+        public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
+            // for `map()` or copy operations
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(1)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+                .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .buffer(this.handle.get())
+                .offset(0L)
+                .size(VK_WHOLE_SIZE); // TODO: support partial synchronization
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+
+            return this;
         }
     }
 

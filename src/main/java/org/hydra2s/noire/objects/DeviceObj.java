@@ -5,6 +5,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -173,7 +174,7 @@ public class DeviceObj extends BasicObj {
     }
 
     // use it when a polling
-    public DeviceObj processing() {
+    public DeviceObj doPolling() {
         this.whenDone.forEach((F)->F.apply(null));
         return this;
     }
@@ -190,11 +191,14 @@ public class DeviceObj extends BasicObj {
 
         //
         var ref = new Object() { Function<LongBuffer, Integer> deallocProcess = null; };
+        if (cmd.onDone == null) { cmd.onDone = new Promise(); };
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             int status = vkGetFenceStatus(this.device, fence.get(0));
             if (status != VK_NOT_READY) {
+                vkDestroyFence(this.device, fence.get(0), null); fence.put(0, 0);
                 this.whenDone.remove(ref.deallocProcess);
-                return cmd.onDone.apply(fence);
+                cmd.onDone.fulfill(status);
+                return status;
             }
             return status;
         });
@@ -217,19 +221,16 @@ public class DeviceObj extends BasicObj {
     public LongBuffer submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         //
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.create()
-                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+            .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+            .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
         fn.apply(submitCmd.cmdBuf);
         vkEndCommandBuffer(submitCmd.cmdBuf);
 
         //
-        var _onDone = submitCmd.onDone;
-        submitCmd.onDone = (fenceI)->{
-            var status = _onDone != null ? _onDone.apply(fenceI) : vkGetFenceStatus(this.device, fenceI.get(0));
+        submitCmd.onDone.thenApply((status)->{
             vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
-            vkDestroyFence(this.device, fenceI.get(0), null); fenceI.put(0, 0);
             return status;
-        };
+        });
 
         //
         return submitCommand(submitCmd);

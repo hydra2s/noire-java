@@ -1,6 +1,7 @@
 package org.hydra2s.noire.descriptors;
 
 //
+import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 //
@@ -645,7 +646,7 @@ public class BasicCInfo {
         public IntBuffer dstStageMask = null;
         public LongBuffer waitSemaphores = null;
         public LongBuffer signalSemaphores = null;
-        public Function<LongBuffer, Integer> onDone = null;
+        public Promise<Integer> onDone = null;
     };
 
     //
