@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.SwapChainCInfo;
@@ -36,17 +37,14 @@ public class SwapChainObj extends BasicObj  {
     //
     public LongBuffer semaphoreImageAvailable = null;
     public LongBuffer semaphoreRenderingAvailable = null;
-    public IntBuffer imageIndex = memAllocInt(1);
+    public IntBuffer imageIndex = memAllocInt(1).put(0,0);
 
     //
     public SwapChainObj(Handle base, Handle handle) {
         super(base, handle);
     }
 
-    //
-    public SwapChainObj(Handle base, SwapChainCInfo cInfo) {
-        super(base, cInfo);
-
+    public SwapChainObj generateImages(SwapChainCInfo cInfo) {
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
@@ -84,7 +82,7 @@ public class SwapChainObj extends BasicObj  {
             .imageFormat(format)
             .imageColorSpace(colorSpace)
             .imageExtent(cInfo.extent)
-            .imageArrayLayers(1)
+            .imageArrayLayers(cInfo.layerCount)
             .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
             .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : memAllocInt(1).put(0, cInfo.queueFamilyIndex))
@@ -96,8 +94,6 @@ public class SwapChainObj extends BasicObj  {
 
         //
         vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("SwapChain")).ptr(), 0), 1));
-
-        //
         vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = memAllocInt(1), null);
         vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
         this.imagesObj = new ArrayList<>();
@@ -135,8 +131,22 @@ public class SwapChainObj extends BasicObj  {
             this.imageViews.add(new ImageViewObj(this.base, imageViewCInfo));
         }
 
+        return this;
+    }
+
+    //
+    public SwapChainObj(Handle base, SwapChainCInfo cInfo) {
+        super(base, cInfo);
+
         //
-        this.imageIndex = memAllocInt(1);
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+        var surfaceInfo = physicalDeviceObj.getSurfaceInfo(cInfo.surface, cInfo.queueFamilyIndex);
+
+        //
+        this.imageIndex = memAllocInt(1).put(0,0);
+        this.generateImages(cInfo);
         vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(1));
         vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(1));
     }
@@ -170,6 +180,79 @@ public class SwapChainObj extends BasicObj  {
             .pSwapchains(memAllocLong(1).put(0, this.handle.get())).swapchainCount(1)
             .pImageIndices(this.imageIndex));
         return this;
+    }
+
+    // TODO: OpenGL support
+    // Virtual SwapChain for rendering in virtual surface
+    public static class SwapChainVirtual extends SwapChainObj {
+        public SwapChainVirtual(Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
+            super(base, cInfo);
+        }
+
+        @Override
+        public SwapChainObj generateImages(SwapChainCInfo cInfo) {
+            this.imagesObj = new ArrayList<>();
+
+            //
+            for (var I=0;I<cInfo.imageCount;I++) {
+                var allocationCInfo = new MemoryAllocationCInfo() {{
+                    isHost = false;
+                    isDevice = true;
+                }};
+
+                var finalI = I;
+                var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
+                    arrayLayers = cInfo.layerCount;
+                    format = cInfo.format;
+                    mipLevels = 1;
+                    extent3D = VkExtent3D.create().width(cInfo.extent.width()).height(cInfo.extent.height()).depth(1);;
+                    tiling = VK_IMAGE_TILING_OPTIMAL;
+                    samples = VK_SAMPLE_COUNT_1_BIT;
+                    usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                }};
+
+                //
+                var imageViewCInfo = new ImageViewCInfo(){{
+                    image = images.get(finalI);
+                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                    pipelineLayout = cInfo.pipelineLayout;
+                    imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    type = "storage";
+                }};
+
+                //
+                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
+                this.imageViews.add(new ImageViewObj(this.base, imageViewCInfo));
+            }
+
+            return this;
+        }
+
+        // TODO: support for OpenGL
+        @Override
+        public int acquireImageIndex(long semaphore) {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                waitSemaphores = semaphore != 0 ? memAllocLong(1).put(0, semaphore) : memAllocLong(1).put(0, semaphoreImageAvailable.get(0));
+                queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            }}, (cmdBuf)->{
+                return VK_SUCCESS;
+            });
+            return this.imageIndex.get(0);
+        }
+
+        // TODO: support for OpenGL
+        @Override
+        public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                waitSemaphores = semaphore != null ? semaphore : memAllocLong(1).put(0, semaphoreRenderingAvailable.get(0));
+                queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            }}, (cmdBuf)->{
+                return VK_SUCCESS;
+            });
+            return this;
+        }
     }
 
 }
