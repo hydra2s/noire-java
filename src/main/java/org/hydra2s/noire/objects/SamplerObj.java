@@ -30,7 +30,7 @@ public class SamplerObj extends BasicObj  {
         vkCreateSampler(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Sampler")).ptr(), 0), 1));
 
         //
-        if (cInfo.pipelineLayout > 0) {
+        if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
             this.DSC_ID = descriptorsObj.samplers.push(memLongBuffer(this.handle.get(), 1));
             descriptorsObj.writeDescriptors();

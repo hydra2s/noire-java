@@ -127,6 +127,7 @@ public class SwapChainObj extends BasicObj  {
                 subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
                 pipelineLayout = cInfo.pipelineLayout;
                 imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                type = "storage";
             }};
 
             //
@@ -136,8 +137,8 @@ public class SwapChainObj extends BasicObj  {
 
         //
         this.imageIndex = memAllocInt(1);
-        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
-        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
+        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(1));
+        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(1));
     }
 
     //
@@ -155,17 +156,17 @@ public class SwapChainObj extends BasicObj  {
     public ImageViewObj getCurrentImageView() { return this.imageViews.get(this.imageIndex.get(0)); }
 
     // TODO: more than one semaphore support
-    public int acquireImageIndex(long semaphoreImageAvailable) {
+    public int acquireImageIndex(long semaphore) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphoreImageAvailable != 0 ? semaphoreImageAvailable : this.semaphoreImageAvailable.get(0), 0L, this.imageIndex);
+        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreRenderingAvailable.get(0), 0L, this.imageIndex);
         return this.imageIndex.get(0);
     }
 
     // TODO: more than one semaphore support
-    public SwapChainObj present(VkQueue queue, LongBuffer semaphoreRenderingAvailable) {
+    public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
         vkQueuePresentKHR(queue, VkPresentInfoKHR.create()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-            .pWaitSemaphores(semaphoreRenderingAvailable != null ? semaphoreRenderingAvailable : memAllocLong(1).put(0, this.semaphoreRenderingAvailable.get(0)))
+            .pWaitSemaphores(semaphore != null ? semaphore : memAllocLong(1).put(0, this.semaphoreImageAvailable.get(0)))
             .pSwapchains(memAllocLong(1).put(0, this.handle.get())).swapchainCount(1)
             .pImageIndices(this.imageIndex));
         return this;

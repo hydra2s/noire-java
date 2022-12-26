@@ -4,18 +4,25 @@ import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Generator;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkExtent2D;
-import org.lwjgl.vulkan.VkFenceCreateInfo;
+import org.lwjgl.vulkan.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -33,11 +40,13 @@ public class RendererObj extends BasicObj  {
 
     public LongBuffer fences;
     public ArrayList<Promise<Integer>> promises = new ArrayList<Promise<Integer>>();
+    public ArrayList<VkCommandBuffer> commandBuffers = new ArrayList<VkCommandBuffer>();
     public Iterator<Integer> process;
+    public PipelineObj.ComputePipelineObj finalComp;
 
 
     //
-    public RendererObj initializer() {
+    public RendererObj initializer() throws IOException {
         InstanceObj.globalHandleMap.put((this.handle = new Handle("Renderer", MemoryUtil.memAddress(memAllocLong(1)))).get(), this);
 
         //
@@ -60,13 +69,21 @@ public class RendererObj extends BasicObj  {
         }});
         this.memoryAllocator = new MemoryAllocatorObj(logicalDevice.getHandle(), new MemoryAllocatorCInfo(){{}});
 
+
+
         //
         var _memoryAllocator = this.memoryAllocator;
         this.pipelineLayout = new PipelineLayoutObj(logicalDevice.getHandle(), new PipelineLayoutCInfo(){{
             memoryAllocator = _memoryAllocator.getHandle().get();
         }});
 
-
+        //
+        var compSpv = Files.readAllBytes(Path.of("./shaders/final.comp.spv"));
+        var _pipelineLayout = this.pipelineLayout;
+        this.finalComp = new PipelineObj.ComputePipelineObj(logicalDevice.getHandle(), new PipelineCInfo.ComputePipelineCInfo(){{
+            pipelineLayout = _pipelineLayout.getHandle().get();
+            computeCode = memAlloc(compSpv.length).put(0, compSpv);
+        }});
 
         //
         return this;
@@ -104,6 +121,26 @@ public class RendererObj extends BasicObj  {
 
     //
     public RendererObj rendering() {
+
+        for (var I=0;I<this.swapchain.getImageCount();I++) {
+            var cmdBuf = this.logicalDevice.allocateCommand(this.logicalDevice.getCommandPool(0));
+            var pushConst = memAllocInt(2);
+            pushConst.put(0, swapchain.getImageView(I).DSC_ID);
+
+            // TODO: built-in command forming
+            vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.create()
+                    .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+                    .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+
+            //
+            this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.create().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
+
+            // TODO: built-in command forming
+            vkEndCommandBuffer(cmdBuf);
+            this.commandBuffers.add(cmdBuf);
+        }
+
+
         this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
@@ -116,8 +153,19 @@ public class RendererObj extends BasicObj  {
                     }
                 } while(!promise.state().equals(Future.State.RUNNING));
 
-                swapchain.present(logicalDevice.getQueue(0, 0), null);
-                //rendering = null;
+                //
+                var _queue = logicalDevice.getQueue(0, 0);
+                promises.set(imageIndex, new Promise<>());
+                logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+                    waitSemaphores = swapchain.semaphoreRenderingAvailable;
+                    signalSemaphores = swapchain.semaphoreImageAvailable;
+                    queue = _queue;
+                    cmdBuf = commandBuffers.get(imageIndex);
+                    onDone = promises.get(imageIndex);
+                }});
+
+                //
+                swapchain.present(_queue, swapchain.semaphoreImageAvailable);
             }
         };
 
@@ -180,7 +228,7 @@ public class RendererObj extends BasicObj  {
     }
 
     //
-    public RendererObj(Handle base, Handle handle) {
+    public RendererObj(Handle base, Handle handle) throws IOException {
         super(base, handle);
 
         this.initializer();
@@ -191,7 +239,7 @@ public class RendererObj extends BasicObj  {
     }
 
     //
-    public RendererObj(Handle base, RendererCInfo cInfo) {
+    public RendererObj(Handle base, RendererCInfo cInfo) throws IOException {
         super(base, cInfo);
 
         this.initializer();

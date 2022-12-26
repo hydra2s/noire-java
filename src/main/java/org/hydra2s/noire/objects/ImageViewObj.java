@@ -43,7 +43,7 @@ public class ImageViewObj extends BasicObj {
         deviceObj.handleMap.put(this.handle, this);
 
         //
-        if (cInfo.pipelineLayout > 0) {
+        if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
             this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
             descriptorsObj.writeDescriptors();

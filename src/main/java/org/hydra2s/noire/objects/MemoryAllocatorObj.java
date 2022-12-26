@@ -105,7 +105,7 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr);
-            return memByteBufferNT2(dataPtr.get(0));
+            return memByteBuffer(dataPtr.get(0), (int) BS);
         }
 
         public void unmap() {

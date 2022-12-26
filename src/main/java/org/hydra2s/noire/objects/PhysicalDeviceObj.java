@@ -10,6 +10,7 @@ import java.nio.IntBuffer;
 //
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTMemoryBudget.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTMeshShader.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
@@ -109,7 +110,7 @@ public class PhysicalDeviceObj extends BasicObj {
         this.deviceFeatures = VkPhysicalDeviceFeatures2.create().pNext(this.deviceFeatures13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
 
         //
-        this.deviceDescriptorBufferProperties = VkPhysicalDeviceDescriptorBufferPropertiesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES);
+        this.deviceDescriptorBufferProperties = VkPhysicalDeviceDescriptorBufferPropertiesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT);
         this.deviceProperties = VkPhysicalDeviceProperties2.create().pNext(this.deviceDescriptorBufferProperties.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
 
         //
@@ -133,7 +134,7 @@ public class PhysicalDeviceObj extends BasicObj {
 
         //
         org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport);
-        if (capability.surfaceSupport.get(0) > 0) {
+        if (capability.surfaceSupport.get(0) != 0) {
             var surfaceInfo = VkPhysicalDeviceSurfaceInfo2KHR.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR).surface(surface);
 
             //
@@ -167,7 +168,7 @@ public class PhysicalDeviceObj extends BasicObj {
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
         for (int I=0;I<this.queueFamilyCount.get();I++) {
-            if ((this.queueFamilyProperties.get(I).queueFlags() & bits) > 0) {
+            if ((this.queueFamilyProperties.get(I).queueFlags() & bits) != 0) {
                 queueIndex = I; break;
             }
         }
@@ -182,7 +183,7 @@ public class PhysicalDeviceObj extends BasicObj {
         for (var I = 0; I < memoryProperties.memoryTypeCount(); ++I) {
             var prop = memoryProperties.memoryTypes().get(I);
             if (
-                    (typeFilter & (1 << I)) > 0 &&
+                    (typeFilter & (1 << I)) != 0 &&
                             (prop.propertyFlags() & propertyFlag) == propertyFlag &&
                             (prop.propertyFlags() & ignoreFlags) == 0 &&
                             memoryBudget.heapBudget().get(prop.heapIndex()) >= size
