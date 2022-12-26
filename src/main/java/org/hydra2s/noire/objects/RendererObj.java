@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Generator;
 import org.hydra2s.utils.Promise;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkExtent2D;
 import org.lwjgl.vulkan.VkFenceCreateInfo;
@@ -32,11 +33,13 @@ public class RendererObj extends BasicObj  {
 
     public LongBuffer fences;
     public ArrayList<Promise<Integer>> promises = new ArrayList<Promise<Integer>>();
-    public Iterator<Integer> rendering;
+    public Iterator<Integer> process;
 
 
     //
     public RendererObj initializer() {
+        InstanceObj.globalHandleMap.put((this.handle = new Handle("Renderer", MemoryUtil.memAddress(memAllocLong(1)))).get(), this);
+
         //
         var instanceCInfo = new InstanceCInfo();
         this.instance = new InstanceObj(null, instanceCInfo);
@@ -88,13 +91,12 @@ public class RendererObj extends BasicObj  {
 
     //
     public RendererObj tickRendering () {
-        if (this.rendering == null || !this.rendering.hasNext()) {
-            this.rendering = this.processor.iterator();
-        }
-
-        //
         this.logicalDevice.doPolling();
-        this.rendering.next();
+        if (this.process == null || !this.process.hasNext()) {
+            this.process = this.processor.iterator();
+        } else {
+            this.process.next();
+        }
 
         //
         return this;
@@ -128,6 +130,13 @@ public class RendererObj extends BasicObj  {
     }
 
     //
+    public RendererObj prepare() {
+
+
+        return this;
+    }
+
+    //
     public RendererObj windowed() {
         //
         var _pipelineLayout = pipelineLayout;
@@ -150,12 +159,12 @@ public class RendererObj extends BasicObj  {
 
         //
         this.fences = memAllocLong(this.swapchain.getImageCount());
-        this.promises = new ArrayList<Promise<Integer>>(this.swapchain.getImageCount());
+        this.promises = new ArrayList<Promise<Integer>>();
 
         // EXAMPLE!
         for (var I=0;I<fences.capacity();I++) {
             vkCreateFence(logicalDevice.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fences.slice(I, 1));
-            //promises.set(I, new Promise<Integer>());
+            this.promises.add(new Promise<Integer>());
         }
 
         //
@@ -177,6 +186,19 @@ public class RendererObj extends BasicObj  {
         this.initializer();
         this.pipelines();
         this.windowed();
+        this.prepare();
+        this.rendering();
+    }
+
+    //
+    public RendererObj(Handle base, RendererCInfo cInfo) {
+        super(base, cInfo);
+
+        this.initializer();
+        this.pipelines();
+        this.windowed();
+        this.prepare();
+        this.rendering();
     }
 
 }

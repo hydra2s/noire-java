@@ -99,6 +99,7 @@ public class InstanceObj extends BasicObj {
         //
         BasicObj.globalHandleMap.put(this.handle.get(), this);
         this.instance = new VkInstance(this.handle.get(), this.instanceInfo);
+        System.out.println("Something wrong with Instance? " + Long.toHexString(this.handle.get()));
     }
 
     //

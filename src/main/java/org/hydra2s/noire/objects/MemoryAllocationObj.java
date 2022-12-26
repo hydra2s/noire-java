@@ -287,7 +287,7 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
-                vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr()), 1));
+                vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
             } else {
                 this.handle = new Handle("Buffer", cInfo.buffer.get(0));
             }

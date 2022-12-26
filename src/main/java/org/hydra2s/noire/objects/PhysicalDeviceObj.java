@@ -24,6 +24,7 @@ import static org.lwjgl.vulkan.EXTTransformFeedback.VK_STRUCTURE_TYPE_PHYSICAL_D
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRFragmentShaderBarycentric.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+import static org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.*;
 import static org.lwjgl.vulkan.KHRRayQuery.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRRayTracingMaintenance1.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
@@ -133,11 +134,29 @@ public class PhysicalDeviceObj extends BasicObj {
         //
         org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport);
         if (capability.surfaceSupport.get(0) > 0) {
-            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceCapabilities2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.capabilities2 = VkSurfaceCapabilities2KHR.create());
-            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, null);
-            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = memAllocInt(capability.presentModeCount.get()));
-            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.formatCount = memAllocInt(1), null);
-            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(this.physicalDevice, VkPhysicalDeviceSurfaceInfo2KHR.create().surface(surface), capability.formatCount, capability.formats2 = VkSurfaceFormat2KHR.create(capability.formatCount.get(0)));
+            var surfaceInfo = VkPhysicalDeviceSurfaceInfo2KHR.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR).surface(surface);
+
+            //
+            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceCapabilities2KHR(
+                this.physicalDevice, surfaceInfo,
+                capability.capabilities2 = VkSurfaceCapabilities2KHR.create().sType(VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_2_KHR)
+            );
+
+            //
+            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount = memAllocInt(1), null);
+            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = memAllocInt(capability.presentModeCount.get(0)));
+
+            //
+            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(
+                this.physicalDevice, surfaceInfo, capability.formatCount = memAllocInt(1),
+                null);
+
+            //
+            var formats = VkSurfaceFormat2KHR.create(capability.formatCount.get(0));
+            for (var I=0;I<formats.capacity();I++) { formats.get(I).sType(VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR); };
+            org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(
+                this.physicalDevice, surfaceInfo, capability.formatCount,
+                capability.formats2 = formats);
         }
 
         //

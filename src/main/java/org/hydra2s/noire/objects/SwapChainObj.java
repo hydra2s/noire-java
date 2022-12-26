@@ -56,7 +56,7 @@ public class SwapChainObj extends BasicObj  {
         //
         var presentMode = presentModes.get(0);
         for (var I=0;I<presentModes.size();I++) { var PM = presentModes.get(I);
-            if (List.of(surfaceInfo.presentModes.array()).indexOf(PM) >= 0) {
+            if (List.of(surfaceInfo.presentModes).contains(PM)) {
                 presentMode = PM; break;
             }
         }
@@ -112,7 +112,7 @@ public class SwapChainObj extends BasicObj  {
             var finalI = I;
             var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
                 image = memAllocPointer(1).put(0, images.get(finalI));
-                arrayLayers = 1;
+                arrayLayers = createInfo.imageArrayLayers();
                 format = createInfo.imageFormat();
                 mipLevels = 1;
                 extent3D = VkExtent3D.create().width(createInfo.imageExtent().width()).height(createInfo.imageExtent().height()).depth(1);
@@ -166,7 +166,7 @@ public class SwapChainObj extends BasicObj  {
         vkQueuePresentKHR(queue, VkPresentInfoKHR.create()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
             .pWaitSemaphores(semaphoreRenderingAvailable != null ? semaphoreRenderingAvailable : memAllocLong(1).put(0, this.semaphoreRenderingAvailable.get(0)))
-            .pSwapchains(memAllocLong(1).put(0, this.handle.get()))
+            .pSwapchains(memAllocLong(1).put(0, this.handle.get())).swapchainCount(1)
             .pImageIndices(this.imageIndex));
         return this;
     }

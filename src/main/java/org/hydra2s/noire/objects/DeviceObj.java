@@ -175,7 +175,9 @@ public class DeviceObj extends BasicObj {
 
     // use it when a polling
     public DeviceObj doPolling() {
-        this.whenDone.forEach((F)->F.apply(null));
+        var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
+        _list.stream().forEach((F)->F.apply(null));
+        //for (var I=0;I<_list.size();I++) {var F =_list.get(I);}
         return this;
     }
 
@@ -184,6 +186,7 @@ public class DeviceObj extends BasicObj {
         LongBuffer fence = memAllocLong(1);
         vkCreateFence(this.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
         vkQueueSubmit(cmd.queue, VkSubmitInfo.create(1)
+            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
             .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
             .pWaitDstStageMask(cmd.dstStageMask)
             .pSignalSemaphores(cmd.signalSemaphores)
@@ -213,7 +216,8 @@ public class DeviceObj extends BasicObj {
         vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.create()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
             .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-            .commandPool(commandPool), commands);
+            .commandPool(commandPool)
+            .commandBufferCount(1), commands);
         return new VkCommandBuffer(commands.get(0), this.device);
     }
 
@@ -227,6 +231,7 @@ public class DeviceObj extends BasicObj {
         vkEndCommandBuffer(submitCmd.cmdBuf);
 
         //
+        if (submitCmd.onDone == null) { submitCmd.onDone = new Promise(); };
         submitCmd.onDone.thenApply((status)->{
             vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
             return status;

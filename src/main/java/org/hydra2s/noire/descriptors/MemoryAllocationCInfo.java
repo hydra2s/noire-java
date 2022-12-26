@@ -30,7 +30,7 @@ public class MemoryAllocationCInfo extends BasicCInfo {
 
 
         public BufferCInfo() {
-            this.buffer = memAllocPointer(1);
+            this.buffer = memAllocPointer(1).put(0, 0);
         }
     }
 
@@ -46,7 +46,7 @@ public class MemoryAllocationCInfo extends BasicCInfo {
 
         //
         public ImageCInfo() {
-            this.image = memAllocPointer(1);
+            this.image = memAllocPointer(1).put(0, 0);;
         }
     }
 
