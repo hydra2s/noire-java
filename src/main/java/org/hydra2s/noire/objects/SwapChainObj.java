@@ -158,7 +158,7 @@ public class SwapChainObj extends BasicObj  {
     // TODO: more than one semaphore support
     public int acquireImageIndex(long semaphore) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreRenderingAvailable.get(0), 0L, this.imageIndex);
+        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.get(0), 0L, this.imageIndex);
         return this.imageIndex.get(0);
     }
 
@@ -166,7 +166,7 @@ public class SwapChainObj extends BasicObj  {
     public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
         vkQueuePresentKHR(queue, VkPresentInfoKHR.create()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-            .pWaitSemaphores(semaphore != null ? semaphore : memAllocLong(1).put(0, this.semaphoreImageAvailable.get(0)))
+            .pWaitSemaphores(semaphore != null ? semaphore : memAllocLong(1).put(0, this.semaphoreRenderingAvailable.get(0)))
             .pSwapchains(memAllocLong(1).put(0, this.handle.get())).swapchainCount(1)
             .pImageIndices(this.imageIndex));
         return this;

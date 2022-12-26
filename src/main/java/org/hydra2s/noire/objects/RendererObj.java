@@ -6,22 +6,15 @@ import org.hydra2s.utils.Promise;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-import java.nio.MappedByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 import static org.lwjgl.vulkan.VK10.*;
@@ -109,15 +102,51 @@ public class RendererObj extends BasicObj  {
     //
     public RendererObj tickRendering () {
         this.logicalDevice.doPolling();
-        if (this.process == null || !this.process.hasNext()) {
-            this.process = this.processor.iterator();
-        } else {
+
+        //
+        if (this.process != null && this.process.hasNext()) {
             this.process.next();
+        } else {
+            if (this.process != null) { this.process = null; };
+            this.process = this.generate().iterator();
         }
 
         //
         return this;
     };
+
+    public Generator<Integer> generate() {
+        return (this.processor = new Generator<Integer>() {
+            @Override
+            protected void run() throws InterruptedException {
+                var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.get(0));
+                var promise = promises.get(imageIndex);
+
+                //
+                //System.out.println("Is Rendering!");
+
+                //
+                do {
+                    if (promise.state().equals(Future.State.RUNNING)) {
+                        this.yield(VK_NOT_READY);
+                    }
+                } while(!promise.state().equals(Future.State.RUNNING));
+
+                //
+                var _queue = logicalDevice.getQueue(0, 0);
+                logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+                    waitSemaphores = swapchain.semaphoreImageAvailable;
+                    signalSemaphores = swapchain.semaphoreRenderingAvailable;
+                    dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                    queue = _queue;
+                    cmdBuf = commandBuffers.get(imageIndex);
+                    onDone = promises.get(imageIndex);
+                }});
+                promises.set(imageIndex, new Promise<>());
+                swapchain.present(_queue, swapchain.semaphoreRenderingAvailable);
+            }
+        });
+    }
 
     //
     public RendererObj rendering() {
@@ -130,7 +159,7 @@ public class RendererObj extends BasicObj  {
             // TODO: built-in command forming
             vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.create()
                     .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                    .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+                    .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT));
 
             //
             this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.create().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
@@ -141,33 +170,7 @@ public class RendererObj extends BasicObj  {
         }
 
 
-        this.processor = new Generator<Integer>() {
-            @Override
-            protected void run() throws InterruptedException {
-                var imageIndex = swapchain.acquireImageIndex(0L);
-                var promise = promises.get(imageIndex);
 
-                do {
-                    if (promise.state().equals(Future.State.RUNNING)) {
-                        this.yield(VK_NOT_READY);
-                    }
-                } while(!promise.state().equals(Future.State.RUNNING));
-
-                //
-                var _queue = logicalDevice.getQueue(0, 0);
-                promises.set(imageIndex, new Promise<>());
-                logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                    waitSemaphores = swapchain.semaphoreRenderingAvailable;
-                    signalSemaphores = swapchain.semaphoreImageAvailable;
-                    queue = _queue;
-                    cmdBuf = commandBuffers.get(imageIndex);
-                    onDone = promises.get(imageIndex);
-                }});
-
-                //
-                swapchain.present(_queue, swapchain.semaphoreImageAvailable);
-            }
-        };
 
         // EXAMPLE!
         //while (!glfwWindowShouldClose(this.window.handle.get())) {

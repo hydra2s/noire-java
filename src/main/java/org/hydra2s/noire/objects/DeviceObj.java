@@ -190,7 +190,8 @@ public class DeviceObj extends BasicObj {
             .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
             .pWaitDstStageMask(cmd.dstStageMask)
             .pSignalSemaphores(cmd.signalSemaphores)
-            .pWaitSemaphores(cmd.waitSemaphores), fence.get(0));
+            .pWaitSemaphores(cmd.waitSemaphores)
+            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.capacity() : 0), fence.get(0));
 
         //
         var ref = new Object() { Function<LongBuffer, Integer> deallocProcess = null; };
