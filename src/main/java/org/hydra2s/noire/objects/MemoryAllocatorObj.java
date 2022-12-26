@@ -5,9 +5,7 @@ import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.VkMemoryAllocateFlagsInfo;
-import org.lwjgl.vulkan.VkMemoryAllocateInfo;
-import org.lwjgl.vulkan.VkMemoryDedicatedAllocateInfo;
+import org.lwjgl.vulkan.*;
 
 //
 import java.nio.ByteBuffer;
@@ -15,9 +13,10 @@ import java.nio.ByteBuffer;
 //
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRBufferDeviceAddress.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+import static org.lwjgl.vulkan.KHRExternalMemoryWin32.VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+import static org.lwjgl.vulkan.KHRExternalMemoryWin32.vkGetMemoryWin32HandleKHR;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-import static org.lwjgl.vulkan.VK11.VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+import static org.lwjgl.vulkan.VK11.*;
 
 //
 public class MemoryAllocatorObj extends BasicObj  {
@@ -86,8 +85,15 @@ public class MemoryAllocatorObj extends BasicObj  {
                     .pNext(VkMemoryAllocateFlagsInfo.create()
                         .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
                         .flags(cInfo.buffer != null ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0)
-                        .pNext(VkMemoryDedicatedAllocateInfo.create().sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
+                        .pNext(VkMemoryDedicatedAllocateInfo.create()
+                            .pNext(VkExportMemoryAllocateInfo.create()
+                                .sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO)
+                                .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
+                            .sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
                         .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1));
+
+            // TODO: Linux support
+            vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
 
             //
             deviceObj.handleMap.put(this.handle, this);
@@ -148,6 +154,9 @@ public class MemoryAllocatorObj extends BasicObj  {
         //
         if (memoryAllocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
         if (memoryAllocationObj.isImage) { vkBindImageMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
+
+        //
+        //memoryAllocationObj.Win32Handle
 
         //
         return memoryAllocationObj;

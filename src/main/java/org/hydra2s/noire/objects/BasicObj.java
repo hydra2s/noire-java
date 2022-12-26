@@ -6,7 +6,11 @@ import com.lodborg.intervaltree.IntervalTree;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.HashMap;
+
+import static org.lwjgl.system.MemoryUtil.*;
 
 //
 // DO NOT `wrap`! Use `memAlloc#Type()` with `put(pos, val)`!
@@ -20,6 +24,10 @@ public class BasicObj {
     public Handle getHandle() {
         return handle;
     }
+
+    //
+    public PointerBuffer Win32Handle = memAllocPointer(1).put(0, 0);
+    public IntBuffer FdHandle = memAllocInt(1).put(0, 0);
 
     //
     protected Handle base = new Handle("Unknown", 0);

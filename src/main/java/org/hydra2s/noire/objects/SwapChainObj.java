@@ -5,6 +5,7 @@ import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
 //
@@ -16,9 +17,13 @@ import java.util.List;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.vulkan.KHRExternalMemoryWin32.vkGetMemoryWin32HandleKHR;
+import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.vkGetSemaphoreWin32HandleKHR;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK11.*;
 
 //
 public class SwapChainObj extends BasicObj  {
@@ -38,6 +43,10 @@ public class SwapChainObj extends BasicObj  {
     public LongBuffer semaphoreImageAvailable = null;
     public LongBuffer semaphoreRenderingAvailable = null;
     public IntBuffer imageIndex = memAllocInt(1).put(0,0);
+
+    //
+    public PointerBuffer SemImageWin32Handle = memAllocPointer(1).put(0, 0);
+    public PointerBuffer SemRenderWin32Handle = memAllocPointer(1).put(0, 0);
 
     //
     public SwapChainObj(Handle base, Handle handle) {
@@ -135,6 +144,28 @@ public class SwapChainObj extends BasicObj  {
     }
 
     //
+    public SwapChainObj generateSemaphores() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+
+        // useless for pure Vulkan, for test only
+        // TODO: semaphore objects
+        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(1));
+        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(1));
+
+        // TODO: semaphore objects
+        // TODO: Linux support
+        vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.semaphoreImageAvailable.get(0)).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.SemImageWin32Handle = memAllocPointer(1));
+        vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.semaphoreRenderingAvailable.get(0)).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.SemRenderWin32Handle = memAllocPointer(1));
+
+        //
+        System.out.println(this.SemImageWin32Handle.get(0));
+        System.out.println(this.SemRenderWin32Handle.get(0));
+
+        //
+        return this;
+    }
+
+    //
     public SwapChainObj(Handle base, SwapChainCInfo cInfo) {
         super(base, cInfo);
 
@@ -147,8 +178,7 @@ public class SwapChainObj extends BasicObj  {
         //
         this.imageIndex = memAllocInt(1).put(0,0);
         this.generateImages(cInfo);
-        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(1));
-        vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(1));
+        this.generateSemaphores();
     }
 
     //
@@ -187,6 +217,24 @@ public class SwapChainObj extends BasicObj  {
     public static class SwapChainVirtual extends SwapChainObj {
         public SwapChainVirtual(Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
             super(base, cInfo);
+        }
+
+        //
+        @Override
+        public SwapChainObj generateSemaphores() {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+
+            // useless for pure Vulkan, for test only
+            // TODO: semaphore objects
+            vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreImageAvailable = memAllocLong(1));
+            vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, semaphoreRenderingAvailable = memAllocLong(1));
+
+            // TODO: semaphore objects
+            // TODO: Linux support
+            vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.semaphoreImageAvailable.get(0)).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.SemImageWin32Handle = memAllocPointer(1));
+            vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.semaphoreRenderingAvailable.get(0)).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.SemRenderWin32Handle = memAllocPointer(1));
+
+            return this;
         }
 
         @Override
