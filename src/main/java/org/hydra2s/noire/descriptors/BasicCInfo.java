@@ -7,7 +7,9 @@ import org.lwjgl.vulkan.*;
 //
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.Function;
 
 //
@@ -140,6 +142,14 @@ public class BasicCInfo {
             this.format_class = format_class;
         };
     }
+
+    //
+    public static long[] unboxed(final Long[] array) {
+        return Arrays.stream(array)
+            .filter(Objects::nonNull)
+            .mapToLong(Long::longValue)
+            .toArray();
+    };
 
     //
     public static HashMap<Integer, VULKAN_FORMAT_INFO> vk_format_table = new HashMap<Integer, VULKAN_FORMAT_INFO>();
@@ -670,5 +680,8 @@ public class BasicCInfo {
 
         public FormatProperties() {};
     };
+
+
+
 
 }

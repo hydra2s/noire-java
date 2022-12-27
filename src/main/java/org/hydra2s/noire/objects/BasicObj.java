@@ -8,7 +8,9 @@ import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
 
 import static org.lwjgl.system.MemoryUtil.*;
 
@@ -119,5 +121,7 @@ public class BasicObj {
             return result;
         }
     }
+
+
 
 }

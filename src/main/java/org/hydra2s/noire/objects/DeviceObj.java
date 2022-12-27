@@ -44,6 +44,7 @@ public class DeviceObj extends BasicObj {
     //
     public HashMap<Integer, QueueFamily> queueFamilies = new HashMap<Integer, QueueFamily>();
 
+
     //
     public DeviceObj(Handle base, DeviceCInfo cInfo) {
         super(base, cInfo);
@@ -154,14 +155,6 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public static long[] unboxed(final Long[] array) {
-        return Arrays.stream(array)
-                .filter(Objects::nonNull)
-                .mapToLong(Long::longValue)
-                .toArray();
-    }
-
-    //
     public static class QueueFamily {
         int index = 0;
         LongBuffer cmdPool = memAllocLong(1).put(0, 0);
@@ -186,6 +179,15 @@ public class DeviceObj extends BasicObj {
         _list.stream().forEach((F)->F.apply(null));
         //for (var I=0;I<_list.size();I++) {var F =_list.get(I);}
         return this;
+    }
+
+    public VkCommandBuffer writeCommand(VkCommandBuffer cmdBuf, Function<VkCommandBuffer, Integer> fn) {
+        vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.create()
+            .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+            .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT));
+        fn.apply(cmdBuf);
+        vkEndCommandBuffer(cmdBuf);
+        return cmdBuf;
     }
 
     //
@@ -226,7 +228,8 @@ public class DeviceObj extends BasicObj {
             .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
             .commandPool(commandPool)
             .commandBufferCount(1), commands);
-        return new VkCommandBuffer(commands.get(0), this.device);
+        var cmdBuf = new VkCommandBuffer(commands.get(0), this.device);
+        return cmdBuf;
     }
 
     //

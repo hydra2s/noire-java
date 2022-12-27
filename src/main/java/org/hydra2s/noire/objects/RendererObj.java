@@ -70,13 +70,7 @@ public class RendererObj extends BasicObj  {
             memoryAllocator = _memoryAllocator.getHandle().get();
         }});
 
-        //
-        var compSpv = Files.readAllBytes(Path.of("./shaders/final.comp.spv"));
-        var _pipelineLayout = this.pipelineLayout;
-        this.finalComp = new PipelineObj.ComputePipelineObj(logicalDevice.getHandle(), new PipelineCInfo.ComputePipelineCInfo(){{
-            pipelineLayout = _pipelineLayout.getHandle().get();
-            computeCode = memAlloc(compSpv.length).put(0, compSpv);
-        }});
+
 
         //
         return this;
@@ -92,10 +86,13 @@ public class RendererObj extends BasicObj  {
     }
 
     //
-    public RendererObj pipelines() {
-
-
-
+    public RendererObj pipelines() throws IOException {
+        var finalCompSpv = Files.readAllBytes(Path.of("./shaders/final.comp.spv"));
+        var _pipelineLayout = this.pipelineLayout;
+        this.finalComp = new PipelineObj.ComputePipelineObj(logicalDevice.getHandle(), new PipelineCInfo.ComputePipelineCInfo(){{
+            pipelineLayout = _pipelineLayout.getHandle().get();
+            computeCode = memAlloc(finalCompSpv.length).put(0, finalCompSpv);
+        }});
         return this;
     }
 
@@ -119,31 +116,31 @@ public class RendererObj extends BasicObj  {
         return (this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
-                var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.get(0));
-                var promise = promises.get(imageIndex);
+            var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.get(0));
+            var promise = promises.get(imageIndex);
 
-                //
-                //System.out.println("Is Rendering!");
+            //
+            //System.out.println("Is Rendering!");
 
-                //
-                do {
-                    if (promise.state().equals(Future.State.RUNNING)) {
-                        this.yield(VK_NOT_READY);
-                    }
-                } while(!promise.state().equals(Future.State.RUNNING));
+            //
+            do {
+                if (promise.state().equals(Future.State.RUNNING)) {
+                    this.yield(VK_NOT_READY);
+                }
+            } while(!promise.state().equals(Future.State.RUNNING));
 
-                //
-                var _queue = logicalDevice.getQueue(0, 0);
-                logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                    waitSemaphores = swapchain.semaphoreImageAvailable;
-                    signalSemaphores = swapchain.semaphoreRenderingAvailable;
-                    dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-                    queue = _queue;
-                    cmdBuf = commandBuffers.get(imageIndex);
-                    onDone = promises.get(imageIndex);
-                }});
-                promises.set(imageIndex, new Promise<>());
-                swapchain.present(_queue, swapchain.semaphoreRenderingAvailable);
+            //
+            var _queue = logicalDevice.getQueue(0, 0);
+            logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+                waitSemaphores = swapchain.semaphoreImageAvailable;
+                signalSemaphores = swapchain.semaphoreRenderingAvailable;
+                dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                queue = _queue;
+                cmdBuf = commandBuffers.get(imageIndex);
+                onDone = promises.get(imageIndex);
+            }});
+            promises.set(imageIndex, new Promise<>());
+            swapchain.present(_queue, swapchain.semaphoreRenderingAvailable);
             }
         });
     }
@@ -156,26 +153,13 @@ public class RendererObj extends BasicObj  {
             var pushConst = memAllocInt(2);
             pushConst.put(0, swapchain.getImageView(I).DSC_ID);
 
-            // TODO: built-in command forming
-            vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.create()
-                    .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-                    .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT));
+            this.logicalDevice.writeCommand(cmdBuf, (_cmdBuf_)->{
+                this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.create().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
+                return VK_SUCCESS;
+            });
 
-            //
-            this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.create().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
-
-            // TODO: built-in command forming
-            vkEndCommandBuffer(cmdBuf);
             this.commandBuffers.add(cmdBuf);
         }
-
-
-
-
-        // EXAMPLE!
-        //while (!glfwWindowShouldClose(this.window.handle.get())) {
-            //this.tickRendering();
-        //}
 
         return this;
     }
@@ -183,13 +167,11 @@ public class RendererObj extends BasicObj  {
     //
     public RendererObj prepare() {
 
-
         return this;
     }
 
     //
     public RendererObj windowed() {
-        //
         var _pipelineLayout = pipelineLayout;
         var _memoryAllocator = memoryAllocator;
 
