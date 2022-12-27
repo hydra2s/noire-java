@@ -20,5 +20,6 @@ public class SemaphoreObj extends BasicObj {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, memLongBuffer(memAddress((this.handle = new Handle("Semaphore")).ptr(), 0), 1));
         vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = memAllocPointer(1));
+        deviceObj.handleMap.put(this.handle, this);
     }
 }
