@@ -9,6 +9,8 @@ import org.lwjgl.vulkan.*;
 
 //
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.stream.IntStream;
 
 //
@@ -61,6 +63,19 @@ public class MemoryAllocationObj extends BasicObj {
         deviceMemoryObj.unmap();
     }
 
+    public PointerBuffer getWin32Handle() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        return deviceMemoryObj.Win32Handle;
+    }
+
+    public IntBuffer getFdHandle() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        return deviceMemoryObj.FdHandle;
+    }
 
     // TODO: special support for ImageView
     public MemoryAllocationObj cmdCopyImageToImage(VkCommandBuffer cmdBuf, long image, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {

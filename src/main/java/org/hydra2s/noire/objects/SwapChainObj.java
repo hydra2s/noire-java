@@ -51,90 +51,120 @@ public class SwapChainObj extends BasicObj  {
     }
 
     public SwapChainObj generateImages(SwapChainCInfo cInfo) {
-        //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
         var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
-        var surfaceInfo = physicalDeviceObj.getSurfaceInfo(cInfo.surface, cInfo.queueFamilyIndex);
 
         //
-        var presentMode = presentModes.get(0);
-        for (var I=0;I<presentModes.size();I++) { var PM = presentModes.get(I);
-            if (List.of(surfaceInfo.presentModes).contains(PM)) {
-                presentMode = PM; break;
+        if (cInfo.surface != 0) {
+            var surfaceInfo = physicalDeviceObj.getSurfaceInfo(cInfo.surface, cInfo.queueFamilyIndex);
+            var presentMode = presentModes.get(0);
+            for (var I = 0; I < presentModes.size(); I++) {
+                var PM = presentModes.get(I);
+                if (List.of(surfaceInfo.presentModes).contains(PM)) {
+                    presentMode = PM;
+                    break;
+                }
             }
-        }
-
-        //
-        var format = surfaceFormats.get(0);
-        var colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-
-        //
-        for (var I=0;I<surfaceFormats.size();I++) { var F = surfaceFormats.get(I);
-            Integer finalFormat = format;
-            var ID = surfaceInfo.formats2.stream().toList().indexOf(surfaceInfo.formats2.stream().filter((F2)->(F2.surfaceFormat().format() == finalFormat)).findFirst().orElse(null));
-            if (ID >= 0) {
-                format = surfaceInfo.formats2.get(ID).surfaceFormat().format();
-                colorSpace = surfaceInfo.formats2.get(ID).surfaceFormat().colorSpace();
-                break;
-            }
-        }
-
-        //
-        this.createInfo = VkSwapchainCreateInfoKHR.create()
-            .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
-            .surface(cInfo.surface)
-            .minImageCount(surfaceInfo.capabilities2.surfaceCapabilities().maxImageCount())
-            .imageFormat(format)
-            .imageColorSpace(colorSpace)
-            .imageExtent(cInfo.extent)
-            .imageArrayLayers(cInfo.layerCount)
-            .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-            .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
-            .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : memAllocInt(1).put(0, cInfo.queueFamilyIndex))
-            .preTransform(surfaceInfo.capabilities2.surfaceCapabilities().currentTransform())
-            .compositeAlpha(surfaceInfo.capabilities2.surfaceCapabilities().supportedCompositeAlpha())
-            .presentMode(presentMode)
-            .clipped(true)
-            .oldSwapchain(0L);
-
-        //
-        vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("SwapChain")).ptr(), 0), 1));
-        vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = memAllocInt(1), null);
-        vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
-        this.imagesObj = new ArrayList<>();
-
-        //
-        for (var I=0;I<this.amountOfImagesInSwapchain.get(0);I++) {
-            var allocationCInfo = new MemoryAllocationCInfo() {{
-                isHost = false;
-                isDevice = true;
-            }};
-
-            var finalI = I;
-            var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
-                image = memAllocPointer(1).put(0, images.get(finalI));
-                arrayLayers = createInfo.imageArrayLayers();
-                format = createInfo.imageFormat();
-                mipLevels = 1;
-                extent3D = VkExtent3D.create().width(createInfo.imageExtent().width()).height(createInfo.imageExtent().height()).depth(1);
-                tiling = VK_IMAGE_TILING_OPTIMAL;
-                samples = VK_SAMPLE_COUNT_1_BIT;
-                usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            }};
 
             //
-            var imageViewCInfo = new ImageViewCInfo(){{
-                image = images.get(finalI);
-                subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                pipelineLayout = cInfo.pipelineLayout;
-                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                type = "storage";
-            }};
+            var format = surfaceFormats.get(0);
+            var colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
             //
-            this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
-            this.imageViews.add(new ImageViewObj(this.base, imageViewCInfo));
+            for (var I = 0; I < surfaceFormats.size(); I++) {
+                var F = surfaceFormats.get(I);
+                Integer finalFormat = format;
+                var ID = surfaceInfo.formats2.stream().toList().indexOf(surfaceInfo.formats2.stream().filter((F2) -> (F2.surfaceFormat().format() == finalFormat)).findFirst().orElse(null));
+                if (ID >= 0) {
+                    format = surfaceInfo.formats2.get(ID).surfaceFormat().format();
+                    colorSpace = surfaceInfo.formats2.get(ID).surfaceFormat().colorSpace();
+                    break;
+                }
+            }
+
+            //
+            this.createInfo = VkSwapchainCreateInfoKHR.create()
+                    .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
+                    .surface(cInfo.surface)
+                    .minImageCount(surfaceInfo.capabilities2.surfaceCapabilities().maxImageCount())
+                    .imageFormat(format)
+                    .imageColorSpace(colorSpace)
+                    .imageExtent(cInfo.extent)
+                    .imageArrayLayers(cInfo.layerCount)
+                    .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+                    .imageSharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                    .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : memAllocInt(1).put(0, cInfo.queueFamilyIndex))
+                    .preTransform(surfaceInfo.capabilities2.surfaceCapabilities().currentTransform())
+                    .compositeAlpha(surfaceInfo.capabilities2.surfaceCapabilities().supportedCompositeAlpha())
+                    .presentMode(presentMode)
+                    .clipped(true)
+                    .oldSwapchain(0L);
+
+            //
+            vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("SwapChain")).ptr(), 0), 1));
+            vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = memAllocInt(1), null);
+            vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
+            this.imagesObj = new ArrayList<>();
+            this.imageViews = new ArrayList<>();
+            this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0));
+
+            //
+            for (var I = 0; I < this.amountOfImagesInSwapchain.get(0); I++) {
+                var finalI = I;
+                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, new MemoryAllocationCInfo.ImageCInfo() {{
+                    isHost = false;
+                    isDevice = true;
+                    image = memAllocPointer(1).put(0, images.get(finalI));
+                    arrayLayers = createInfo.imageArrayLayers();
+                    format = createInfo.imageFormat();
+                    mipLevels = 1;
+                    extent3D = VkExtent3D.create().width(createInfo.imageExtent().width()).height(createInfo.imageExtent().height()).depth(1);
+                    tiling = VK_IMAGE_TILING_OPTIMAL;
+                    samples = VK_SAMPLE_COUNT_1_BIT;
+                    usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                }}));
+                this.images.put(finalI, this.imagesObj.get(finalI).getHandle().get());
+
+                //
+                this.imageViews.add(new ImageViewObj(this.base, new ImageViewCInfo() {{
+                    image = images.get(finalI);
+                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                    pipelineLayout = cInfo.pipelineLayout;
+                    imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    type = "storage";
+                }}));
+            }
+        } else {
+            //
+            var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+
+            this.imageViews = new ArrayList<>();
+            this.imagesObj = new ArrayList<>();
+            this.images = memAllocLong((int) cInfo.imageCount);
+            for (var I=0;I<cInfo.imageCount;I++) {
+                var finalI = I;
+                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, new MemoryAllocationCInfo.ImageCInfo(){{
+                    isHost = false;
+                    isDevice = true;
+                    arrayLayers = cInfo.layerCount;
+                    format = cInfo.format;
+                    mipLevels = 1;
+                    extent3D = VkExtent3D.create().width(cInfo.extent.width()).height(cInfo.extent.height()).depth(1);;
+                    tiling = VK_IMAGE_TILING_OPTIMAL;
+                    samples = VK_SAMPLE_COUNT_1_BIT;
+                    usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                    memoryAllocator = memoryAllocatorObj.getHandle().get();
+                }}));
+                this.images.put(finalI, this.imagesObj.get(finalI).getHandle().get());
+                this.imageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){{
+                    image = images.get(finalI);
+                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                    pipelineLayout = cInfo.pipelineLayout;
+                    imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    type = "storage";
+                }}));
+            }
         }
 
         return this;
@@ -155,12 +185,6 @@ public class SwapChainObj extends BasicObj  {
     //
     public SwapChainObj(Handle base, SwapChainCInfo cInfo) {
         super(base, cInfo);
-
-        //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
-        var surfaceInfo = physicalDeviceObj.getSurfaceInfo(cInfo.surface, cInfo.queueFamilyIndex);
 
         //
         this.imageIndex = memAllocInt(1).put(0,0);
@@ -202,49 +226,6 @@ public class SwapChainObj extends BasicObj  {
     // TODO: OpenGL support
     // Virtual SwapChain for rendering in virtual surface
     public static class SwapChainVirtual extends SwapChainObj {
-        public SwapChainVirtual(Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
-            super(base, cInfo);
-        }
-
-        @Override
-        public SwapChainObj generateImages(SwapChainCInfo cInfo) {
-            this.imagesObj = new ArrayList<>();
-
-            //
-            for (var I=0;I<cInfo.imageCount;I++) {
-                var allocationCInfo = new MemoryAllocationCInfo() {{
-                    isHost = false;
-                    isDevice = true;
-                }};
-
-                var finalI = I;
-                var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
-                    arrayLayers = cInfo.layerCount;
-                    format = cInfo.format;
-                    mipLevels = 1;
-                    extent3D = VkExtent3D.create().width(cInfo.extent.width()).height(cInfo.extent.height()).depth(1);;
-                    tiling = VK_IMAGE_TILING_OPTIMAL;
-                    samples = VK_SAMPLE_COUNT_1_BIT;
-                    usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-                }};
-
-                //
-                var imageViewCInfo = new ImageViewCInfo(){{
-                    image = images.get(finalI);
-                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
-                    pipelineLayout = cInfo.pipelineLayout;
-                    imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                    type = "storage";
-                }};
-
-                //
-                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
-                this.imageViews.add(new ImageViewObj(this.base, imageViewCInfo));
-            }
-
-            return this;
-        }
-
         // TODO: support for OpenGL
         @Override
         public int acquireImageIndex(long semaphore) {
@@ -270,6 +251,11 @@ public class SwapChainObj extends BasicObj  {
             });
             return this;
         }
+
+        public SwapChainVirtual(Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
+            super(base, cInfo);
+        }
+
     }
 
 }
