@@ -104,7 +104,6 @@ public class PipelineLayoutObj extends BasicObj  {
         //
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
 
         //
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
@@ -162,36 +161,30 @@ public class PipelineLayoutObj extends BasicObj  {
         this.samplers = new OutstandingArray<LongBuffer>();
 
         //
-        var allocationCInfo = new MemoryAllocationCInfo();
-        allocationCInfo.isHost = true;
-        allocationCInfo.isDevice = true;
-
-        //
-        var sizes = this.sizes;
-        var uniformBufferSize = this.uniformBufferSize;
-        var resourceBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+        this.resourceDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
+            isHost = true;
+            isDevice = true;
             size = sizes.get(0);
             usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        }};
-        var samplerBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+            memoryAllocator = cInfo.memoryAllocator;
+        }});
+        this.samplerDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
+            isHost = true;
+            isDevice = true;
             size = sizes.get(1);
             usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-        }};
-        var uniformBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo() {{
+            memoryAllocator = cInfo.memoryAllocator;
+        }});
+        this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
+            isHost = true;
+            isDevice = true;
             size = uniformBufferSize;
             usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        }};
-
-        //
-        this.resourceDescriptorBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, resourceBufferCreateInfo));
-        this.samplerDescriptorBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, samplerBufferCreateInfo));
-        this.uniformDescriptorBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, uniformBufferCreateInfo));
+            memoryAllocator = cInfo.memoryAllocator;
+        }});
 
         //
         this.writeDescriptors();
-
-        //
-        //return this;
     }
 
     //

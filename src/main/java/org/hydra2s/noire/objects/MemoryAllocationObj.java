@@ -286,7 +286,7 @@ public class MemoryAllocationObj extends BasicObj {
                 .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
                 .sharingMode(VK_SHARING_MODE_EXCLUSIVE);
 
-            //
+            // TODO: direct create with direct allocation
             if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
                 vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
             } else {
@@ -296,6 +296,12 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
+
+            // TODO: direct create with direct allocation
+            if (cInfo.memoryAllocator != 0) {
+                var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+                memoryAllocatorObj.allocateMemory(cInfo, this);
+            }
         }
 
         //
@@ -367,7 +373,7 @@ public class MemoryAllocationObj extends BasicObj {
                 .format(cInfo.format)
                 .tiling(cInfo.tiling);
 
-            //
+            // TODO: direct create with direct allocation
             if (cInfo.image == null || cInfo.image.get(0) == 0) {
                 vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
             } else {
@@ -377,6 +383,12 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2).image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
+
+            // TODO: direct create with direct allocation
+            if (cInfo.memoryAllocator != 0) {
+                var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+                memoryAllocatorObj.allocateMemory(cInfo, this);
+            }
         }
 
         // TODO: special support for ImageView

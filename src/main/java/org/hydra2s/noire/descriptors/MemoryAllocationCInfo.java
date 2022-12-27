@@ -24,6 +24,9 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     public PointerBuffer image = null;
 
     //
+    public long memoryAllocator = 0L;
+
+    //
     public static class BufferCInfo extends MemoryAllocationCInfo {
         public long size = 0;
         public int usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;

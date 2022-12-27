@@ -46,7 +46,6 @@ public class AccelerationStructureObj extends BasicObj {
         //
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
 
         //
         this.geometryInfo = VkAccelerationStructureGeometryKHR.create(this.geometryData.capacity())
@@ -110,20 +109,16 @@ public class AccelerationStructureObj extends BasicObj {
         vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(1), this.primitiveCount, this.buildSizeInfo);
 
         //
-        var allocationCInfo = new MemoryAllocationCInfo(){{
+        var buildSizeInfo = this.buildSizeInfo;
+
+        //
+        this.ASStorageBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
             isHost = false;
             isDevice = true;
-        }};
-
-        //
-        var buildSizeInfo = this.buildSizeInfo;
-        var ASBufferCreateInfo = new MemoryAllocationCInfo.BufferCInfo() {{
+            memoryAllocator = cInfo.memoryAllocator;
             size = buildSizeInfo.accelerationStructureSize();
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-        }};
-
-        //
-        this.ASStorageBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASBufferCreateInfo));
+        }});
         this.ASStorageBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
             .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
@@ -133,16 +128,20 @@ public class AccelerationStructureObj extends BasicObj {
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASStorageBuffer.handle.get())
             .offset(0)
-            .size(ASBufferCreateInfo.size);
+            .size(buildSizeInfo.accelerationStructureSize());
 
         //
+        var scratchSize = Math.max(buildSizeInfo.buildScratchSize(), buildSizeInfo.updateScratchSize());
         var ASScratchCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
-            size = Math.max(buildSizeInfo.buildScratchSize(), buildSizeInfo.updateScratchSize());
+            isHost = false;
+            isDevice = true;
+            memoryAllocator = cInfo.memoryAllocator;
+            size = scratchSize;
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }};
 
         //
-        this.ASScratchBuffer = (MemoryAllocationObj.BufferObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.BufferObj(this.base, ASScratchCreateInfo));
+        this.ASScratchBuffer = new MemoryAllocationObj.BufferObj(this.base, ASScratchCreateInfo);
         this.ASScratchBarrier = VkBufferMemoryBarrier2.create()
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
             .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR)
@@ -152,10 +151,10 @@ public class AccelerationStructureObj extends BasicObj {
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASScratchBuffer.handle.get())
             .offset(0)
-            .size(ASScratchCreateInfo.size);
+            .size(scratchSize);
 
         //
-        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(ASBufferCreateInfo.size).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
+        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
         deviceObj.handleMap.put(this.handle, this);
 
         //

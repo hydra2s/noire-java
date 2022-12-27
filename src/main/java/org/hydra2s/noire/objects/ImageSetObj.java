@@ -36,7 +36,6 @@ public class ImageSetObj extends BasicObj  {
         //
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
 
         //
         this.images = new ArrayList<MemoryAllocationObj.ImageObj>();
@@ -46,15 +45,11 @@ public class ImageSetObj extends BasicObj  {
 
         //
         for (var I=0;I<cInfo.formats.capacity();I++) {
-            //
-            var allocationCInfo = new MemoryAllocationCInfo() {{
-                isHost = false;
-                isDevice = true;
-            }};
-
-            //
             var fI = I;
             var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
+                isHost = false;
+                isDevice = true;
+                memoryAllocator = cInfo.memoryAllocator;
                 arrayLayers = cInfo.layerCounts.get(fI)*3;
                 format = cInfo.formats.get(fI);
                 mipLevels = 1;
@@ -66,7 +61,7 @@ public class ImageSetObj extends BasicObj  {
 
             //
             var images = this.images;
-            this.images.add((MemoryAllocationObj.ImageObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.ImageObj(this.base, imageCInfo)));
+            this.images.add(new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
 
             //
             this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
@@ -171,13 +166,10 @@ public class ImageSetObj extends BasicObj  {
                 var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
 
                 //
-                var allocationCInfo = new MemoryAllocationCInfo() {{
+                var imageCInfo = new MemoryAllocationCInfo.ImageCInfo() {{
                     isHost = false;
                     isDevice = true;
-                }};
-
-                //
-                var imageCInfo = new MemoryAllocationCInfo.ImageCInfo() {{
+                    memoryAllocator = cInfo.memoryAllocator;
                     arrayLayers = layerCount * 2;
                     format = cInfo.depthStencilFormat;
                     mipLevels = 1;
@@ -188,7 +180,7 @@ public class ImageSetObj extends BasicObj  {
                 }};
 
                 //
-                this.depthStencilImage = (MemoryAllocationObj.ImageObj) memoryAllocatorObj.allocateMemory(allocationCInfo, new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
+                this.depthStencilImage = new MemoryAllocationObj.ImageObj(this.base, imageCInfo);
 
                 //
                 this.currentDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
