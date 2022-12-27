@@ -1,26 +1,24 @@
 #version 460 core
-
+#extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_ARB_separate_shader_objects : enable
-#extension GL_EXT_ray_query : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int32 : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int16 : enable
-#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_scalar_block_layout : enable
 #extension GL_EXT_buffer_reference : enable
 #extension GL_EXT_buffer_reference2 : enable
 #extension GL_EXT_samplerless_texture_functions : enable
-#extension GL_EXT_shared_memory_block : enable
+#extension GL_EXT_fragment_shader_barycentric : enable
+#extension GL_EXT_demote_to_helper_invocation : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 #extension GL_EXT_shader_atomic_float : enable
 
 //
-layout (rgba8, set = 0, binding = 0) uniform image2D images[];
-layout (local_size_x = 32, local_size_y = 6, local_size_z = 1) in;
-layout (push_constant, scalar) uniform constants { int imageDesc; int rasterImage; };
+layout (location = 0) out vec4 fcolor;
 
 //
 void main() {
-    imageStore(images[imageDesc], ivec2(gl_GlobalInvocationID.xy), imageLoad(images[rasterImage], ivec2(gl_GlobalInvocationID.xy)));
+	fcolor = vec4(gl_BaryCoordEXT, 1.0);
 }

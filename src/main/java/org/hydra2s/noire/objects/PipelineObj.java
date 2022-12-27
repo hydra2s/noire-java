@@ -121,7 +121,7 @@ public class PipelineObj extends BasicObj  {
             //
             var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout));
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
@@ -190,14 +190,18 @@ public class PipelineObj extends BasicObj  {
 
             //
             //this.attachmentFormats.put();
+            // TODO: depth only or stencil only support
             this.dynamicRenderingPipelineInfo
-                .pColorAttachmentFormats(fbLayout.formats);
+                .pColorAttachmentFormats(fbLayout.formats)
+                .depthAttachmentFormat(fbLayout.depthStencilFormat)
+                .stencilAttachmentFormat(fbLayout.depthStencilFormat);
 
             //
             this.dynamicStates
                 .put(0, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
                 .put(1, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
                 .put(2, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+            this.dynamicStateInfo.pDynamicStates(this.dynamicStates);
 
             //
             this.depthStencilState.depthTestEnable(true)
@@ -260,6 +264,15 @@ public class PipelineObj extends BasicObj  {
             boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
 
             //
+            if (hasDepthStencil) {
+                fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+                fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.currentDepthStencilImageView.getHandle().get());
+                fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.currentDepthStencilImageView.getImageLayout());
+                fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
+                fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            };
+
+            //
             vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.create()
                 .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
                 .pColorAttachments(fbLayout.attachmentInfos)
@@ -272,7 +285,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             if (pushConstRaw != null) {
-                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, pushConstByteOffset, pushConstRaw);
+                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, pushConstByteOffset, pushConstRaw);
             }
 
             //

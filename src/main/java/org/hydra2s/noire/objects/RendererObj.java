@@ -11,6 +11,7 @@ import java.nio.LongBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.Future;
 import java.util.function.Function;
@@ -36,6 +37,9 @@ public class RendererObj extends BasicObj  {
     public ArrayList<VkCommandBuffer> commandBuffers = new ArrayList<VkCommandBuffer>();
     public Iterator<Integer> process;
     public PipelineObj.ComputePipelineObj finalComp;
+    public PipelineObj.GraphicsPipelineObj trianglePipeline;
+    public ImageSetCInfo.FBLayout fbLayout;
+    public ImageSetObj.FramebufferObj framebuffer;
 
 
     //
@@ -89,10 +93,80 @@ public class RendererObj extends BasicObj  {
     public RendererObj pipelines() throws IOException {
         var finalCompSpv = Files.readAllBytes(Path.of("./shaders/final.comp.spv"));
         var _pipelineLayout = this.pipelineLayout;
+        var _memoryAllocator = memoryAllocator;
+
+        //
+        this.fbLayout = new ImageSetCInfo.FBLayout(){{
+            memoryAllocator = _memoryAllocator.handle.get();
+            pipelineLayout = _pipelineLayout.handle.get();
+
+            extents = new ArrayList<>(){{
+                add(VkExtent3D.create().width(1280).height(720).depth(1));
+            }};
+            formats = memAllocInt(1).put(0, VK_FORMAT_R32G32B32A32_SFLOAT);
+            layerCounts = new ArrayList<>(){{
+                add(1);
+            }};
+
+            //
+            blendAttachments = VkPipelineColorBlendAttachmentState.create(1);
+            blendAttachments.get(0)
+                .blendEnable(false)
+                .colorWriteMask(VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT);
+
+            //
+            attachmentInfos = VkRenderingAttachmentInfo.create(1);
+            attachmentInfos.get(0)
+                .clearValue(VkClearValue.create().color(VkClearColorValue.create()
+                    .float32(memAllocFloat(4)
+                        .put(0, 0.0F)
+                        .put(1, 0.0F)
+                        .put(2, 0.0F)
+                        .put(3, 1.0F)
+                    )));
+
+            // TODO: support only depth or only stencil
+            depthStencilAttachmentInfo = VkRenderingAttachmentInfo.create()
+                .clearValue(VkClearValue.create().depthStencil(VkClearDepthStencilValue.create()
+                    .depth(1.0F)
+                    .stencil(0)));
+
+            // TODO: support only depth or only stencil
+            depthStencilFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+            scissor = VkRect2D.create()
+                .extent(VkExtent2D.create().width(1280).height(720))
+                .offset(VkOffset2D.create().x(0).y(0));
+            viewport = VkViewport.create()
+                .x(0.F).y(0.F)
+                .width(1280.F).height(720.F)
+                .minDepth(0.F).maxDepth(1.F);
+        }};
+
+        //
+        this.framebuffer = new ImageSetObj.FramebufferObj(this.logicalDevice.getHandle(), this.fbLayout);
+
+        //
+        var _fbLayout = this.fbLayout;
+
+        //
         this.finalComp = new PipelineObj.ComputePipelineObj(logicalDevice.getHandle(), new PipelineCInfo.ComputePipelineCInfo(){{
             pipelineLayout = _pipelineLayout.getHandle().get();
             computeCode = memAlloc(finalCompSpv.length).put(0, finalCompSpv);
         }});
+
+        //
+        var fragSpv = Files.readAllBytes(Path.of("./shaders/triangle.frag.spv"));
+        var vertSpv = Files.readAllBytes(Path.of("./shaders/triangle.vert.spv"));
+        this.trianglePipeline = new PipelineObj.GraphicsPipelineObj(logicalDevice.getHandle(), new PipelineCInfo.GraphicsPipelineCInfo(){{
+            pipelineLayout = _pipelineLayout.getHandle().get();
+            fbLayout = _fbLayout;
+            sourceMap = new HashMap<>(){{
+                put(VK_SHADER_STAGE_FRAGMENT_BIT, memAlloc(fragSpv.length).put(0, fragSpv));
+                put(VK_SHADER_STAGE_VERTEX_BIT, memAlloc(vertSpv.length).put(0, vertSpv));
+            }};
+
+        }});
+
         return this;
     }
 
@@ -152,8 +226,10 @@ public class RendererObj extends BasicObj  {
             var cmdBuf = this.logicalDevice.allocateCommand(this.logicalDevice.getCommandPool(0));
             var pushConst = memAllocInt(2);
             pushConst.put(0, swapchain.getImageView(I).DSC_ID);
+            pushConst.put(1, framebuffer.writingImageViews.get(0).DSC_ID);
 
             this.logicalDevice.writeCommand(cmdBuf, (_cmdBuf_)->{
+                this.trianglePipeline.cmdDraw(cmdBuf, VkMultiDrawInfoEXT.create(1).put(0, VkMultiDrawInfoEXT.create().vertexCount(3).firstVertex(0)), this.framebuffer.getHandle().get(), memByteBuffer(pushConst), 0);
                 this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.create().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
                 return VK_SUCCESS;
             });
@@ -205,6 +281,15 @@ public class RendererObj extends BasicObj  {
             this.swapchain.imageViews.forEach((img)->{
                 img.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
             });
+            this.framebuffer.processCurrentImageViews((img)->{
+                img.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, true);
+                return 0;
+            });
+            this.framebuffer.processWritingImageViews((img)->{
+                img.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_GENERAL, true);
+                return 0;
+            });
+            this.framebuffer.currentDepthStencilImageView.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, true);
             return 0;
         });
 
