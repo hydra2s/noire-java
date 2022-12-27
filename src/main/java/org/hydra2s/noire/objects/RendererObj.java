@@ -116,7 +116,7 @@ public class RendererObj extends BasicObj  {
         return (this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
-            var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.get(0));
+            var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.getHandle().get());
             var promise = promises.get(imageIndex);
 
             //
@@ -132,15 +132,15 @@ public class RendererObj extends BasicObj  {
             //
             var _queue = logicalDevice.getQueue(0, 0);
             logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                waitSemaphores = swapchain.semaphoreImageAvailable;
-                signalSemaphores = swapchain.semaphoreRenderingAvailable;
+                waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
+                signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
                 dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
                 queue = _queue;
                 cmdBuf = commandBuffers.get(imageIndex);
                 onDone = promises.get(imageIndex);
             }});
             promises.set(imageIndex, new Promise<>());
-            swapchain.present(_queue, swapchain.semaphoreRenderingAvailable);
+            swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
             }
         });
     }
