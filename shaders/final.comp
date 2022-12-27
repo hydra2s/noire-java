@@ -18,9 +18,30 @@
 //
 layout (rgba8, set = 0, binding = 0) uniform image2D images[];
 layout (local_size_x = 32, local_size_y = 6, local_size_z = 1) in;
-layout (push_constant, scalar) uniform constants { int imageDesc; int rasterImage; };
+layout (push_constant, scalar) uniform constants { int imageDesc; int rasterImage; uint64_t accStruct; };
 
 //
 void main() {
-    imageStore(images[imageDesc], ivec2(gl_GlobalInvocationID.xy), imageLoad(images[rasterImage], ivec2(gl_GlobalInvocationID.xy)));
+    vec3 origin = vec3(vec2(gl_GlobalInvocationID.xy) / vec2(1280, 720) * 2.f - 1.f, 1.f);
+    vec3 dir = vec3(0.f, 0.f, -1.f);
+
+    //
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery, accelerationStructureEXT(accStruct), gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, origin, 0.0001f, dir, 10000.f);
+
+    //
+    while(rayQueryProceedEXT(rayQuery)) {
+        rayQueryConfirmIntersectionEXT(rayQuery);
+    }
+
+    //
+    if (rayQueryGetIntersectionTypeEXT(rayQuery, true) == gl_RayQueryCommittedIntersectionTriangleEXT) {
+        const vec2 bary_ = rayQueryGetIntersectionBarycentricsEXT(rayQuery, true);
+        const vec3 bary = vec3(1.f - bary_.x - bary_.y, bary_.xy);
+        imageStore(images[imageDesc], ivec2(gl_GlobalInvocationID.xy), vec4(bary, 1.f));
+    } else {
+        imageStore(images[imageDesc], ivec2(gl_GlobalInvocationID.xy), vec4(0.f.xxx, 1.f));
+    }
+
+    //imageStore(images[imageDesc], ivec2(gl_GlobalInvocationID.xy), imageLoad(images[rasterImage], ivec2(gl_GlobalInvocationID.xy)));
 }

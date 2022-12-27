@@ -41,20 +41,19 @@ public class AccelerationStructureObj extends BasicObj {
         super(base, cInfo);
 
         // TODO: auto-detect AS level
-        // this.ASLevel = ...
+        this.ASLevel = cInfo.instances != null ? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
         //
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
-        //
-        this.geometryInfo = VkAccelerationStructureGeometryKHR.create(this.geometryData.capacity())
-            .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
-            .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR);
 
         //
         this.geometryData = VkAccelerationStructureGeometryDataKHR.create(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? 1 : cInfo.geometries.size());
         this.primitiveCount = memAllocInt(this.geometryData.capacity());
+        this.geometryInfo = VkAccelerationStructureGeometryKHR.create(this.geometryData.capacity())
+                .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
+                .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR);
 
         //
         if (this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
@@ -66,10 +65,16 @@ public class AccelerationStructureObj extends BasicObj {
             );
             this.geometryInfo.geometry(this.geometryData.get(0));
             this.geometryInfo.flags((cInfo.instances.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
+            this.primitiveCount.put(0, cInfo.instances.instanceBinding.vertexCount);
         } else
         {
-            IntStream.range(0, cInfo.geometries.size()).map((I)->{
-                var triangles = VkAccelerationStructureGeometryTrianglesDataKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR).indexType(VK_INDEX_TYPE_NONE_KHR);
+            IntStream.range(0, cInfo.geometries.size()).forEachOrdered((I)->{
+                var triangles = VkAccelerationStructureGeometryTrianglesDataKHR.create()
+                    .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR)
+                    .indexType(VK_INDEX_TYPE_NONE_KHR)
+                    .transformData(VkDeviceOrHostAddressConstKHR.create().deviceAddress(0L))
+                    .indexData(VkDeviceOrHostAddressConstKHR.create().deviceAddress(0L));
+
                 var geometryI = cInfo.geometries.get(I);
                 if (geometryI.vertexBinding != null) {
                     triangles
@@ -90,36 +95,39 @@ public class AccelerationStructureObj extends BasicObj {
                 this.geometryData.get(I).triangles(triangles);
                 this.geometryInfo.get(I).geometry(this.geometryData.get(I));
                 this.geometryInfo.get(I).flags((geometryI.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
-
-                //
-                return I;
             });
         }
 
         //
-        this.geometryBuildInfo = VkAccelerationStructureBuildGeometryInfoKHR.create(1).sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR)
+        this.geometryBuildInfo = VkAccelerationStructureBuildGeometryInfoKHR.create(1)
+            .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR)
+            .pNext(0L)
             .type(this.ASLevel)
             .mode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
             .flags(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR)
             .geometryCount(this.geometryInfo.capacity())
-            .pGeometries(this.geometryInfo);
+            .pGeometries(this.geometryInfo)
+            .ppGeometries(null);
 
         //
         this.buildSizeInfo = VkAccelerationStructureBuildSizesInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR);
-        vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(1), this.primitiveCount, this.buildSizeInfo);
+        vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(0), this.primitiveCount, this.buildSizeInfo);
 
         //
         var buildSizeInfo = this.buildSizeInfo;
+        var accelSize = buildSizeInfo.accelerationStructureSize();
 
         //
         this.ASStorageBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
             isHost = false;
             isDevice = true;
             memoryAllocator = cInfo.memoryAllocator;
-            size = buildSizeInfo.accelerationStructureSize();
+            size = accelSize;
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }});
         this.ASStorageBarrier = VkBufferMemoryBarrier2.create()
+            .pNext(0L)
+            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
             .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
             .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
@@ -128,21 +136,20 @@ public class AccelerationStructureObj extends BasicObj {
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASStorageBuffer.handle.get())
             .offset(0)
-            .size(buildSizeInfo.accelerationStructureSize());
+            .size(accelSize);
 
         //
         var scratchSize = Math.max(buildSizeInfo.buildScratchSize(), buildSizeInfo.updateScratchSize());
-        var ASScratchCreateInfo = new MemoryAllocationCInfo.BufferCInfo(){{
+        this.ASScratchBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
             isHost = false;
             isDevice = true;
             memoryAllocator = cInfo.memoryAllocator;
             size = scratchSize;
-            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-        }};
-
-        //
-        this.ASScratchBuffer = new MemoryAllocationObj.BufferObj(this.base, ASScratchCreateInfo);
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }});
         this.ASScratchBarrier = VkBufferMemoryBarrier2.create()
+            .pNext(0L)
+            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
             .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR)
             .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
@@ -154,7 +161,7 @@ public class AccelerationStructureObj extends BasicObj {
             .size(scratchSize);
 
         //
-        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
+        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(accelSize).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
         deviceObj.handleMap.put(this.handle, this);
 
         //
@@ -167,7 +174,7 @@ public class AccelerationStructureObj extends BasicObj {
     public long getDeviceAddress() {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         if (this.deviceAddress == 0) {
-            this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()));
+            this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.create().pNext(0L).sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.buildSizeInfo.accelerationStructureSize(), Interval.Bounded.CLOSED));
             deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
         }

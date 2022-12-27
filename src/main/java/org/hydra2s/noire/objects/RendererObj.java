@@ -17,6 +17,10 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -40,6 +44,8 @@ public class RendererObj extends BasicObj  {
     public PipelineObj.GraphicsPipelineObj trianglePipeline;
     public ImageSetCInfo.FBLayout fbLayout;
     public ImageSetObj.FramebufferObj framebuffer;
+    public AccelerationStructureObj.TopAccelerationStructureObj topLvl;
+    public AccelerationStructureObj.BottomAccelerationStructureObj bottomLvl;
 
 
     //
@@ -171,6 +177,102 @@ public class RendererObj extends BasicObj  {
     }
 
     //
+    public RendererObj acceleration() {
+        var _pipelineLayout = this.pipelineLayout;
+        var _memoryAllocator = memoryAllocator;
+
+        //
+        var triangleBuffer = new MemoryAllocationObj.BufferObj(this.logicalDevice.getHandle(), new MemoryAllocationCInfo.BufferCInfo(){{
+            isHost = true;
+            isDevice = true;
+            size = 16 * 3;
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            memoryAllocator = _memoryAllocator.handle.get();
+        }});
+
+        //
+        var tmapped = triangleBuffer.map(16*3, 0);
+        tmapped.asFloatBuffer().put(0, new float[]{
+             0.5F, -0.5F, 0.F, 1.F,
+            -0.5F, -0.5F, 0.F, 1.F,
+             0.0F,  0.5F, 0.F, 1.F
+        });
+        triangleBuffer.unmap();
+
+        //
+        this.bottomLvl = new AccelerationStructureObj.BottomAccelerationStructureObj(this.logicalDevice.getHandle(), new AccelerationStructureCInfo.BottomAccelerationStructureCInfo(){{
+            memoryAllocator = _memoryAllocator.getHandle().get();
+            geometries = new ArrayList<DataCInfo.TriangleGeometryCInfo>(){{
+                add(new DataCInfo.TriangleGeometryCInfo(){{
+                    vertexBinding = new DataCInfo.VertexBindingCInfo(){{
+                        address = triangleBuffer.getDeviceAddress();
+                        stride = 16;
+                        format = VK_FORMAT_R32G32B32_SFLOAT;
+                        vertexCount = 3;
+                    }};
+                }});
+            }};
+        }});
+
+        //
+        var instanceBuffer = new MemoryAllocationObj.BufferObj(this.logicalDevice.getHandle(), new MemoryAllocationCInfo.BufferCInfo(){{
+            isHost = true;
+            isDevice = true;
+            size = VkAccelerationStructureInstanceKHR.SIZEOF;
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            memoryAllocator = _memoryAllocator.handle.get();
+        }});
+
+        //
+        var imapped = instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0);
+        var instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(imapped));
+        instanceInfo.mask(0xFF);
+        instanceInfo.accelerationStructureReference(this.bottomLvl.getDeviceAddress());
+        instanceInfo.flags(0);
+        instanceInfo.transform(VkTransformMatrixKHR.create().matrix(memAllocFloat(12).put(0, new float[]{
+            1.0F, 0.0F, 0.0F, 0.0F,
+            0.0F, 1.0F, 0.0F, 0.0F,
+            0.0F, 0.0F, 1.0F, 0.0F
+        })));
+        instanceBuffer.unmap();
+
+        this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(this.logicalDevice.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
+            memoryAllocator = _memoryAllocator.getHandle().get();
+            instances = new DataCInfo.InstanceGeometryCInfo(){{
+                instanceBinding = new DataCInfo.InstanceBindingCInfo(){{
+                    address = instanceBuffer.getDeviceAddress();
+                    vertexCount = 1;
+                }};
+            }};
+        }});
+
+        //
+        this.submitOnce((cmdBuf)->{
+
+            triangleBuffer.cmdSynchronizeFromHost(cmdBuf);
+            this.bottomLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.create(1)
+                    .primitiveCount(1)
+                    .firstVertex(0)
+                    .primitiveOffset(0)
+                    .transformOffset(0),
+                    VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+            instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
+            this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.create(1)
+                    .primitiveCount(1)
+                    .firstVertex(0)
+                    .primitiveOffset(0)
+                    .transformOffset(0),
+                    VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+            return VK_SUCCESS;
+        });
+
+        //
+        return this;
+    }
+
+    //
     public RendererObj tickRendering () {
         this.logicalDevice.doPolling();
 
@@ -224,9 +326,10 @@ public class RendererObj extends BasicObj  {
 
         for (var I=0;I<this.swapchain.getImageCount();I++) {
             var cmdBuf = this.logicalDevice.allocateCommand(this.logicalDevice.getCommandPool(0));
-            var pushConst = memAllocInt(2);
+            var pushConst = memAllocInt(4);
             pushConst.put(0, swapchain.getImageView(I).DSC_ID);
             pushConst.put(1, framebuffer.writingImageViews.get(0).DSC_ID);
+            memLongBuffer(memAddress(pushConst, 2), 1).put(0, this.topLvl.getDeviceAddress());
 
             this.logicalDevice.writeCommand(cmdBuf, (_cmdBuf_)->{
                 this.trianglePipeline.cmdDraw(cmdBuf, VkMultiDrawInfoEXT.create(1).put(0, VkMultiDrawInfoEXT.create().vertexCount(3).firstVertex(0)), this.framebuffer.getHandle().get(), memByteBuffer(pushConst), 0);
@@ -305,6 +408,7 @@ public class RendererObj extends BasicObj  {
         this.pipelines();
         this.windowed();
         this.prepare();
+        this.acceleration();
         this.rendering();
     }
 
@@ -316,6 +420,7 @@ public class RendererObj extends BasicObj  {
         this.pipelines();
         this.windowed();
         this.prepare();
+        this.acceleration();
         this.rendering();
     }
 

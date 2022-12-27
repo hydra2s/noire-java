@@ -280,22 +280,38 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             this.createInfo = VkBufferCreateInfo.create()
-                .pNext(VkExternalMemoryBufferCreateInfo.create().sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO).handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
+                .pNext(VkExternalMemoryBufferCreateInfo.create()
+                    .pNext(0L)
+                    .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO)
+                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address()
+                )
+                .flags(0)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
-                .size(cInfo.size)
+                .size(Math.max(cInfo.size, 0L))
                 .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-                .sharingMode(VK_SHARING_MODE_EXCLUSIVE);
+                .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
+                .pQueueFamilyIndices(null);
 
             // TODO: direct create with direct allocation
+            int status = VK_NOT_READY;
             if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
-                vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
+                status = vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
             } else {
                 this.handle = new Handle("Buffer", cInfo.buffer.get(0));
             }
             deviceObj.handleMap.put(this.handle, this);
 
             //
-            vkGetBufferMemoryRequirements2(deviceObj.device, VkBufferMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2).buffer(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
+            vkGetBufferMemoryRequirements2(
+                    deviceObj.device,
+                    VkBufferMemoryRequirementsInfo2.create()
+                            .pNext(0L)
+                            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2)
+                            .buffer(this.handle.get()),
+                    this.memoryRequirements2 = VkMemoryRequirements2.create()
+                            .sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2)
+                            .pNext(0L)
+            );
 
             // TODO: direct create with direct allocation
             if (cInfo.memoryAllocator != 0) {
@@ -308,7 +324,7 @@ public class MemoryAllocationObj extends BasicObj {
         public long getDeviceAddress() {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
             if (this.deviceAddress == 0) {
-                this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.create().sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
+                this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.create().pNext(0L).sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
                 deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.createInfo.size(), Interval.Bounded.CLOSED));
                 deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
             }
@@ -321,7 +337,7 @@ public class MemoryAllocationObj extends BasicObj {
             // for `map()` or copy operations
             var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
                 .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
                 .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
                 .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
@@ -357,7 +373,11 @@ public class MemoryAllocationObj extends BasicObj {
 
             //
             this.createInfo = VkImageCreateInfo.create()
-                .pNext(VkExternalMemoryImageCreateInfo.create().sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO).handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address())
+                .pNext(VkExternalMemoryImageCreateInfo.create()
+                    .pNext(0L)
+                    .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO)
+                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT )
+                    .address())
                 .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
                 .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT |
                     (((imageType == VK_IMAGE_TYPE_3D)) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0) |
@@ -374,15 +394,25 @@ public class MemoryAllocationObj extends BasicObj {
                 .tiling(cInfo.tiling);
 
             // TODO: direct create with direct allocation
+            int status = VK_NOT_READY;
             if (cInfo.image == null || cInfo.image.get(0) == 0) {
-                vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
+                status = vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
             } else {
                 this.handle = new Handle("Image", cInfo.image.get(0));
             }
             deviceObj.handleMap.put(this.handle, this);
 
             //
-            vkGetImageMemoryRequirements2(deviceObj.device, VkImageMemoryRequirementsInfo2.create().sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2).image(this.handle.get()), this.memoryRequirements2 = VkMemoryRequirements2.create().sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2));
+            vkGetImageMemoryRequirements2(
+                    deviceObj.device,
+                    VkImageMemoryRequirementsInfo2.create()
+                            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2)
+                            .pNext(0L)
+                            .image(this.handle.get()),
+                    this.memoryRequirements2 = VkMemoryRequirements2.create()
+                            .sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2)
+                            .pNext(0L)
+            );
 
             // TODO: direct create with direct allocation
             if (cInfo.memoryAllocator != 0) {
