@@ -22,6 +22,7 @@ import static org.lwjgl.vulkan.VK11.*;
 public class MemoryAllocatorObj extends BasicObj  {
     static public class DeviceMemoryObj extends BasicObj  {
         protected VkMemoryAllocateInfo allocInfo = null;
+        protected boolean mapped = false;
 
         public DeviceMemoryObj(Handle base, Handle handle) {
             super(base, handle);
@@ -107,11 +108,13 @@ public class MemoryAllocatorObj extends BasicObj  {
             //
             PointerBuffer dataPtr = memAllocPointer(1);
             long BO = byteOffset;
-            long BS = byteLength != 0 ? byteLength : Math.min(((VkMemoryAllocateInfo)this.allocInfo).allocationSize(), byteLength);
+            long BS = (byteLength != 0 || byteLength == VK_WHOLE_SIZE) ? byteLength : Math.min(((VkMemoryAllocateInfo)this.allocInfo).allocationSize(), byteLength);
+            long BM = BS == VK_WHOLE_SIZE || BS < 0 ? ((VkMemoryAllocateInfo)this.allocInfo).allocationSize() : BS;
 
             //
-            vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr);
-            return memByteBuffer(dataPtr.get(0), (int) BS);
+            if (mapped) { this.unmap(); };
+            vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr); mapped = true;
+            return memByteBuffer(dataPtr.get(0), (int)BM);
         }
 
         public void unmap() {
@@ -119,7 +122,8 @@ public class MemoryAllocatorObj extends BasicObj  {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
-            vkUnmapMemory(deviceObj.device, this.handle.get());
+            //
+            vkUnmapMemory(deviceObj.device, this.handle.get()); mapped = false;
         }
     }
 
