@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
@@ -51,6 +52,7 @@ public class MemoryAllocationObj extends BasicObj {
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
         var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
 
+        // TODO: add support for synchronize to host
         return deviceMemoryObj.map(byteLength, this.memoryOffset + byteOffset);
     }
 
@@ -61,6 +63,18 @@ public class MemoryAllocationObj extends BasicObj {
         var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
 
         deviceMemoryObj.unmap();
+
+        // TODO: for OpenGL needs semaphores
+        /*if (this.isBuffer) {
+            // TODO: fix queue family indices support
+            deviceObj.submitOnce(deviceObj.getCommandPool(0), new BasicCInfo.SubmitCmd() {{
+                queue = deviceObj.getQueue(0, 0);
+
+            }}, (cmdBuf) -> {
+                ((BufferObj)this).cmdSynchronizeFromHost(cmdBuf);
+                return null;
+            });
+        }*/
     }
 
     public PointerBuffer getWin32Handle() {
