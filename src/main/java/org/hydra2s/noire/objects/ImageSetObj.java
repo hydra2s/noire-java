@@ -44,7 +44,7 @@ public class ImageSetObj extends BasicObj  {
         this.writingImageViews = new ArrayList<ImageViewObj>();
 
         //
-        for (var I=0;I<cInfo.formats.capacity();I++) {
+        for (var I=0;I<cInfo.formats.remaining();I++) {
             var fI = I;
             var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
                 isHost = false;

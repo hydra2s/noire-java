@@ -109,7 +109,7 @@ public class InstanceObj extends BasicObj {
             VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = PointerBuffer.allocateDirect(1));
 
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
-            for (int I = 0; I < this.physicalDeviceAmount.capacity(); I++) {
+            for (int I = 0; I < this.physicalDeviceAmount.remaining(); I++) {
                 this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new Handle("PhysicalDevice", this.physicalDevices.get(I))));
             }
         }

@@ -374,7 +374,7 @@ public class RendererObj extends BasicObj  {
         this.promises = new ArrayList<Promise<Integer>>();
 
         // EXAMPLE!
-        for (var I=0;I<fences.capacity();I++) {
+        for (var I=0;I<fences.remaining();I++) {
             vkCreateFence(logicalDevice.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fences.slice(I, 1));
             this.promises.add(new Promise<Integer>());
         }

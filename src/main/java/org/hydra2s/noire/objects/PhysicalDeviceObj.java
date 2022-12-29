@@ -154,7 +154,7 @@ public class PhysicalDeviceObj extends BasicObj {
 
             //
             var formats = VkSurfaceFormat2KHR.create(capability.formatCount.get(0));
-            for (var I=0;I<formats.capacity();I++) { formats.get(I).sType(VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR); };
+            for (var I=0;I<formats.remaining();I++) { formats.get(I).sType(VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR); };
             org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(
                 this.physicalDevice, surfaceInfo, capability.formatCount,
                 capability.formats2 = formats);

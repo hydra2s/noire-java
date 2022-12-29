@@ -88,7 +88,7 @@ public class DeviceObj extends BasicObj {
         //
         var deviceExtensions = (List<Long>)(extbuf.stream().filter((Ep) -> {
             Boolean found = false;
-            for (int K = 0; K < physicalDeviceObj.extensions.capacity(); K++) {
+            for (int K = 0; K < physicalDeviceObj.extensions.remaining(); K++) {
                 String X = MemoryUtil.memUTF8(physicalDeviceObj.extensions.get(K).extensionName());
                 String E = MemoryUtil.memUTF8(Ep);
                 if (X.contains(E)) {
@@ -101,7 +101,7 @@ public class DeviceObj extends BasicObj {
 
         // Extensions
         this.extensions = PointerBuffer.allocateDirect(deviceExtensions.size());
-        for (int I = 0; I < this.extensions.capacity(); I++) {
+        for (int I = 0; I < this.extensions.remaining(); I++) {
             this.extensions.put(I, deviceExtensions.get(I));
         }
         this.queueFamiliesCInfo = org.lwjgl.vulkan.VkDeviceQueueCreateInfo.create(cInfo.queueFamilies.size());
@@ -200,7 +200,7 @@ public class DeviceObj extends BasicObj {
             .pWaitDstStageMask(cmd.dstStageMask)
             .pSignalSemaphores(cmd.signalSemaphores)
             .pWaitSemaphores(cmd.waitSemaphores)
-            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.capacity() : 0), fence.get(0));
+            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0), fence.get(0));
 
         //
         var ref = new Object() { Function<LongBuffer, Integer> deallocProcess = null; };

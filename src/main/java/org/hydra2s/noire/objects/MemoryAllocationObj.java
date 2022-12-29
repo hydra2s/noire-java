@@ -118,10 +118,10 @@ public class MemoryAllocationObj extends BasicObj {
         var srcImage = this.handle.get();
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.capacity()*2);
+        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.remaining()*2);
 
         // TODO: support a correct buffer size
-        IntStream.range(0, regions.capacity()).forEachOrdered((I)->{
+        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate).image(dstImage).oldLayout(dstImageLayout).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.create()
                 .aspectMask(regions.get(I).dstSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
@@ -173,11 +173,11 @@ public class MemoryAllocationObj extends BasicObj {
         var srcImage = this.handle.get();
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.capacity());
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(regions.capacity());
+        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.remaining());
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(regions.remaining());
 
         // TODO: support a correct buffer size
-        IntStream.range(0, regions.capacity()).forEachOrdered((I)->{
+        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I, readMemoryBarrierTemplate).image(srcImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.create()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
@@ -223,11 +223,11 @@ public class MemoryAllocationObj extends BasicObj {
         var dstImage = image;
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.capacity());
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(regions.capacity());
+        var imageMemoryBarrier = VkImageMemoryBarrier2.create(regions.remaining());
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(regions.remaining());
 
         // TODO: support a correct buffer size
-        IntStream.range(0, regions.capacity()).forEachOrdered((I)->{
+        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I, writeMemoryBarrierTemplate).image(dstImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.create()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
@@ -273,8 +273,8 @@ public class MemoryAllocationObj extends BasicObj {
         var dstBuffer = buffer;
 
         //
-        var memoryBarriers = VkBufferMemoryBarrier2.create(regions.capacity()*2);
-        IntStream.range(0, regions.capacity()).forEachOrdered((I)->{
+        var memoryBarriers = VkBufferMemoryBarrier2.create(regions.remaining()*2);
+        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             memoryBarriers.put(I*2+0, readMemoryBarrierTemplate).offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
             memoryBarriers.put(I*2+1, writeMemoryBarrierTemplate).offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
         });

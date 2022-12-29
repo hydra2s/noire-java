@@ -194,7 +194,7 @@ public class SwapChainObj extends BasicObj  {
 
     //
     public int getFormat() { return this.createInfo.imageFormat(); }
-    public int getImageCount() { return this.images.capacity(); }
+    public int getImageCount() { return this.images.remaining(); }
     public int getColorSpace() { return this.createInfo.imageColorSpace(); }
     public LongBuffer getImages() { return this.images; }
     public ArrayList<MemoryAllocationObj.ImageObj> getImagesObj() { return this.imagesObj; }

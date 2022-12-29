@@ -241,9 +241,9 @@ public class PipelineObj extends BasicObj  {
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
-            var fbClearC = VkClearAttachment.create(fbLayout.formats.capacity());
-            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.capacity());
-            for (var I=0;I<fbLayout.formats.capacity();I++) {
+            var fbClearC = VkClearAttachment.create(fbLayout.formats.remaining());
+            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.remaining());
+            for (var I=0;I<fbLayout.formats.remaining();I++) {
                 fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
                 fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
                 fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());

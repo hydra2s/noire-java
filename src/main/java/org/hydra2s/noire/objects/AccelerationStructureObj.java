@@ -50,8 +50,8 @@ public class AccelerationStructureObj extends BasicObj {
 
         //
         this.geometryData = VkAccelerationStructureGeometryDataKHR.create(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? 1 : cInfo.geometries.size());
-        this.primitiveCount = memAllocInt(this.geometryData.capacity());
-        this.geometryInfo = VkAccelerationStructureGeometryKHR.create(this.geometryData.capacity())
+        this.primitiveCount = memAllocInt(this.geometryData.remaining());
+        this.geometryInfo = VkAccelerationStructureGeometryKHR.create(this.geometryData.remaining())
                 .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
                 .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR);
 
@@ -105,7 +105,7 @@ public class AccelerationStructureObj extends BasicObj {
             .type(this.ASLevel)
             .mode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
             .flags(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR)
-            .geometryCount(this.geometryInfo.capacity())
+            .geometryCount(this.geometryInfo.remaining())
             .pGeometries(this.geometryInfo)
             .ppGeometries(null);
 
