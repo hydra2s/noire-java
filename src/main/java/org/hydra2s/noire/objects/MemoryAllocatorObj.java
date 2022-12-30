@@ -79,22 +79,22 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             vkAllocateMemory(deviceObj.device, this.allocInfo =
-                VkMemoryAllocateInfo.create()
+                VkMemoryAllocateInfo.calloc()
                     .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                     .memoryTypeIndex(memoryTypeIndex)
                     .allocationSize(cInfo.memoryRequirements.size())
-                    .pNext(VkMemoryAllocateFlagsInfo.create()
+                    .pNext(VkMemoryAllocateFlagsInfo.calloc()
                         .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
                         .flags(cInfo.buffer != null ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0)
-                        .pNext(VkMemoryDedicatedAllocateInfo.create()
-                            .pNext(VkExportMemoryAllocateInfo.create()
+                        .pNext(VkMemoryDedicatedAllocateInfo.calloc()
+                            .pNext(VkExportMemoryAllocateInfo.calloc()
                                 .sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO)
                                 .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
                             .sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
                         .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1));
 
             // TODO: Linux support
-            vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
+            vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
 
             //
             deviceObj.handleMap.put(this.handle, this);

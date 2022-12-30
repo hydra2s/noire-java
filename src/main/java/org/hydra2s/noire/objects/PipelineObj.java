@@ -31,7 +31,7 @@ public class PipelineObj extends BasicObj  {
 
     //
     public VkPipelineShaderStageCreateInfo createShaderModuleInfo(long module, int stage, CharSequence pName){
-        return VkPipelineShaderStageCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO).flags(0).module(module).stage(stage).pName(memUTF8(pName)).pSpecializationInfo(null);
+        return VkPipelineShaderStageCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO).flags(0).module(module).stage(stage).pName(memUTF8(pName)).pSpecializationInfo(null);
     }
 
     public static class ComputePipelineObj extends PipelineObj {
@@ -52,7 +52,7 @@ public class PipelineObj extends BasicObj  {
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
-            this.createInfo = VkComputePipelineCreateInfo.create(1)
+            this.createInfo = VkComputePipelineCreateInfo.calloc(1)
                     .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
                     .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
                     .stage(createShaderModuleInfo(deviceObj.createShaderModule(cInfo.computeCode), VK_SHADER_STAGE_COMPUTE_BIT, "main"))
@@ -79,7 +79,7 @@ public class PipelineObj extends BasicObj  {
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.handle.get());
             vkCmdDispatch(cmdBuf, dispatch.width(), dispatch.height(), dispatch.depth());
-            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
                 .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
                 .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
                 .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
@@ -130,23 +130,23 @@ public class PipelineObj extends BasicObj  {
             boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
 
             //
-            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
+            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.calloc(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
             cInfo.sourceMap.forEach((stage, source)->{
                 this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
             });
 
             //
-            this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            this.viewportStateInfo = VkPipelineViewportStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
-            this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-            this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-            this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-            this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-            this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
-            this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-            this.createInfo = VkGraphicsPipelineCreateInfo.create(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+            this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+            this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+            this.viewportStateInfo = VkPipelineViewportStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+            this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
+            this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
+            this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+            this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
+            this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+            this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+            this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+            this.createInfo = VkGraphicsPipelineCreateInfo.calloc(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             this.dynamicStates = memAllocInt(3);
 
             //
@@ -241,8 +241,8 @@ public class PipelineObj extends BasicObj  {
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
-            var fbClearC = VkClearAttachment.create(fbLayout.formats.remaining());
-            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.remaining());
+            var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
+            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
             for (var I=0;I<fbLayout.formats.remaining();I++) {
                 fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
                 fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
@@ -273,7 +273,7 @@ public class PipelineObj extends BasicObj  {
             };
 
             //
-            vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.create()
+            vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.calloc()
                 .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
                 .pColorAttachments(fbLayout.attachmentInfos)
                 .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
@@ -294,17 +294,17 @@ public class PipelineObj extends BasicObj  {
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
             vkCmdSetVertexInputEXT(cmdBuf, null, null);
-            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.create(1).put(0, fbLayout.scissor));
-            vkCmdSetViewportWithCount(cmdBuf, VkViewport.create(1).put(0, fbLayout.viewport));
+            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
+            vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
             if (multiDraw != null) {
                 vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
             } else {
-                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
                 if (hasDepthStencil) {
-                    vkCmdClearAttachments(cmdBuf, VkClearAttachment.create(1)
+                    vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
                         .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
                         .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
-                        .colorAttachment(0), VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
+                        .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
                 }
             }
             vkCmdEndRendering(cmdBuf);

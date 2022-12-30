@@ -49,6 +49,6 @@ public class WindowObj extends BasicObj  {
     public VkExtent2D getWindowSize() {
         IntBuffer size = memAllocInt(2);
         glfwGetWindowSize(this.handle.get(), size.slice(0, 1), size.slice(1, 1));
-        return (((WindowCInfo)this.cInfo).size = VkExtent2D.create().width(size.get(0)).height(size.get(1)));
+        return (((WindowCInfo)this.cInfo).size = VkExtent2D.calloc().width(size.get(0)).height(size.get(1)));
     }
 }

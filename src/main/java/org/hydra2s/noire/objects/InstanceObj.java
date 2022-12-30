@@ -66,7 +66,7 @@ public class InstanceObj extends BasicObj {
         //
         this.layersAmount = memAllocInt(1);
         VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, null);
-        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.create(this.layersAmount.get(0)));
+        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.calloc(this.layersAmount.get(0)));
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
@@ -79,17 +79,17 @@ public class InstanceObj extends BasicObj {
         //
         this.extensionAmount = memAllocInt(1);
         VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, null);
-        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.create(this.extensionAmount.get(0)));
+        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.calloc(this.extensionAmount.get(0)));
 
         // TODO: Handle VkResult!!
-        this.appInfo = VkApplicationInfo.create(1)
+        this.appInfo = VkApplicationInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
                 .pApplicationName(MemoryUtil.memUTF8("NoireTest"))
                 .pEngineName(MemoryUtil.memUTF8("Noire"))
                 .apiVersion(VK13.VK_API_VERSION_1_3)
                 .engineVersion(VK10.VK_MAKE_VERSION(1, 0, 0))
                 .applicationVersion(VK10.VK_MAKE_VERSION(1, 0, 0));
-        this.instanceInfo = VkInstanceCreateInfo.create(1)
+        this.instanceInfo = VkInstanceCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
                 .pApplicationInfo(this.appInfo.get(0))
                 .ppEnabledExtensionNames(this.extensions)

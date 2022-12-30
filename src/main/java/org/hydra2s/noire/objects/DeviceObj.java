@@ -104,7 +104,7 @@ public class DeviceObj extends BasicObj {
         for (int I = 0; I < this.extensions.remaining(); I++) {
             this.extensions.put(I, deviceExtensions.get(I));
         }
-        this.queueFamiliesCInfo = org.lwjgl.vulkan.VkDeviceQueueCreateInfo.create(cInfo.queueFamilies.size());
+        this.queueFamiliesCInfo = org.lwjgl.vulkan.VkDeviceQueueCreateInfo.calloc(cInfo.queueFamilies.size());
         this.queueFamilyIndices = memAllocInt(cInfo.queueFamilies.size());
 
         //
@@ -122,7 +122,7 @@ public class DeviceObj extends BasicObj {
         }
 
         // TODO: Handle VkResult!!
-        var result = VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.create()
+        var result = VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.calloc()
                 .pNext(physicalDeviceObj.deviceFeatures.address())
                 .sType(VK10.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO)
                 .pQueueCreateInfos(this.queueFamiliesCInfo)
@@ -137,7 +137,7 @@ public class DeviceObj extends BasicObj {
         //
         for (int Q = 0; Q < cInfo.queueFamilies.size(); Q++) {
             var qfi = this.queueFamilyIndices.get(Q);
-            VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.create().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).cmdPool);
+            VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).cmdPool);
         }
     }
 
@@ -148,7 +148,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public long createShaderModule(ByteBuffer shaderSrc){
-        var shaderModuleInfo = VkShaderModuleCreateInfo.create().sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO).pCode(shaderSrc);
+        var shaderModuleInfo = VkShaderModuleCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO).pCode(shaderSrc);
         var shaderModule = memAllocLong(1);
         vkCreateShaderModule(device, shaderModuleInfo, null, shaderModule);
         return shaderModule.get(0);
@@ -182,7 +182,7 @@ public class DeviceObj extends BasicObj {
     }
 
     public VkCommandBuffer writeCommand(VkCommandBuffer cmdBuf, Function<VkCommandBuffer, Integer> fn) {
-        vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.create()
+        vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT));
         fn.apply(cmdBuf);
@@ -193,8 +193,8 @@ public class DeviceObj extends BasicObj {
     //
     public LongBuffer submitCommand(BasicCInfo.SubmitCmd cmd) {
         LongBuffer fence = memAllocLong(1);
-        vkCreateFence(this.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
-        vkQueueSubmit(cmd.queue, VkSubmitInfo.create(1)
+        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
+        vkQueueSubmit(cmd.queue, VkSubmitInfo.calloc(1)
             .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
             .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
             .pWaitDstStageMask(cmd.dstStageMask)
@@ -223,7 +223,7 @@ public class DeviceObj extends BasicObj {
     //
     public VkCommandBuffer allocateCommand(long commandPool) {
         PointerBuffer commands = memAllocPointer(1);
-        vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.create()
+        vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
             .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
             .commandPool(commandPool)
@@ -235,7 +235,7 @@ public class DeviceObj extends BasicObj {
     //
     public LongBuffer submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         //
-        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.create()
+        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
         fn.apply(submitCmd.cmdBuf);

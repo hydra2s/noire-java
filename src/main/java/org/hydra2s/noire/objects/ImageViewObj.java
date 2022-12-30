@@ -39,13 +39,13 @@ public class ImageViewObj extends BasicObj {
         if (cInfo.isCubemap)            { imageViewType = (cInfo.subresourceRange.layerCount() > 6 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE); };
 
         //
-        vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.create().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, memLongBuffer(memAddress((this.handle = new Handle("ImageView")).ptr(), 0), 1));
+        vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, memLongBuffer(memAddress((this.handle = new Handle("ImageView")).ptr(), 0), 1));
         deviceObj.handleMap.put(this.handle, this);
 
         //
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
-            this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
+            this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.calloc().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
             descriptorsObj.writeDescriptors();
         }
 
@@ -60,7 +60,7 @@ public class ImageViewObj extends BasicObj {
     //
     public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
         var subresourceRange = this.subresourceRange();
-        return VkImageSubresourceLayers.create()
+        return VkImageSubresourceLayers.calloc()
             .aspectMask(subresourceRange.aspectMask())
             .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
             .baseArrayLayer(subresourceRange.baseArrayLayer())
@@ -87,7 +87,7 @@ public class ImageViewObj extends BasicObj {
 
         //
         srcBufferObj.cmdCopyBufferToImage(cmdBuf, ((ImageViewCInfo)cInfo).image,
-            ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.create(1)
+            ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
                 .bufferOffset(srcOffset)
                 .imageOffset(dstOffset).imageExtent(extent)
@@ -149,7 +149,7 @@ public class ImageViewObj extends BasicObj {
 
         //
         srcImageObj.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)cInfo).image, srcImageLayout,
-            ((ImageViewCInfo)cInfo).imageLayout, VkImageCopy2.create(1)
+            ((ImageViewCInfo)cInfo).imageLayout, VkImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
                 .extent(extent)
                 .dstOffset(dstOffset)
