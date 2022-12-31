@@ -8,6 +8,11 @@ project.ext.lwjglNatives = "natives-windows"
 group 'org.hydra2s'
 version '1.0-SNAPSHOT'
 
+wrapper {
+    gradleVersion = '8.1-20221230234309+0000'
+    distributionUrl = distributionUrl.replace("bin", "all")
+}
+
 repositories {
     mavenCentral()
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
