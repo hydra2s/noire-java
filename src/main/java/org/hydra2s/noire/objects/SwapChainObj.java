@@ -165,6 +165,9 @@ public class SwapChainObj extends BasicObj  {
                     type = "storage";
                 }}));
             }
+
+            //
+            this.amountOfImagesInSwapchain = memAllocInt(1).put(0, cInfo.imageCount);
         }
 
         return this;
@@ -230,12 +233,15 @@ public class SwapChainObj extends BasicObj  {
         @Override
         public int acquireImageIndex(long semaphore) {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var index = this.imageIndex.get(0);
+            this.imageIndex.put(0, (index+1)%this.amountOfImagesInSwapchain.get(0));
+            /* // OpenGL isn't needs it
             deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 waitSemaphores = semaphore != 0 ? memAllocLong(1).put(0, semaphore) : memAllocLong(1).put(0, semaphoreImageAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });
+            });*/
             return this.imageIndex.get(0);
         }
 
@@ -243,12 +249,13 @@ public class SwapChainObj extends BasicObj  {
         @Override
         public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            /* // OpenGL isn't needs it
             deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 waitSemaphores = semaphore != null ? semaphore : memAllocLong(1).put(0, semaphoreRenderingAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });
+            });*/
             return this;
         }
 
