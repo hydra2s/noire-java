@@ -230,32 +230,38 @@ public class SwapChainObj extends BasicObj  {
     // Virtual SwapChain for rendering in virtual surface
     public static class SwapChainVirtual extends SwapChainObj {
         // TODO: support for OpenGL
+        // Here, probably, should to be image barrier operation
         @Override
         public int acquireImageIndex(long semaphore) {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
             var index = this.imageIndex.get(0);
             this.imageIndex.put(0, (index+1)%this.amountOfImagesInSwapchain.get(0));
-            /* // OpenGL isn't needs it
+
+            // blank operation for awaiting OpenGL op
             deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 waitSemaphores = semaphore != 0 ? memAllocLong(1).put(0, semaphore) : memAllocLong(1).put(0, semaphoreImageAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });*/
+            });
+
             return this.imageIndex.get(0);
         }
 
         // TODO: support for OpenGL
+        // Here, probably, should to be image barrier operation
         @Override
         public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            /* // OpenGL isn't needs it
+
+            //
             deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-                waitSemaphores = semaphore != null ? semaphore : memAllocLong(1).put(0, semaphoreRenderingAvailable.getHandle().get());
+                signalSemaphores = semaphore != null ? semaphore : memAllocLong(1).put(0, semaphoreRenderingAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });*/
+            });
+
             return this;
         }
 

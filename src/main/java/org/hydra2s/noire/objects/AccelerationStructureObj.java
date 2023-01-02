@@ -47,57 +47,6 @@ public class AccelerationStructureObj extends BasicObj {
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
-
-        //
-        this.geometryData = VkAccelerationStructureGeometryDataKHR.calloc(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? 1 : cInfo.geometries.size());
-        this.primitiveCount = memAllocInt(this.geometryData.remaining());
-        this.geometryInfo = VkAccelerationStructureGeometryKHR.calloc(this.geometryData.remaining())
-                .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
-                .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR);
-
-        //
-        if (this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
-        {
-            this.geometryData.instances(VkAccelerationStructureGeometryInstancesDataKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR)
-                .arrayOfPointers(false)
-                .data(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(cInfo.instances.instanceBinding.address))
-            );
-            this.geometryInfo.geometry(this.geometryData.get(0));
-            this.geometryInfo.flags((cInfo.instances.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
-            this.primitiveCount.put(0, cInfo.instances.instanceBinding.vertexCount);
-        } else
-        {
-            IntStream.range(0, cInfo.geometries.size()).forEachOrdered((I)->{
-                var triangles = VkAccelerationStructureGeometryTrianglesDataKHR.calloc()
-                    .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR)
-                    .indexType(VK_INDEX_TYPE_NONE_KHR)
-                    .transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L))
-                    .indexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L));
-
-                var geometryI = cInfo.geometries.get(I);
-                if (geometryI.vertexBinding != null) {
-                    triangles
-                        .vertexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.vertexBinding.address))
-                        .vertexFormat(geometryI.vertexBinding.format)
-                        .vertexStride(geometryI.vertexBinding.stride)
-                        .maxVertex(geometryI.vertexBinding.vertexCount);
-                }
-                if (geometryI.indexBinding != null) {
-                    triangles
-                        .indexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.indexBinding.address))
-                        .indexType(geometryI.indexBinding.type)
-                        .maxVertex(geometryI.indexBinding.vertexCount);
-                }
-
-                //
-                this.primitiveCount.put(I, triangles.maxVertex()/3);
-                this.geometryData.get(I).triangles(triangles);
-                this.geometryInfo.get(I).geometry(this.geometryData.get(I));
-                this.geometryInfo.get(I).flags((geometryI.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
-            });
-        }
-
         //
         this.geometryBuildInfo = VkAccelerationStructureBuildGeometryInfoKHR.calloc(1)
             .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR)
@@ -105,24 +54,21 @@ public class AccelerationStructureObj extends BasicObj {
             .type(this.ASLevel)
             .mode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR)
             .flags(VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR)
-            .geometryCount(this.geometryInfo.remaining())
-            .pGeometries(this.geometryInfo)
             .ppGeometries(null);
+
+        //
+        this.recallGeometryInfo();
 
         //
         this.buildSizeInfo = VkAccelerationStructureBuildSizesInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR);
         vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(0), this.primitiveCount, this.buildSizeInfo);
 
         //
-        var buildSizeInfo = this.buildSizeInfo;
-        var accelSize = buildSizeInfo.accelerationStructureSize();
-
-        //
         this.ASStorageBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
             isHost = false;
             isDevice = true;
             memoryAllocator = cInfo.memoryAllocator;
-            size = accelSize;
+            size = buildSizeInfo.accelerationStructureSize();
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
         }});
         this.ASStorageBarrier = VkBufferMemoryBarrier2.calloc()
@@ -136,10 +82,10 @@ public class AccelerationStructureObj extends BasicObj {
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASStorageBuffer.handle.get())
             .offset(0)
-            .size(accelSize);
+            .size(this.buildSizeInfo.accelerationStructureSize());
 
         //
-        var scratchSize = Math.max(buildSizeInfo.buildScratchSize(), buildSizeInfo.updateScratchSize());
+        var scratchSize = Math.max(this.buildSizeInfo.buildScratchSize(), this.buildSizeInfo.updateScratchSize());
         this.ASScratchBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
             isHost = false;
             isDevice = true;
@@ -161,13 +107,79 @@ public class AccelerationStructureObj extends BasicObj {
             .size(scratchSize);
 
         //
-        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(accelSize).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
+        vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(this.buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
         deviceObj.handleMap.put(this.handle, this);
 
         //
         this.deviceAddress = this.getDeviceAddress();
         this.geometryBuildInfo.dstAccelerationStructure(this.handle.get());
         this.geometryBuildInfo.scratchData(VkDeviceOrHostAddressKHR.calloc().deviceAddress(this.ASScratchBuffer.getDeviceAddress()));
+    }
+
+    //
+    public AccelerationStructureObj recallGeometryInfo() {
+        var cInfo = (AccelerationStructureCInfo)this.cInfo;
+
+        //
+        this.geometryData = VkAccelerationStructureGeometryDataKHR.calloc(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? 1 : cInfo.geometries.size());
+        this.primitiveCount = memAllocInt(this.geometryData.remaining());
+        this.geometryInfo = VkAccelerationStructureGeometryKHR.calloc(this.geometryData.remaining())
+            .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
+            .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR);
+
+        //
+        if (this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+        {
+            this.geometryData.instances(VkAccelerationStructureGeometryInstancesDataKHR.calloc()
+                .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR)
+                .arrayOfPointers(false)
+                .data(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(cInfo.instances.instanceBinding.address))
+            );
+            this.geometryInfo.geometry(this.geometryData.get(0));
+            this.geometryInfo.flags((cInfo.instances.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
+            this.primitiveCount.put(0, cInfo.instances.instanceBinding.vertexCount);
+        } else
+        {
+            IntStream.range(0, cInfo.geometries.size()).forEachOrdered((I)->{
+                var triangles = VkAccelerationStructureGeometryTrianglesDataKHR.calloc()
+                        .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR)
+                        .indexType(VK_INDEX_TYPE_NONE_KHR)
+                        .transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L))
+                        .indexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L));
+
+                var geometryI = cInfo.geometries.get(I);
+                if (geometryI.vertexBinding != null) {
+                    triangles
+                        .vertexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.vertexBinding.address))
+                        .vertexFormat(geometryI.vertexBinding.format)
+                        .vertexStride(geometryI.vertexBinding.stride)
+                        .maxVertex(geometryI.vertexBinding.vertexCount);
+                }
+
+                if (geometryI.indexBinding != null) {
+                    triangles
+                        .indexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.indexBinding.address))
+                        .indexType(geometryI.indexBinding.type)
+                        .maxVertex(geometryI.indexBinding.vertexCount);
+                }
+
+                //
+                this.primitiveCount.put(I, triangles.maxVertex()/3);
+                this.geometryInfo.get(I)
+                    .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR)
+                    .geometryType(this.ASLevel == VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR ? VK_GEOMETRY_TYPE_INSTANCES_KHR : VK_GEOMETRY_TYPE_TRIANGLES_KHR)
+                    .geometry(this.geometryData.get(I).triangles(triangles))
+                    .flags((geometryI.opaque ? VK_GEOMETRY_OPAQUE_BIT_KHR : 0) | VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR);
+            });
+        }
+
+        //
+        this.geometryBuildInfo
+            .geometryCount(this.geometryInfo.remaining())
+            .pGeometries(this.geometryInfo);
+
+        //
+        return this;
     }
 
     //

@@ -34,7 +34,7 @@ public class BasicObj {
     //
     protected Handle base = new Handle("Unknown", 0);
     protected Handle handle = new Handle("Unknown", 0);
-    protected BasicCInfo cInfo = null;
+    public BasicCInfo cInfo = null;
 
     //
     public static HashMap<Long, BasicObj> globalHandleMap = new HashMap<Long, BasicObj>();
