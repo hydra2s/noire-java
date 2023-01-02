@@ -35,6 +35,7 @@ public class DataCInfo extends BasicCInfo {
         public boolean opaque = false;
         public DataCInfo.VertexBindingCInfo vertexBinding = null;
         public DataCInfo.IndexBindingCInfo indexBinding = null;
+        public long transformAddress = 0L;
     }
 
 }

@@ -297,7 +297,7 @@ public class PipelineObj extends BasicObj  {
             vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
             vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
             if (multiDraw != null) {
-                vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
+                vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, 8);
             } else {
                 vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
                 if (hasDepthStencil) {

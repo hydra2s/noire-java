@@ -163,6 +163,8 @@ public class AccelerationStructureObj extends BasicObj {
                         .maxVertex(geometryI.indexBinding.vertexCount);
                 }
 
+                triangles.transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.transformAddress));
+
                 //
                 this.primitiveCount.put(I, triangles.maxVertex()/3);
                 this.geometryInfo.get(I)

@@ -54,7 +54,7 @@ public class PipelineLayoutObj extends BasicObj  {
     //
     protected MemoryAllocationObj.BufferObj resourceDescriptorBuffer = null;
     protected MemoryAllocationObj.BufferObj samplerDescriptorBuffer = null;
-    protected MemoryAllocationObj.BufferObj uniformDescriptorBuffer = null;
+    public MemoryAllocationObj.BufferObj uniformDescriptorBuffer = null;
 
     //
     protected LongBuffer offsets = memAllocLong(3);
