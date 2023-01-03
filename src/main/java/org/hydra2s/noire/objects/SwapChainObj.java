@@ -238,12 +238,12 @@ public class SwapChainObj extends BasicObj  {
             this.imageIndex.put(0, (index+1)%this.amountOfImagesInSwapchain.get(0));
 
             // blank operation for awaiting OpenGL op
-            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            /*deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 waitSemaphores = semaphore != 0 ? memAllocLong(1).put(0, semaphore) : memAllocLong(1).put(0, semaphoreImageAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });
+            });*/
 
             return this.imageIndex.get(0);
         }
@@ -255,12 +255,12 @@ public class SwapChainObj extends BasicObj  {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
 
             //
-            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            /*deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 signalSemaphores = semaphore != null ? semaphore : memAllocLong(1).put(0, semaphoreRenderingAvailable.getHandle().get());
                 queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             }}, (cmdBuf)->{
                 return VK_SUCCESS;
-            });
+            });*/
 
             return this;
         }

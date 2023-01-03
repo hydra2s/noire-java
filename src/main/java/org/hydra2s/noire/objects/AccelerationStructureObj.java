@@ -76,8 +76,8 @@ public class AccelerationStructureObj extends BasicObj {
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
             .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
-            .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
-            .dstAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_READ_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_READ_BIT)
             .srcQueueFamilyIndex(~0)
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASStorageBuffer.handle.get())
@@ -97,9 +97,9 @@ public class AccelerationStructureObj extends BasicObj {
             .pNext(0L)
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
-            .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR)
-            .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
-            .dstAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
+            .srcAccessMask(VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
+            .dstStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR)
             .srcQueueFamilyIndex(~0)
             .dstQueueFamilyIndex(~0)
             .buffer(this.ASScratchBuffer.handle.get())
@@ -141,13 +141,13 @@ public class AccelerationStructureObj extends BasicObj {
         } else
         {
             IntStream.range(0, cInfo.geometries.size()).forEachOrdered((I)->{
+                var geometryI = cInfo.geometries.get(I);
                 var triangles = VkAccelerationStructureGeometryTrianglesDataKHR.calloc()
                         .sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR)
                         .indexType(VK_INDEX_TYPE_NONE_KHR)
-                        .transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L))
+                        .transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.transformAddress))
                         .indexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(0L));
 
-                var geometryI = cInfo.geometries.get(I);
                 if (geometryI.vertexBinding != null) {
                     triangles
                         .vertexData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.vertexBinding.address))
@@ -162,8 +162,6 @@ public class AccelerationStructureObj extends BasicObj {
                         .indexType(geometryI.indexBinding.type)
                         .maxVertex(geometryI.indexBinding.vertexCount);
                 }
-
-                triangles.transformData(VkDeviceOrHostAddressConstKHR.calloc().deviceAddress(geometryI.transformAddress));
 
                 //
                 this.primitiveCount.put(I, triangles.maxVertex()/3);
