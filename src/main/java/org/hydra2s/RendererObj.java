@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -82,15 +81,6 @@ public class RendererObj extends BasicObj {
 
 
         //
-        return this;
-    }
-
-    //
-    public RendererObj submitOnce(Function<VkCommandBuffer, Integer> fx) {
-        this.logicalDevice.submitOnce(logicalDevice.getCommandPool(0), new BasicCInfo.SubmitCmd(){{
-            queue = logicalDevice.getQueue(0, 0);
-
-        }}, fx);
         return this;
     }
 
@@ -248,8 +238,9 @@ public class RendererObj extends BasicObj {
         }});
 
         //
-        this.submitOnce((cmdBuf)->{
-
+        this.logicalDevice.submitOnce(logicalDevice.getCommandPool(0), new BasicCInfo.SubmitCmd(){{
+            queue = logicalDevice.getQueue(0, 0);
+        }}, (cmdBuf)->{
             triangleBuffer.cmdSynchronizeFromHost(cmdBuf);
             this.bottomLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
                             .primitiveCount(1)
@@ -282,14 +273,14 @@ public class RendererObj extends BasicObj {
             this.process.next();
         } else {
             if (this.process != null) { this.process = null; };
-            this.process = this.generate().iterator();
+            this.process = this.generateRenderThread().iterator();
         }
 
         //
         return this;
     };
 
-    public Generator<Integer> generate() {
+    public Generator<Integer> generateRenderThread() {
         return (this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
@@ -321,7 +312,7 @@ public class RendererObj extends BasicObj {
     }
 
     //
-    public RendererObj createResultCmds() {
+    public RendererObj createResultCommands() {
 
         for (var I=0;I<this.swapchain.getImageCount();I++) {
             var cmdBuf = this.logicalDevice.allocateCommand(this.logicalDevice.getCommandPool(0));
@@ -352,7 +343,7 @@ public class RendererObj extends BasicObj {
     }
 
     //
-    public RendererObj prepare() {
+    public RendererObj prepareToRendering() {
 
         return this;
     }
@@ -389,7 +380,9 @@ public class RendererObj extends BasicObj {
         }
 
         //
-        this.submitOnce((cmdBuf)->{
+        this.logicalDevice.submitOnce(logicalDevice.getCommandPool(0), new BasicCInfo.SubmitCmd(){{
+            queue = logicalDevice.getQueue(0, 0);
+        }}, (cmdBuf)->{
             this.swapchain.imageViews.forEach((img)->{
                 img.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, true);
             });
@@ -416,9 +409,9 @@ public class RendererObj extends BasicObj {
         this.initializer();
         this.createPipelines();
         this.createWindow();
-        this.prepare();
+        this.prepareToRendering();
         this.createAccelerationStructures();
-        this.createResultCmds();
+        this.createResultCommands();
     }
 
     //
@@ -428,9 +421,9 @@ public class RendererObj extends BasicObj {
         this.initializer();
         this.createPipelines();
         this.createWindow();
-        this.prepare();
+        this.prepareToRendering();
         this.createAccelerationStructures();
-        this.createResultCmds();
+        this.createResultCommands();
     }
 
 }
