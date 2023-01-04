@@ -3,18 +3,14 @@ package org.hydra2s.noire.objects;
 //
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.stream.IntStream;
 
-//
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
@@ -24,11 +20,28 @@ import static org.lwjgl.vulkan.VK12.VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 import static org.lwjgl.vulkan.VK12.vkGetBufferDeviceAddress;
 import static org.lwjgl.vulkan.VK13.*;
 
-//
+// currently, is a part of device memory object
+// in the future, probably, planned to use modular system with buffer or image, instead of inheritance
+// not sure about that
 public class MemoryAllocationObj extends BasicObj {
 
-    //
-    public long memoryOffset = 0;
+    // important for VMA or other allocators
+    public long memoryOffset = 0L;
+
+    // reserved for future usage
+    //public long memorySize = 0L;
+
+    // reserved for VMA, or any other
+    // reserved due unable to store as main handle
+    // as handle already used vulkan buffer or image
+    // in the future, probably, planned to use modular system with buffer or image, instead of inheritance
+    // not sure about that
+    public long allocationHandle = 0L;
+    public Object allocationInfo = null;
+    public long allocationInfoAddress = 0L;
+
+    // probably, will be replaced by modules
+    // not sure about that
     public boolean isBuffer = false;
     public boolean isImage = false;
 
@@ -43,7 +56,6 @@ public class MemoryAllocationObj extends BasicObj {
     public MemoryAllocationObj(Handle base, MemoryAllocationCInfo handle) {
         super(base, handle);
     }
-
 
     //
     public ByteBuffer map(long byteLength, long byteOffset) {
@@ -287,10 +299,10 @@ public class MemoryAllocationObj extends BasicObj {
         return this;
     }
 
-
-
     //
     // DEFAULT IS ResizableBAR!
+    // probably, will be replaced by modules for allocation
+    // not sure about that
     static public class BufferObj extends MemoryAllocationObj {
         public VkBufferCreateInfo createInfo = null;
         public long deviceAddress = 0L;
@@ -382,6 +394,8 @@ public class MemoryAllocationObj extends BasicObj {
     }
 
     //
+    // probably, will be replaced by modules for allocation
+    // not sure about that
     static public class ImageObj extends MemoryAllocationObj {
         public VkImageCreateInfo createInfo = null;
         public ImageObj(Handle base, Handle handle) {

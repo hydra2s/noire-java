@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.lwjgl.vulkan.*;
 
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
@@ -33,6 +35,27 @@ public class PipelineObj extends BasicObj  {
     public VkPipelineShaderStageCreateInfo createShaderModuleInfo(long module, int stage, CharSequence pName){
         return VkPipelineShaderStageCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO).flags(0).module(module).stage(stage).pName(memUTF8(pName)).pSpecializationInfo(null);
     }
+
+    //
+    public MemoryAllocationObj.BufferObj uniformDescriptorBuffer = null;
+
+    //
+    public static class ComputeDispatchInfo {
+        public VkExtent3D dispatch = VkExtent3D.calloc().width(1).height(1).depth(1);
+        public ByteBuffer pushConstRaw = null;
+        public int pushConstByteOffset = 0;
+        public boolean useOnboardUniform = false;
+    }
+
+    public static class GraphicsDrawInfo {
+        public VkMultiDrawInfoEXT.Buffer multiDraw = null;
+        public long imageSet = 0L;
+        public ByteBuffer pushConstRaw = null;
+        public int pushConstByteOffset = 0;
+        public boolean useOnboardUniform = false;
+    }
+
+    public static final long uniformBufferSize = 2048L;
 
     public static class ComputePipelineObj extends PipelineObj {
 
@@ -61,11 +84,22 @@ public class PipelineObj extends BasicObj  {
             //
             vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
             deviceObj.handleMap.put(this.handle, this);
+
+            //
+            if (cInfo.memoryAllocator != 0) {
+                this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
+                    isHost = true;
+                    isDevice = true;
+                    size = uniformBufferSize;
+                    usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+                    memoryAllocator = cInfo.memoryAllocator;
+                }});
+            }
         }
 
-        public ComputePipelineObj cmdDispatch(VkCommandBuffer cmdBuf, VkExtent3D dispatch, ByteBuffer pushConstRaw, int pushConstByteOffset) {
-            if (pushConstRaw != null) {
-                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, pushConstByteOffset, pushConstRaw);
+        public ComputePipelineObj cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo) {
+            if (cmdInfo.pushConstRaw != null) {
+                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
             }
 
             //
@@ -74,11 +108,11 @@ public class PipelineObj extends BasicObj  {
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
 
             //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.uniformDescriptorBuffer != null && cmdInfo.useOnboardUniform ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
 
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.handle.get());
-            vkCmdDispatch(cmdBuf, dispatch.width(), dispatch.height(), dispatch.depth());
+            vkCmdDispatch(cmdBuf, cmdInfo.dispatch.width(), cmdInfo.dispatch.height(), cmdInfo.dispatch.depth());
             vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
                 .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
                 .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
@@ -230,14 +264,25 @@ public class PipelineObj extends BasicObj  {
             //
             vkCreateGraphicsPipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
             deviceObj.handleMap.put(this.handle, this);
+
+            //
+            if (cInfo.memoryAllocator != 0) {
+                this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
+                    isHost = true;
+                    isDevice = true;
+                    size = uniformBufferSize;
+                    usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+                    memoryAllocator = cInfo.memoryAllocator;
+                }});
+            }
         }
 
         //
-        public GraphicsPipelineObj cmdDraw(VkCommandBuffer cmdBuf, VkMultiDrawInfoEXT.Buffer multiDraw, long imageSet, ByteBuffer pushConstRaw, int pushConstByteOffset) {
+        public GraphicsPipelineObj cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
             var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout));
-            var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", imageSet));
+            var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet));
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
@@ -284,20 +329,20 @@ public class PipelineObj extends BasicObj  {
             );
 
             //
-            if (pushConstRaw != null) {
-                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, pushConstByteOffset, pushConstRaw);
+            if (cmdInfo.pushConstRaw != null) {
+                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
             }
 
             //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.uniformDescriptorBuffer != null && cmdInfo.useOnboardUniform ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
 
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
             vkCmdSetVertexInputEXT(cmdBuf, null, null);
             vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
             vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
-            if (multiDraw != null) {
-                vkCmdDrawMultiEXT(cmdBuf, multiDraw, 1, 0, 8);
+            if (cmdInfo.multiDraw != null) {
+                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
             } else {
                 vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
                 if (hasDepthStencil) {

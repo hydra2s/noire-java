@@ -328,12 +328,21 @@ public class RendererObj extends BasicObj {
             pushConst.put(1, framebuffer.writingImageViews.get(0).DSC_ID);
             memLongBuffer(memAddress(pushConst, 2), 1).put(0, this.topLvl.getDeviceAddress());
 
+            //
             this.logicalDevice.writeCommand(cmdBuf, (_cmdBuf_)->{
-                this.trianglePipeline.cmdDraw(cmdBuf, VkMultiDrawInfoEXT.calloc(1).put(0, VkMultiDrawInfoEXT.calloc().vertexCount(3).firstVertex(0)), this.framebuffer.getHandle().get(), memByteBuffer(pushConst), 0);
-                this.finalComp.cmdDispatch(cmdBuf, VkExtent3D.calloc().width(1280/32).height(720/6).depth(1), memByteBuffer(pushConst), 0);
+                this.trianglePipeline.cmdDraw(cmdBuf, new PipelineObj.GraphicsDrawInfo() {{
+                    multiDraw = VkMultiDrawInfoEXT.calloc(1).put(0, VkMultiDrawInfoEXT.calloc().vertexCount(3).firstVertex(0));
+                    pushConstRaw = memByteBuffer(pushConst);
+                    imageSet = framebuffer.getHandle().get();
+                }});
+                this.finalComp.cmdDispatch(cmdBuf, new PipelineObj.ComputeDispatchInfo(){{
+                    dispatch = VkExtent3D.calloc().width(1280/32).height(720/6).depth(1);
+                    pushConstRaw = memByteBuffer(pushConst);
+                }});
                 return VK_SUCCESS;
             });
 
+            //
             this.commandBuffers.add(cmdBuf);
         }
 

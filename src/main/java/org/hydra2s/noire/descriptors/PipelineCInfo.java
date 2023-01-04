@@ -7,7 +7,8 @@ import java.util.HashMap;
 //
 public class PipelineCInfo extends BasicCInfo  {
 
-    public long pipelineLayout = 0;
+    public long pipelineLayout = 0L;
+    public long memoryAllocator = 0L;
 
     static public class ComputePipelineCInfo extends PipelineCInfo {
         public ByteBuffer computeCode = null;
