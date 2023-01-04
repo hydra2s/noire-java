@@ -44,7 +44,6 @@ public class PipelineObj extends BasicObj  {
         public VkExtent3D dispatch = VkExtent3D.calloc().width(1).height(1).depth(1);
         public ByteBuffer pushConstRaw = null;
         public int pushConstByteOffset = 0;
-        public boolean useOnboardUniform = false;
     }
 
     public static class GraphicsDrawInfo {
@@ -52,7 +51,6 @@ public class PipelineObj extends BasicObj  {
         public long imageSet = 0L;
         public ByteBuffer pushConstRaw = null;
         public int pushConstByteOffset = 0;
-        public boolean useOnboardUniform = false;
     }
 
     public static final long uniformBufferSize = 2048L;
@@ -108,7 +106,7 @@ public class PipelineObj extends BasicObj  {
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
 
             //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.uniformDescriptorBuffer != null && cmdInfo.useOnboardUniform ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.uniformDescriptorBuffer != null ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
 
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.handle.get());
@@ -334,7 +332,7 @@ public class PipelineObj extends BasicObj  {
             }
 
             //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.uniformDescriptorBuffer != null && cmdInfo.useOnboardUniform ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.uniformDescriptorBuffer != null ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
 
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());

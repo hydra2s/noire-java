@@ -155,6 +155,7 @@ public class RendererObj extends BasicObj {
 
         //
         this.finalComp = new PipelineObj.ComputePipelineObj(logicalDevice.getHandle(), new PipelineCInfo.ComputePipelineCInfo(){{
+            memoryAllocator = _memoryAllocator.getHandle().get();
             pipelineLayout = _pipelineLayout.getHandle().get();
             computeCode = memAlloc(finalCompSpv.length).put(0, finalCompSpv);
         }});
@@ -163,6 +164,7 @@ public class RendererObj extends BasicObj {
         var fragSpv = Files.readAllBytes(Path.of("./shaders/triangle.frag.spv"));
         var vertSpv = Files.readAllBytes(Path.of("./shaders/triangle.vert.spv"));
         this.trianglePipeline = new PipelineObj.GraphicsPipelineObj(logicalDevice.getHandle(), new PipelineCInfo.GraphicsPipelineCInfo(){{
+            memoryAllocator = _memoryAllocator.getHandle().get();
             pipelineLayout = _pipelineLayout.getHandle().get();
             fbLayout = _fbLayout;
             sourceMap = new HashMap<>(){{
