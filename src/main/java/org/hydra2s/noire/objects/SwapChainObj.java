@@ -1,26 +1,24 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.*;
+
+import org.hydra2s.noire.descriptors.ImageViewCInfo;
+import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.SemaphoreCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-//
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.KHRExternalMemoryWin32.vkGetMemoryWin32HandleKHR;
-import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.vkGetSemaphoreWin32HandleKHR;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK11.*;
 
 //
 public class SwapChainObj extends BasicObj  {
@@ -107,7 +105,6 @@ public class SwapChainObj extends BasicObj  {
             vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
             this.imagesObj = new ArrayList<>();
             this.imageViews = new ArrayList<>();
-            this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0));
 
             //
             for (var I = 0; I < this.amountOfImagesInSwapchain.get(0); I++) {
