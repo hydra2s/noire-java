@@ -17,8 +17,11 @@ public class VirtualMutableBufferSystem extends BasicObj {
     //}
 
     // Will be able to deallocate and re-allocate again
-    public static class VirtualMutableBufferObj {
+    public static class VirtualMutableBufferObj extends BasicObj {
 
+        public VirtualMutableBufferObj(Handle base, Handle handle) {
+            super(base, handle);
+        }
     }
 
 }
