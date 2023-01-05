@@ -2,6 +2,7 @@ package org.hydra2s.noire.virtual;
 
 //
 
+import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.PointerBuffer;
@@ -20,20 +21,24 @@ import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERA
 import static org.lwjgl.vulkan.VK10.*;
 
 // Will uses large buffer concept with virtual allocation (VMA)
-public class VirtualMutableBufferSystem extends BasicObj {
+// TODO: getting virtual GL buffers with +1 index shift
+public class VirtualMutableBufferHeap extends BasicObj {
 
     //
     public VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
-    public VirtualMutableBufferSystem(Handle base, Handle handle) {
+    public VirtualMutableBufferHeap(Handle base, Handle handle) {
         super(base, handle);
     }
-    protected MemoryAllocationObj.BufferObj bufferHeap = null;
+    protected BufferObj bufferHeap = null;
 
     //
     public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
 
+    // TODO: merge into virtual GL registry system
+    public PipelineLayoutObj.OutstandingArray<VirtualMutableBufferObj> virtualBuffers = null;
+
     // But before needs to create such system
-    public VirtualMutableBufferSystem(Handle base, VirtualMutableBufferSystemCInfo cInfo) {
+    public VirtualMutableBufferHeap(Handle base, VirtualMutableBufferHeapCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -46,26 +51,26 @@ public class VirtualMutableBufferSystem extends BasicObj {
         deviceObj.handleMap.put(this.handle, this);
 
         //
-        this.bufferHeap = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-            isHost = cInfo.isHost;
-            isDevice = !cInfo.isHost;
+        this.bufferHeap = new BufferObj(this.base, new BufferCInfo() {{
             size = cInfo.bufferHeapSize;
             usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = cInfo.isHost;
+                isDevice = !cInfo.isHost;
+            }};
         }});
 
         //
         vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+
+        //
+        this.virtualBuffers = new PipelineLayoutObj.OutstandingArray<>();
     }
 
     // Will be able to deallocate and re-allocate again
     // TODO: add sub-buffer copying support (for command buffers)
     public static class VirtualMutableBufferObj extends BasicObj {
-        //
-        public VirtualMutableBufferSystem bound = null;
-        public VmaVirtualAllocationCreateInfo allocCreateInfo = null;
-
-        //
         public PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
         public LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);
         public long bufferSize = 0L;
@@ -74,25 +79,35 @@ public class VirtualMutableBufferSystem extends BasicObj {
         public ByteBuffer mapped = null;
 
         //
+        public VmaVirtualAllocationCreateInfo allocCreateInfo = null;
+        public VirtualMutableBufferHeap bound = null;
+
+        // virtual GL is always is `DSC_ID`+1
+        public int DSC_ID = -1; // for shaders
+        public int virtualGL = 0; // for virtual OpenGL
+
+        //
         public VirtualMutableBufferObj(Handle base, Handle handle) {
             super(base, handle);
         }
 
         //
-        public VirtualMutableBufferObj(Handle base, VirtualMutableBufferSystemCInfo.VirtualMutableBufferCInfo cInfo) {
+        public VirtualMutableBufferObj(Handle base, VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo cInfo) {
             super(base, cInfo);
 
             //
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
-            var virtualBufferSystem = (VirtualMutableBufferSystem)deviceObj.handleMap.get(new Handle("VirtualMutableBufferSystem", cInfo.bufferHeapHandle));
+            var virtualBufferSystem = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferSystem", cInfo.bufferHeapHandle));
 
             //
             this.bound = bound;
             this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
             this.allocId = memAllocPointer(1).put(0, 0L);
             this.bufferOffset = memAllocLong(1).put(0, 0L);
+            this.DSC_ID = this.bound.virtualBuffers.push(this);
+            this.virtualGL = this.DSC_ID+1;
 
             //
             this.handle = new Handle("VirtualMutableBufferObj", MemoryUtil.memAddress(memAllocLong(1)));

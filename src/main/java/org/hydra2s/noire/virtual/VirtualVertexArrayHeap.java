@@ -2,6 +2,7 @@ package org.hydra2s.noire.virtual;
 
 //
 
+import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.system.MemoryUtil;
@@ -18,23 +19,26 @@ import static org.lwjgl.vulkan.VK10.*;
 // Will be used in buffer based registry
 // Will uses outstanding array
 // Bindings depends on shaders
-public class VirtualVertexArraySystem extends BasicObj {
+// TODO: getting virtual GL vertex array with +1 index shift
+public class VirtualVertexArrayHeap extends BasicObj {
 
     //
     public static final int vertexArrayStride = 256;
     public static final int vertexBindingStride = 32;
+
+    // TODO: merge into virtual GL registry system
     public PipelineLayoutObj.OutstandingArray<VirtualVertexArrayObj> vertexArrays = null;
 
     //
-    protected MemoryAllocationObj.BufferObj bufferHeap = null;
+    protected BufferObj bufferHeap = null;
 
     //
-    public VirtualVertexArraySystem(Handle base, Handle handle) {
+    public VirtualVertexArrayHeap(Handle base, Handle handle) {
         super(base, handle);
     }
 
     // But before needs to create such system
-    public VirtualVertexArraySystem(Handle base, VirtualVertexArraySystemCInfo cInfo) {
+    public VirtualVertexArrayHeap(Handle base, VirtualVertexArrayHeapCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -47,12 +51,14 @@ public class VirtualVertexArraySystem extends BasicObj {
         deviceObj.handleMap.put(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
-        this.bufferHeap = new MemoryAllocationObj.CompatibleBufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-            isHost = false;
-            isDevice = true;
+        this.bufferHeap = new CompatibleBufferObj(this.base, new BufferCInfo() {{
             size = cInfo.bufferHeapSize;
             usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = false;
+                isDevice = true;
+            }};
         }});
 
         //
@@ -93,28 +99,30 @@ public class VirtualVertexArraySystem extends BasicObj {
         public long bufferOffset = 0L;
 
         //
-        public VirtualVertexArraySystem bound = null;
+        public VirtualVertexArrayHeap bound = null;
 
-        //
-        public int DSC_ID = -1;
+        // virtual GL is always is `DSC_ID`+1
+        public int DSC_ID = -1; // for shaders
+        public int virtualGL = 0; // for virtual OpenGL
 
         //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
             super(base, handle);
         }
-        public VirtualVertexArrayObj(Handle base, VirtualVertexArraySystemCInfo.VirtualVertexArrayCInfo cInfo) {
+        public VirtualVertexArrayObj(Handle base, VirtualVertexArrayHeapCInfo.VirtualVertexArrayCInfo cInfo) {
             super(base, cInfo);
 
             //
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
-            var virtualVertexArraySystem = (VirtualVertexArraySystem)deviceObj.handleMap.get(new Handle("VirtualVertexArrayObj", cInfo.bufferHeapHandle));
+            var virtualVertexArraySystem = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayObj", cInfo.bufferHeapHandle));
 
             //
             this.bound = virtualVertexArraySystem;
             this.DSC_ID = this.bound.vertexArrays.push(this);
             this.bindingsMapped = this.bound.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
+            this.virtualGL = this.DSC_ID+1;
         }
 
         //

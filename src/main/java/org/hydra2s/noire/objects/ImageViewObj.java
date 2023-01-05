@@ -28,7 +28,7 @@ public class ImageViewObj extends BasicObj {
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var imageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image));
+        var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image));
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
 
@@ -82,11 +82,9 @@ public class ImageViewObj extends BasicObj {
     ) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
-        var srcBufferObj = (MemoryAllocationObj.BufferObj)deviceObj.handleMap.get(new Handle("Buffer", srcBuffer));
 
         //
-        srcBufferObj.cmdCopyBufferToImage(cmdBuf, ((ImageViewCInfo)cInfo).image,
+        MemoryAllocationObj.cmdCopyBufferToImage(cmdBuf, srcBuffer, ((ImageViewCInfo)cInfo).image,
             ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
                 .bufferOffset(srcOffset)
@@ -117,8 +115,8 @@ public class ImageViewObj extends BasicObj {
 
         //
         var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView));
-        var srcImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)srcImageViewObj.cInfo).image));
-        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+        var srcImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)srcImageViewObj.cInfo).image));
+        var dstImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
 
         //
         this.cmdCopyImageToImageView(cmdBuf, extent, dstOffset, dstMipLevel, ((ImageViewCInfo)srcImageViewObj.cInfo).image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, srcOffset, srcImageViewObj.subresourceLayers(srcMipLevel));
@@ -144,11 +142,9 @@ public class ImageViewObj extends BasicObj {
     ) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
-        var srcImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", srcImage));
 
         //
-        srcImageObj.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)cInfo).image, srcImageLayout,
+        MemoryAllocationObj.cmdCopyImageToImage(cmdBuf, srcImage, ((ImageViewCInfo)cInfo).image, srcImageLayout,
             ((ImageViewCInfo)cInfo).imageLayout, VkImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
                 .extent(extent)
@@ -169,7 +165,7 @@ public class ImageViewObj extends BasicObj {
     public ImageViewObj cmdTransitionBarrierFromInitial(VkCommandBuffer cmdBuf) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+        var dstImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
 
         //
         dstImageObj.cmdTransitionBarrier(cmdBuf, VK_IMAGE_LAYOUT_UNDEFINED, ((ImageViewCInfo)cInfo).imageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
@@ -182,7 +178,7 @@ public class ImageViewObj extends BasicObj {
     public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout, boolean fromInitial) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var dstImageObj = (MemoryAllocationObj.ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
+        var dstImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
 
         //
         if (fromInitial) { this.cmdTransitionBarrierFromInitial(cmdBuf); };

@@ -1,16 +1,16 @@
 package org.hydra2s.noire.objects;
 
 //
+
+import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-//
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
@@ -37,7 +37,7 @@ public class PipelineObj extends BasicObj  {
     }
 
     //
-    public MemoryAllocationObj.BufferObj uniformDescriptorBuffer = null;
+    public BufferObj uniformDescriptorBuffer = null;
 
     //
     public static class ComputeDispatchInfo {
@@ -85,12 +85,14 @@ public class PipelineObj extends BasicObj  {
 
             //
             if (cInfo.memoryAllocator != 0) {
-                this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-                    isHost = true;
-                    isDevice = true;
+                this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
                     size = uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
                     memoryAllocator = cInfo.memoryAllocator;
+                    memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                        isHost = true;
+                        isDevice = true;
+                    }};
                 }});
             }
         }
@@ -265,12 +267,14 @@ public class PipelineObj extends BasicObj  {
 
             //
             if (cInfo.memoryAllocator != 0) {
-                this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-                    isHost = true;
-                    isDevice = true;
+                this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
                     size = uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
                     memoryAllocator = cInfo.memoryAllocator;
+                    memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                        isHost = true;
+                        isDevice = true;
+                    }};
                 }});
             }
         }

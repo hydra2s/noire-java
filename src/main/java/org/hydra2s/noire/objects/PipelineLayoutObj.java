@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
@@ -60,9 +61,9 @@ public class PipelineLayoutObj extends BasicObj  {
     protected VkDescriptorSetLayoutBinding.Buffer pipelineDescriptorSetBindings = null;
 
     //
-    protected MemoryAllocationObj.BufferObj resourceDescriptorBuffer = null;
-    protected MemoryAllocationObj.BufferObj samplerDescriptorBuffer = null;
-    public MemoryAllocationObj.BufferObj uniformDescriptorBuffer = null;
+    protected BufferObj resourceDescriptorBuffer = null;
+    protected BufferObj samplerDescriptorBuffer = null;
+    public BufferObj uniformDescriptorBuffer = null;
 
     //
     protected LongBuffer offsets = memAllocLong(4);
@@ -171,26 +172,32 @@ public class PipelineLayoutObj extends BasicObj  {
         this.samplers = new OutstandingArray<LongBuffer>();
 
         //
-        this.resourceDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
-            isHost = true;
-            isDevice = true;
+        this.resourceDescriptorBuffer = new BufferObj(this.base, new BufferCInfo(){{
             size = sizes.get(0);
             usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
             memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = true;
+                isDevice = true;
+            }};
         }});
-        this.samplerDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
-            isHost = true;
-            isDevice = true;
+        this.samplerDescriptorBuffer = new BufferObj(this.base, new BufferCInfo(){{
             size = sizes.get(1);
             usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
             memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = true;
+                isDevice = true;
+            }};
         }});
-        this.uniformDescriptorBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-            isHost = true;
-            isDevice = true;
+        this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
             size = uniformBufferSize;
             usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
             memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = true;
+                isDevice = true;
+            }};
         }});
 
         //
@@ -240,7 +247,7 @@ public class PipelineLayoutObj extends BasicObj  {
     public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, long uniformBufferHandle) {
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var uniformBuffer = uniformBufferHandle != 0 ? (MemoryAllocationObj.BufferObj)deviceObj.handleMap.get(new Handle("Buffer", uniformBufferHandle)) : null;
+        var uniformBuffer = uniformBufferHandle != 0 ? (BufferObj)deviceObj.handleMap.get(new Handle("Buffer", uniformBufferHandle)) : null;
 
         // TODO: better binding system
         var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBuffer != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);

@@ -2,13 +2,10 @@ package org.hydra2s.noire.descriptors;
 
 //
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkMemoryRequirements;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
 
-//
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
-import static org.lwjgl.vulkan.VK10.*;
 
 //
 public class MemoryAllocationCInfo extends BasicCInfo {
@@ -19,38 +16,16 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     public boolean isHost = true;
     public boolean isDevice = true;
 
-    //
+    // for dedicated buffer allocation
     public PointerBuffer buffer = null;
+    // for dedicated image allocation
     public PointerBuffer image = null;
 
     //
     public long memoryAllocator = 0L;
 
-    //
-    public static class BufferCInfo extends MemoryAllocationCInfo {
-        public long size = 0;
-        public int usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-
-
-        public BufferCInfo() {
-            this.buffer = memAllocPointer(1).put(0, 0);
-        }
+    public MemoryAllocationCInfo() {
+        this.buffer = memAllocPointer(1).put(0, 0);
+        this.image = memAllocPointer(1).put(0, 0);
     }
-
-    //
-    public static class ImageCInfo extends MemoryAllocationCInfo {
-        public VkExtent3D extent3D = VkExtent3D.calloc().width(1).height(1).depth(1);
-        public int usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
-        public int mipLevels = 1;
-        public int arrayLayers = 1;
-        public int samples = VK_SAMPLE_COUNT_1_BIT;
-        public int tiling = VK_IMAGE_TILING_OPTIMAL;
-        public int format = VK_FORMAT_R8G8B8A8_UNORM;
-
-        //
-        public ImageCInfo() {
-            this.image = memAllocPointer(1).put(0, 0);;
-        }
-    }
-
 }

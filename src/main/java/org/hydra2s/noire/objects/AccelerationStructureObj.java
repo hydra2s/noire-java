@@ -1,17 +1,17 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
+import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.IntBuffer;
 import java.util.stream.IntStream;
 
-//
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.KHRSynchronization2.*;
@@ -25,9 +25,9 @@ public class AccelerationStructureObj extends BasicObj {
     public VkAccelerationStructureBuildGeometryInfoKHR.Buffer geometryBuildInfo = null;
     public int ASLevel = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     public IntBuffer primitiveCount = null;
-    public MemoryAllocationObj.BufferObj ASStorageBuffer = null;
+    public BufferObj ASStorageBuffer = null;
     public VkBufferMemoryBarrier2 ASStorageBarrier = null;
-    public MemoryAllocationObj.BufferObj ASScratchBuffer = null;
+    public BufferObj ASScratchBuffer = null;
     public VkBufferMemoryBarrier2 ASScratchBarrier = null;
     public long deviceAddress = 0L;
 
@@ -64,12 +64,14 @@ public class AccelerationStructureObj extends BasicObj {
         vkGetAccelerationStructureBuildSizesKHR(deviceObj.device, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, this.geometryBuildInfo.get(0), this.primitiveCount, this.buildSizeInfo);
 
         //
-        this.ASStorageBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
-            isHost = false;
-            isDevice = true;
+        this.ASStorageBuffer = new BufferObj(this.base, new BufferCInfo() {{
             memoryAllocator = cInfo.memoryAllocator;
             size = buildSizeInfo.accelerationStructureSize();
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = false;
+                isDevice = true;
+            }};
         }});
         this.ASStorageBarrier = VkBufferMemoryBarrier2.calloc()
             .pNext(0L)
@@ -86,12 +88,14 @@ public class AccelerationStructureObj extends BasicObj {
 
         //
         var scratchSize = Math.max(this.buildSizeInfo.buildScratchSize(), this.buildSizeInfo.updateScratchSize());
-        this.ASScratchBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo(){{
-            isHost = false;
-            isDevice = true;
+        this.ASScratchBuffer = new BufferObj(this.base, new BufferCInfo(){{
             memoryAllocator = cInfo.memoryAllocator;
             size = scratchSize;
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = false;
+                isDevice = true;
+            }};
         }});
         this.ASScratchBarrier = VkBufferMemoryBarrier2.calloc()
             .pNext(0L)

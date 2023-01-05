@@ -45,7 +45,6 @@ public class RendererObj extends BasicObj {
     public AccelerationStructureObj.TopAccelerationStructureObj topLvl;
     public AccelerationStructureObj.BottomAccelerationStructureObj bottomLvl;
 
-
     //
     public RendererObj initializer() throws IOException {
         InstanceObj.globalHandleMap.put((this.handle = new Handle("Renderer", MemoryUtil.memAddress(memAllocLong(1)))).get(), this);
@@ -173,12 +172,14 @@ public class RendererObj extends BasicObj {
         var _memoryAllocator = memoryAllocator;
 
         //
-        var triangleBuffer = new MemoryAllocationObj.BufferObj(this.logicalDevice.getHandle(), new MemoryAllocationCInfo.BufferCInfo(){{
-            isHost = true;
-            isDevice = true;
+        var triangleBuffer = new BufferObj(this.logicalDevice.getHandle(), new BufferCInfo(){{
             size = 16 * 3;
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             memoryAllocator = _memoryAllocator.getHandle().get();
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = true;
+                isDevice = true;
+            }};
         }});
 
         //
@@ -206,12 +207,14 @@ public class RendererObj extends BasicObj {
         }});
 
         //
-        var instanceBuffer = new MemoryAllocationObj.BufferObj(this.logicalDevice.getHandle(), new MemoryAllocationCInfo.BufferCInfo(){{
-            isHost = true;
-            isDevice = true;
+        var instanceBuffer = new BufferObj(this.logicalDevice.getHandle(), new BufferCInfo(){{
             size = VkAccelerationStructureInstanceKHR.SIZEOF;
             usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             memoryAllocator = _memoryAllocator.getHandle().get();
+            memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                isHost = true;
+                isDevice = true;
+            }};
         }});
 
         //
@@ -284,29 +287,29 @@ public class RendererObj extends BasicObj {
         return (this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
-                var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.getHandle().get());
-                var promise = promises.get(imageIndex);
+            var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.getHandle().get());
+            var promise = promises.get(imageIndex);
 
-                //
-                do {
-                    if (promise.state().equals(Future.State.RUNNING)) {
-                        this.yield(VK_NOT_READY);
-                    }
-                } while(promise.state().equals(Future.State.RUNNING));
+            //
+            do {
+                if (promise.state().equals(Future.State.RUNNING)) {
+                    this.yield(VK_NOT_READY);
+                }
+            } while(promise.state().equals(Future.State.RUNNING));
 
-                //
-                var promised = promises.get(imageIndex);
-                var _queue = logicalDevice.getQueue(0, 0);
-                logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                    waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
-                    signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
-                    dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-                    queue = _queue;
-                    cmdBuf = commandBuffers.get(imageIndex);
-                    onDone = promised;
-                }});
-                promises.set(imageIndex, promised);
-                swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
+            //
+            var promised = promises.get(imageIndex);
+            var _queue = logicalDevice.getQueue(0, 0);
+            logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+                waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
+                signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
+                dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                queue = _queue;
+                cmdBuf = commandBuffers.get(imageIndex);
+                onDone = promised;
+            }});
+            promises.set(imageIndex, promised);
+            swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
             }
         });
     }

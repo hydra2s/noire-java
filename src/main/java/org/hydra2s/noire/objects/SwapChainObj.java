@@ -2,10 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.noire.descriptors.ImageViewCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.SemaphoreCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.noire.descriptors.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
@@ -31,7 +28,7 @@ public class SwapChainObj extends BasicObj  {
     public VkImageViewCreateInfo imageViewInfo = null;
 
     //
-    public ArrayList<MemoryAllocationObj.ImageObj> imagesObj = new ArrayList<MemoryAllocationObj.ImageObj>();
+    public ArrayList<ImageObj> imagesObj = new ArrayList<ImageObj>();
     public ArrayList<ImageViewObj> imageViews = new ArrayList<ImageViewObj>();
 
     //
@@ -109,9 +106,7 @@ public class SwapChainObj extends BasicObj  {
             //
             for (var I = 0; I < this.amountOfImagesInSwapchain.get(0); I++) {
                 var finalI = I;
-                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, new MemoryAllocationCInfo.ImageCInfo() {{
-                    isHost = false;
-                    isDevice = true;
+                this.imagesObj.add(new ImageObj(this.base, new ImageCInfo() {{
                     image = memAllocPointer(1).put(0, images.get(finalI));
                     arrayLayers = createInfo.imageArrayLayers();
                     format = createInfo.imageFormat();
@@ -141,9 +136,7 @@ public class SwapChainObj extends BasicObj  {
             this.images = memAllocLong((int) cInfo.imageCount);
             for (var I=0;I<cInfo.imageCount;I++) {
                 var finalI = I;
-                this.imagesObj.add(new MemoryAllocationObj.ImageObj(this.base, new MemoryAllocationCInfo.ImageCInfo(){{
-                    isHost = false;
-                    isDevice = true;
+                this.imagesObj.add(new ImageObj(this.base, new ImageCInfo(){{
                     arrayLayers = cInfo.layerCount;
                     format = cInfo.format;
                     mipLevels = 1;
@@ -152,6 +145,10 @@ public class SwapChainObj extends BasicObj  {
                     samples = VK_SAMPLE_COUNT_1_BIT;
                     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                     memoryAllocator = memoryAllocatorObj.getHandle().get();
+                    memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                        isHost = false;
+                        isDevice = true;
+                    }};
                 }}));
                 this.images.put(finalI, this.imagesObj.get(finalI).getHandle().get());
                 this.imageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){{
@@ -197,13 +194,13 @@ public class SwapChainObj extends BasicObj  {
     public int getImageCount() { return this.images.remaining(); }
     public int getColorSpace() { return this.createInfo.imageColorSpace(); }
     public LongBuffer getImages() { return this.images; }
-    public ArrayList<MemoryAllocationObj.ImageObj> getImagesObj() { return this.imagesObj; }
+    public ArrayList<ImageObj> getImagesObj() { return this.imagesObj; }
     public ArrayList<ImageViewObj> getImageViews() { return this.imageViews; }
     public long getImage(int index) { return this.images.get(index); }
-    public MemoryAllocationObj.ImageObj getImageObj(int index) { return this.imagesObj.get(index); }
+    public ImageObj getImageObj(int index) { return this.imagesObj.get(index); }
     public ImageViewObj getImageView(int index) { return this.imageViews.get(index); }
     public long getCurrentImage() { return this.images.get(this.imageIndex.get(0)); }
-    public MemoryAllocationObj.ImageObj getCurrentImageObj() { return this.imagesObj.get(this.imageIndex.get(0)); }
+    public ImageObj getCurrentImageObj() { return this.imagesObj.get(this.imageIndex.get(0)); }
     public ImageViewObj getCurrentImageView() { return this.imageViews.get(this.imageIndex.get(0)); }
 
     // TODO: more than one semaphore support

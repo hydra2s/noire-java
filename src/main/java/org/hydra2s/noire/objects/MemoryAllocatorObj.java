@@ -153,21 +153,13 @@ public class MemoryAllocatorObj extends BasicObj  {
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
         //
-        if (memoryAllocationObj.isBuffer) { cInfo.buffer = memoryAllocationObj.handle.ptr(); };
-        if (memoryAllocationObj.isImage) { cInfo.image = memoryAllocationObj.handle.ptr(); };
-        cInfo.memoryRequirements2 = memoryAllocationObj.memoryRequirements2;
-        cInfo.memoryRequirements = cInfo.memoryRequirements2.memoryRequirements();
-
-        //
         memoryAllocationObj.memoryOffset = 0L;
         memoryAllocationObj.deviceMemory = (new DeviceMemoryObj(this.handle, cInfo)).handle.ptr();
+        memoryAllocationObj.memorySize = cInfo.memoryRequirements.size();
 
         //
-        if (memoryAllocationObj.isBuffer) { vkBindBufferMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
-        if (memoryAllocationObj.isImage) { vkBindImageMemory(deviceObj.device, memoryAllocationObj.handle.get(), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
-
-        //
-        //memoryAllocationObj.Win32Handle
+        if (cInfo.buffer != null && cInfo.buffer.get(0) != 0) { vkBindBufferMemory(deviceObj.device, cInfo.buffer.get(0), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
+        if (cInfo.image != null && cInfo.image.get(0) != 0) { vkBindImageMemory(deviceObj.device, cInfo.image.get(0), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
 
         //
         return memoryAllocationObj;

@@ -4,7 +4,7 @@ package org.hydra2s.noire.virtual;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 
 //
-public class VirtualVertexArraySystemCInfo extends BasicCInfo {
+public class VirtualVertexArrayHeapCInfo extends BasicCInfo {
     public long bufferHeapSize = 256L * 1024L;
     public long memoryAllocator = 0L;
 

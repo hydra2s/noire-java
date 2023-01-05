@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import org.hydra2s.noire.descriptors.ImageCInfo;
 import org.hydra2s.noire.descriptors.ImageSetCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -21,7 +22,7 @@ import static org.lwjgl.vulkan.VK10.*;
 //
 public class ImageSetObj extends BasicObj  {
     //
-    public ArrayList<MemoryAllocationObj.ImageObj> images = new ArrayList<MemoryAllocationObj.ImageObj>();
+    public ArrayList<ImageObj> images = new ArrayList<ImageObj>();
     public ArrayList<ImageViewObj> writingImageViews = new ArrayList<ImageViewObj>();
     public ArrayList<ImageViewObj> currentImageViews = new ArrayList<ImageViewObj>();
     public ArrayList<ImageViewObj> previousImageViews = new ArrayList<ImageViewObj>();
@@ -38,7 +39,7 @@ public class ImageSetObj extends BasicObj  {
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
         //
-        this.images = new ArrayList<MemoryAllocationObj.ImageObj>();
+        this.images = new ArrayList<ImageObj>();
         this.currentImageViews = new ArrayList<ImageViewObj>();
         this.previousImageViews = new ArrayList<ImageViewObj>();
         this.writingImageViews = new ArrayList<ImageViewObj>();
@@ -46,9 +47,7 @@ public class ImageSetObj extends BasicObj  {
         //
         for (var I=0;I<cInfo.formats.remaining();I++) {
             var fI = I;
-            var imageCInfo = new MemoryAllocationCInfo.ImageCInfo(){{
-                isHost = false;
-                isDevice = true;
+            var imageCInfo = new ImageCInfo(){{
                 memoryAllocator = cInfo.memoryAllocator;
                 arrayLayers = cInfo.layerCounts.get(fI)*3;
                 format = cInfo.formats.get(fI);
@@ -57,11 +56,15 @@ public class ImageSetObj extends BasicObj  {
                 tiling = VK_IMAGE_TILING_OPTIMAL;
                 samples = VK_SAMPLE_COUNT_1_BIT;
                 usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+                memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                    isHost = false;
+                    isDevice = true;
+                }};
             }};
 
             //
             var images = this.images;
-            this.images.add(new MemoryAllocationObj.ImageObj(this.base, imageCInfo));
+            this.images.add(new ImageObj(this.base, imageCInfo));
 
             //
             this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
@@ -145,7 +148,7 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public static class FramebufferObj extends ImageSetObj  {
-        public MemoryAllocationObj.ImageObj depthStencilImage = null;
+        public ImageObj depthStencilImage = null;
         public ImageViewObj currentDepthStencilImageView = null;
         public ImageViewObj previousDepthStencilImageView = null;
 
@@ -166,9 +169,7 @@ public class ImageSetObj extends BasicObj  {
                 var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
 
                 //
-                var imageCInfo = new MemoryAllocationCInfo.ImageCInfo() {{
-                    isHost = false;
-                    isDevice = true;
+                var imageCInfo = new ImageCInfo() {{
                     memoryAllocator = cInfo.memoryAllocator;
                     arrayLayers = layerCount * 2;
                     format = cInfo.depthStencilFormat;
@@ -177,10 +178,14 @@ public class ImageSetObj extends BasicObj  {
                     tiling = VK_IMAGE_TILING_OPTIMAL;
                     samples = VK_SAMPLE_COUNT_1_BIT;
                     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                    memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                        isHost = false;
+                        isDevice = true;
+                    }};
                 }};
 
                 //
-                this.depthStencilImage = new MemoryAllocationObj.ImageObj(this.base, imageCInfo);
+                this.depthStencilImage = new ImageObj(this.base, imageCInfo);
 
                 //
                 this.currentDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
