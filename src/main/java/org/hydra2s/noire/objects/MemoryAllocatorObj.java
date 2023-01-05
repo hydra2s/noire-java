@@ -23,6 +23,7 @@ public class MemoryAllocatorObj extends BasicObj  {
     static public class DeviceMemoryObj extends BasicObj  {
         protected VkMemoryAllocateInfo allocInfo = null;
         protected boolean mapped = false;
+        protected PointerBuffer mappedPtr = null;
 
         public DeviceMemoryObj(Handle base, Handle handle) {
             super(base, handle);
@@ -98,6 +99,7 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             deviceObj.handleMap.put(this.handle, this);
+            this.mappedPtr = memAllocPointer(1);
         }
 
         public ByteBuffer map(long byteLength, long byteOffset) {
@@ -106,15 +108,20 @@ public class MemoryAllocatorObj extends BasicObj  {
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
-            PointerBuffer dataPtr = memAllocPointer(1);
             long BO = byteOffset;
             long BS = (byteLength != 0 || byteLength == VK_WHOLE_SIZE) ? byteLength : Math.min(((VkMemoryAllocateInfo)this.allocInfo).allocationSize(), byteLength);
             long BM = BS == VK_WHOLE_SIZE || BS < 0 ? ((VkMemoryAllocateInfo)this.allocInfo).allocationSize() : BS;
 
             //
-            if (mapped) { this.unmap(); };
-            vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr); mapped = true;
-            return memByteBuffer(dataPtr.get(0), (int)BM);
+            //if (mapped) { this.unmap(); };
+            if (!mapped) {
+                //vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr);
+                vkMapMemory(deviceObj.device, this.handle.get(), 0, VK_WHOLE_SIZE, 0, this.mappedPtr);
+                mapped = true;
+            }
+
+            //
+            return memSlice(memByteBuffer(this.mappedPtr.get(0), (int) ((VkMemoryAllocateInfo)this.allocInfo).allocationSize()), (int)BO, (int)BM);
         }
 
         public void unmap() {

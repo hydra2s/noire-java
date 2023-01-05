@@ -7,12 +7,10 @@ import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Objects;
 
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
 // DO NOT `wrap`! Use `memAlloc#Type()` with `put(pos, val)`!
@@ -122,6 +120,9 @@ public class BasicObj {
         }
     }
 
-
+    public BasicObj delete() {
+        // TODO: add destructors support
+        return this;
+    }
 
 }

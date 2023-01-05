@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -108,8 +109,8 @@ public class MemoryAllocationObj extends BasicObj {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -119,7 +120,7 @@ public class MemoryAllocationObj extends BasicObj {
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -163,8 +164,8 @@ public class MemoryAllocationObj extends BasicObj {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -174,7 +175,7 @@ public class MemoryAllocationObj extends BasicObj {
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -213,8 +214,8 @@ public class MemoryAllocationObj extends BasicObj {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -224,7 +225,7 @@ public class MemoryAllocationObj extends BasicObj {
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(0)
+            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -261,20 +262,20 @@ public class MemoryAllocationObj extends BasicObj {
     //
     public MemoryAllocationObj cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long buffer, VkBufferCopy2.Buffer regions) {
         //
-        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
+        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
         //
-        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
+        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -373,6 +374,7 @@ public class MemoryAllocationObj extends BasicObj {
         }
 
         // for `map()` or copy operations
+        // necessary after `unmap()` op
         // Resizable BAR!
         public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
             // for `map()` or copy operations
@@ -418,6 +420,72 @@ public class MemoryAllocationObj extends BasicObj {
         }
     }
 
+    // TODO: add copy operations with auto-synchronization
+    static public class CompatibleBufferObj extends BufferObj {
+        public BufferObj hostBuffer = null;
+
+        //
+        public CompatibleBufferObj(Handle base, Handle handle) {
+            super(base, handle);
+        }
+
+        //
+        public CompatibleBufferObj(Handle base, MemoryAllocationCInfo.BufferCInfo cInfo) {
+            super(base, cInfo);
+
+            //
+            if (!cInfo.isHost) {
+                this.hostBuffer = new MemoryAllocationObj.BufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
+                    isHost = true;
+                    isDevice = false;
+                    size = cInfo.size;
+                    usage = 0;
+                    memoryAllocator = cInfo.memoryAllocator;
+                }});
+            }
+        }
+
+        //
+        // necessary after `unmap()` op
+        @Override
+        public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
+
+            //
+            if (this.hostBuffer == null) {
+                super.cmdSynchronizeFromHost(cmdBuf);
+            } else {
+                hostBuffer.cmdCopyBufferToBuffer(cmdBuf, this.getHandle().get(), VkBufferCopy2.calloc(1)
+                    .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
+                    .srcOffset(0)
+                    .dstOffset(0)
+                    .size(this.createInfo.size()));
+            }
+
+            //
+            return this;
+        }
+
+        //
+        @Override
+        public ByteBuffer map(long byteLength, long byteOffset) {
+            if (this.hostBuffer == null) {
+                return super.map(byteLength, byteOffset);
+            } else {
+                return this.hostBuffer.map(byteLength, byteOffset);
+            }
+        }
+
+        //
+        @Override
+        public void unmap() {
+            if (this.hostBuffer == null) {
+                super.unmap();
+            } else {
+                this.hostBuffer.unmap();
+            }
+        }
+    }
+
     //
     // probably, will be replaced by modules for allocation
     // not sure about that
@@ -427,7 +495,7 @@ public class MemoryAllocationObj extends BasicObj {
             super(base, handle); this.isImage = true;
         }
 
-
+        //
         public ImageObj(Handle base, MemoryAllocationCInfo.ImageCInfo cInfo) {
             super(base, cInfo);
             this.isImage = true;

@@ -1,14 +1,19 @@
 package org.hydra2s.noire.virtual;
 
 //
-import org.hydra2s.noire.objects.BasicObj;
 
-//
+import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.objects.*;
+import org.lwjgl.system.MemoryUtil;
+
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.stream.IntStream;
 
-//
+import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memSlice;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+import static org.lwjgl.vulkan.VK10.*;
 
 // Will be used in buffer based registry
 // Will uses outstanding array
@@ -18,6 +23,10 @@ public class VirtualVertexArraySystem extends BasicObj {
     //
     public static final int vertexArrayStride = 256;
     public static final int vertexBindingStride = 32;
+    public PipelineLayoutObj.OutstandingArray<VirtualVertexArrayObj> vertexArrays = null;
+
+    //
+    protected MemoryAllocationObj.BufferObj bufferHeap = null;
 
     //
     public VirtualVertexArraySystem(Handle base, Handle handle) {
@@ -27,6 +36,27 @@ public class VirtualVertexArraySystem extends BasicObj {
     // But before needs to create such system
     public VirtualVertexArraySystem(Handle base, VirtualVertexArraySystemCInfo cInfo) {
         super(base, cInfo);
+
+        //
+        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+
+        //
+        this.handle = new Handle("VirtualVertexArraySystem", MemoryUtil.memAddress(memAllocLong(1)));
+        deviceObj.handleMap.put(this.handle, this);
+
+        // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
+        this.bufferHeap = new MemoryAllocationObj.CompatibleBufferObj(this.base, new MemoryAllocationCInfo.BufferCInfo() {{
+            isHost = false;
+            isDevice = true;
+            size = cInfo.bufferHeapSize;
+            usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            memoryAllocator = cInfo.memoryAllocator;
+        }});
+
+        //
+        this.vertexArrays = new PipelineLayoutObj.OutstandingArray<>();
     }
 
     // byte-based structure data
@@ -58,8 +88,15 @@ public class VirtualVertexArraySystem extends BasicObj {
         // If you planned to use with AS
         public long BLASHandle = 0L;
         public long BLASAddress = 0L;
-        public ArrayList<VertexBinding> bindings = null;
+        public HashMap<Integer, VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
+        public long bufferOffset = 0L;
+
+        //
+        public VirtualVertexArraySystem bound = null;
+
+        //
+        public int DSC_ID = -1;
 
         //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
@@ -67,9 +104,40 @@ public class VirtualVertexArraySystem extends BasicObj {
         }
         public VirtualVertexArrayObj(Handle base, VirtualVertexArraySystemCInfo.VirtualVertexArrayCInfo cInfo) {
             super(base, cInfo);
+
+            //
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
+            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+            var virtualVertexArraySystem = (VirtualVertexArraySystem)deviceObj.handleMap.get(new Handle("VirtualVertexArrayObj", cInfo.bufferHeapHandle));
+
+            //
+            this.bound = virtualVertexArraySystem;
+            this.DSC_ID = this.bound.vertexArrays.push(this);
+            this.bindingsMapped = this.bound.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
         }
 
+        //
+        public VirtualVertexArrayObj writeData() {
+            var bindingOffset = 0L;
+            var keySet = bindings.keySet().stream().toList();
+            IntStream.range(0, bindings.size()).forEach((I)->{
+                var index = keySet.get(I);
+                var binding = bindings.get(index);
+                if (binding != null) {
+                    binding.writeData(bindingsMapped,bindingOffset + vertexBindingStride * index);
+                }
+            });
 
+            //
+            return this;
+        }
+
+        //
+        public VirtualVertexArrayObj vertexBinding(int index, VertexBinding binding) {
+            bindings.put(index, binding);
+            return this;
+        }
     }
 
 }
