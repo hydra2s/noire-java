@@ -9,6 +9,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -21,9 +22,12 @@ import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERA
 import static org.lwjgl.vulkan.VK10.*;
 
 // Will uses large buffer concept with virtual allocation (VMA)
+// When used draw collector system, recommended to use host-based memory
+// TODO: add support for multiple buffer heaps into one virtual GL registry
 public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
     //
+    public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
     public VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
     protected BufferObj bufferHeap = null;
 
@@ -31,9 +35,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public VirtualMutableBufferHeap(Handle base, Handle handle) {
         super(base, handle);
     }
-
-    //
-    public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
 
     // But before needs to create such system
     public VirtualMutableBufferHeap(Handle base, VirtualMutableBufferHeapCInfo cInfo) {
@@ -95,20 +96,24 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
             this.allocId = memAllocPointer(1).put(0, 0L);
             this.bufferOffset = memAllocLong(1).put(0, 0L);
+            this.bufferSize = 0;
+            this.blockSize = 0;
 
             //
             var virtualBufferHeap = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle));
 
             //
-            this.bound = bound;
+            this.bound = virtualBufferHeap;
 
             //
             this.DSC_ID = this.bound.registry.push(this);
             this.virtualGL = this.DSC_ID+1;
+        }
 
-            //
-            this.handle = new Handle("VirtualMutableBufferObj", MemoryUtil.memAddress(memAllocLong(1)));
-            deviceObj.handleMap.put(this.handle, this);
+        //
+        public VkDescriptorBufferInfo getBufferRange() {
+            var heap = ((VirtualMutableBufferHeap)this.bound).bufferHeap;
+            return VkDescriptorBufferInfo.calloc().set(heap.getHandle().get(), this.bufferOffset.get(0), this.bufferSize);
         }
 
         //

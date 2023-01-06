@@ -6,6 +6,7 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -48,7 +49,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
         this.bufferHeap = new CompatibleBufferObj(this.base, new BufferCInfo() {{
-            size = cInfo.bufferHeapSize;
+            size = cInfo.maxVertexArrayCount * vertexArrayStride;
             usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             memoryAllocator = cInfo.memoryAllocator;
             memoryAllocationInfo = new MemoryAllocationCInfo(){{
@@ -56,6 +57,15 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
                 isDevice = true;
             }};
         }});
+    }
+
+    //
+    public VirtualVertexArrayHeap writeVertexArrays() {
+        this.registry.forEach((obj)->{
+            var VAO = (VirtualVertexArrayObj)obj;
+            if (VAO != null) { VAO.writeData(); };
+        });
+        return this;
     }
 
     // byte-based structure data
@@ -90,6 +100,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         public HashMap<Integer, VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
         public long bufferOffset = 0L;
+        public long address = 0L;
 
         //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
@@ -115,6 +126,13 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
             //
             this.bindingsMapped = virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
+            this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
+        }
+
+        //
+        public VkDescriptorBufferInfo getBufferRange() {
+            var heap = ((VirtualMutableBufferHeap)this.bound).bufferHeap;
+            return VkDescriptorBufferInfo.calloc().set(heap.getHandle().get(), this.bufferOffset, vertexArrayStride);
         }
 
         //

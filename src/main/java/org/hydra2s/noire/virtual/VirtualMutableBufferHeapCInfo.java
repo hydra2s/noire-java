@@ -6,8 +6,9 @@ public class VirtualMutableBufferHeapCInfo extends VirtualGLRegistryCInfo {
     public long memoryAllocator = 0L;
     public boolean isHost = false;
 
-    public class VirtualMutableBufferCInfo extends VirtualGLObjCInfo {
-
+    public static class VirtualMutableBufferCInfo extends VirtualGLObjCInfo {
+        public long vertexBufferOffset = 0L;
+        public long indexBufferOffset = 0L;
 
     }
 
