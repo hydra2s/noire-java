@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.stream.IntStream;
 
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
-import static org.lwjgl.system.MemoryUtil.memSlice;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -59,7 +58,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }});
     }
 
-    //
+    // TODO: use synchronization from host with cmdBuf
     public VirtualVertexArrayHeap writeVertexArrays() {
         this.registry.forEach((obj)->{
             var VAO = (VirtualVertexArrayObj)obj;
@@ -68,36 +67,13 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         return this;
     }
 
-    // byte-based structure data
-    // every vertex array binding by stride is (8 + 8 + 4 + 4 + 4 + 4) bytes
-    // DO NOT overflow such limit!
-    public static class VertexBinding {
-        public long bufferAddress = 0L;
-        public long bufferSize = 0L;
-        public int relativeOffset = 0;
-        public int stride = 0;
-        public int format = 0;
-        public int unknown = 0;
-
-        //
-        public VertexBinding writeData(ByteBuffer bindingsMapped, long offset) {
-            memSlice(bindingsMapped, (int) (offset + 0), 8).putLong(0, bufferAddress);
-            memSlice(bindingsMapped, (int) (offset + 8), 8).putLong(0, bufferSize);
-            memSlice(bindingsMapped, (int) (offset + 16), 4).putInt(0, relativeOffset);
-            memSlice(bindingsMapped, (int) (offset + 20), 4).putInt(0, stride);
-            memSlice(bindingsMapped, (int) (offset + 24), 4).putInt(0, format);
-            memSlice(bindingsMapped, (int) (offset + 28), 4).putInt(0, unknown);
-            return this;
-        }
-    }
-
     // also, after draw, vertex and/or index buffer data can/may be changed.
     // for BLAS-based recommended to use a fixed data.
     public static class VirtualVertexArrayObj extends VirtualGLObj {
         // Will be used in draw collection
         //public long BLASHandle = 0L;
         //public long BLASAddress = 0L;
-        public HashMap<Integer, VertexBinding> bindings = null;
+        public HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
         public long bufferOffset = 0L;
         public long address = 0L;
@@ -150,7 +126,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }
 
         //
-        public VirtualVertexArrayObj vertexBinding(int index, VertexBinding binding) {
+        public VirtualVertexArrayObj vertexBinding(int index, VirtualVertexArrayHeapCInfo.VertexBinding binding) {
             if (index >= 0 && index < 4) {
                 bindings.put(index, binding);
             }

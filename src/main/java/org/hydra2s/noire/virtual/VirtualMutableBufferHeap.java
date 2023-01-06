@@ -111,6 +111,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         //
+        public long getAddress() {
+            return this.address;
+        }
+
+        //
         public VkDescriptorBufferInfo getBufferRange() {
             var heap = ((VirtualMutableBufferHeap)this.bound).bufferHeap;
             return VkDescriptorBufferInfo.calloc().set(heap.getHandle().get(), this.bufferOffset.get(0), this.bufferSize);

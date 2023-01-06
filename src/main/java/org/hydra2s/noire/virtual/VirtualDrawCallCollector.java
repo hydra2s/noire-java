@@ -1,7 +1,6 @@
 package org.hydra2s.noire.virtual;
 
 //
-
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -10,14 +9,28 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkAccelerationStructureBuildRangeInfoKHR;
 import org.lwjgl.vulkan.VkMultiDrawInfoEXT;
 
+//
 import java.util.ArrayList;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
 // Will collect draw calls data for building acceleration structures
 public class VirtualDrawCallCollector extends VirtualGLRegistry {
+
+    //
+    public static class BufferBudget {
+        public BufferObj bufferObj = null;
+        public long offset = 0L;
+
+        //
+        public BufferBudget reset() {
+            this.offset = 0L;
+            return this;
+        }
+    }
 
     //
     public final static int vertexAverageStride = 32;
@@ -33,14 +46,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     //public ArrayList<VirtualDrawCallObj> drawCalls = null;
 
     // recommended to store in device memory
-    protected BufferObj vertexDataBuffer = null;
-    protected BufferObj indexDataBuffer = null;
-    protected BufferObj uniformDataBuffer = null;
-
-    //
-    protected long vertexBufferOffset = 0L;
-    protected long indexBufferOffset = 0L;
-    protected long uniformBufferOffset = 0L;
+    protected BufferBudget vertexDataBudget = null;
+    protected BufferBudget indexDataBudget = null;
+    protected BufferBudget uniformDataBudget = null;
 
     //
     public VirtualDrawCallCollector(Handle base, VirtualDrawCallCollectorCInfo cInfo) throws Exception {
@@ -56,42 +64,44 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         deviceObj.handleMap.put(this.handle, this);
 
         //
-        this.vertexBufferOffset = 0L;
-        this.indexBufferOffset = 0L;
-        this.uniformBufferOffset = 0L;
+        this.vertexDataBudget = new BufferBudget(){{
+            bufferObj = new BufferObj(base, new BufferCInfo() {{
+                size = cInfo.maxDrawCalls * vertexAverageStride * vertexAverageCount;
+                usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                memoryAllocator = cInfo.memoryAllocator;
+                memoryAllocationInfo = new MemoryAllocationCInfo(){{
+                    isHost = false;
+                    isDevice = true;
+                }};
+            }});
+        }};
 
         //
-        this.vertexDataBuffer = new BufferObj(this.base, new BufferCInfo() {{
-            size = cInfo.maxDrawCalls * vertexAverageStride * vertexAverageCount;
-            usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-            memoryAllocator = cInfo.memoryAllocator;
-            memoryAllocationInfo = new MemoryAllocationCInfo(){{
-                isHost = false;
-                isDevice = true;
-            }};
-        }});
+        this.indexDataBudget = new BufferBudget(){{
+            bufferObj = new BufferObj(base, new BufferCInfo() {{
+                size = cInfo.maxDrawCalls * vertexAverageCount * 4;
+                usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                memoryAllocator = cInfo.memoryAllocator;
+                memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                    isHost = false;
+                    isDevice = true;
+                }};
+            }});
+        }};
 
         //
-        this.indexDataBuffer = new BufferObj(this.base, new BufferCInfo() {{
-            size = cInfo.maxDrawCalls * vertexAverageCount * 4;
-            usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-            memoryAllocator = cInfo.memoryAllocator;
-            memoryAllocationInfo = new MemoryAllocationCInfo(){{
-                isHost = false;
-                isDevice = true;
-            }};
-        }});
+        this.uniformDataBudget = new BufferBudget(){{
+            bufferObj = new BufferObj(base, new BufferCInfo() {{
+                size = cInfo.maxDrawCalls * drawCallUniformStride;
+                usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                memoryAllocator = cInfo.memoryAllocator;
+                memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                    isHost = false;
+                    isDevice = true;
+                }};
+            }});
+        }};
 
-        //
-        this.uniformDataBuffer = new BufferObj(this.base, new BufferCInfo() {{
-            size = cInfo.maxDrawCalls * drawCallUniformStride;
-            usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-            memoryAllocator = cInfo.memoryAllocator;
-            memoryAllocationInfo = new MemoryAllocationCInfo(){{
-                isHost = false;
-                isDevice = true;
-            }};
-        }});
     }
 
     public VirtualDrawCallCollector resetDrawCalls() {
@@ -103,17 +113,36 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         return this;
     }
 
+    // TODO: finalize dev on such feature, but I'm tired
     public VirtualDrawCallCollector finishCollection() {
         this.geometries = new ArrayList<>();
         this.ranges = VkAccelerationStructureBuildRangeInfoKHR.calloc(this.registry.size());
         this.multiDraw = VkMultiDrawInfoEXT.calloc(this.registry.size());
+
+        for (var I=0;I<this.registry.size();I++) {
+            var drawCall = this.registry.get(I);
+            var geometryInfo = new DataCInfo.TriangleGeometryCInfo();
+            if (drawCall != null) {
+                geometryInfo.indexBinding = new DataCInfo.IndexBindingCInfo(){{
+
+                }};
+                geometryInfo.vertexBinding = new DataCInfo.VertexBindingCInfo() {{
+
+                }};
+            }
+        }
+
         return this;
     }
 
-    //
+    // TODO: finalize dev on such feature, but I'm tired
     public static class VirtualDrawCallObj extends VirtualGLRegistry.VirtualGLObj {
+        //
+        public VirtualDrawCallCollectorCInfo.BufferRange vertexBuffer = null;
+        public VirtualDrawCallCollectorCInfo.BufferRange indexBuffer = null;
+        public VirtualDrawCallCollectorCInfo.BufferRange uniformBuffer = null;
 
-
+        //
         public VirtualDrawCallObj(Handle base, VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo cInfo) {
             super(base, cInfo);
 
