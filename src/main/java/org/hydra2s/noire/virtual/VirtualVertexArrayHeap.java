@@ -19,15 +19,11 @@ import static org.lwjgl.vulkan.VK10.*;
 // Will be used in buffer based registry
 // Will uses outstanding array
 // Bindings depends on shaders
-// TODO: getting virtual GL vertex array with +1 index shift
-public class VirtualVertexArrayHeap extends BasicObj {
+public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
     //
     public static final int vertexArrayStride = 256;
     public static final int vertexBindingStride = 32;
-
-    // TODO: merge into virtual GL registry system
-    public PipelineLayoutObj.OutstandingArray<VirtualVertexArrayObj> vertexArrays = null;
 
     //
     protected BufferObj bufferHeap = null;
@@ -47,7 +43,7 @@ public class VirtualVertexArrayHeap extends BasicObj {
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
         //
-        this.handle = new Handle("VirtualVertexArraySystem", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(memAllocLong(1)));
         deviceObj.handleMap.put(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
@@ -60,9 +56,6 @@ public class VirtualVertexArrayHeap extends BasicObj {
                 isDevice = true;
             }};
         }});
-
-        //
-        this.vertexArrays = new PipelineLayoutObj.OutstandingArray<>();
     }
 
     // byte-based structure data
@@ -90,20 +83,13 @@ public class VirtualVertexArrayHeap extends BasicObj {
 
     // also, after draw, vertex and/or index buffer data can/may be changed.
     // for BLAS-based recommended to use a fixed data.
-    public static class VirtualVertexArrayObj extends BasicObj {
-        // If you planned to use with AS
-        public long BLASHandle = 0L;
-        public long BLASAddress = 0L;
+    public static class VirtualVertexArrayObj extends VirtualGLObj {
+        // Will be used in draw collection
+        //public long BLASHandle = 0L;
+        //public long BLASAddress = 0L;
         public HashMap<Integer, VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
         public long bufferOffset = 0L;
-
-        //
-        public VirtualVertexArrayHeap bound = null;
-
-        // virtual GL is always is `DSC_ID`+1
-        public int DSC_ID = -1; // for shaders
-        public int virtualGL = 0; // for virtual OpenGL
 
         //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
@@ -116,13 +102,19 @@ public class VirtualVertexArrayHeap extends BasicObj {
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
-            var virtualVertexArraySystem = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayObj", cInfo.bufferHeapHandle));
 
             //
-            this.bound = virtualVertexArraySystem;
-            this.DSC_ID = this.bound.vertexArrays.push(this);
-            this.bindingsMapped = this.bound.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
+            var virtualVertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.registryHandle));
+
+            //
+            this.bound = virtualVertexArrayHeap;
+
+            //
+            this.DSC_ID = this.bound.registry.push(this);
             this.virtualGL = this.DSC_ID+1;
+
+            //
+            this.bindingsMapped = virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
         }
 
         //
@@ -136,14 +128,14 @@ public class VirtualVertexArrayHeap extends BasicObj {
                     binding.writeData(bindingsMapped,bindingOffset + vertexBindingStride * index);
                 }
             });
-
-            //
             return this;
         }
 
         //
         public VirtualVertexArrayObj vertexBinding(int index, VertexBinding binding) {
-            bindings.put(index, binding);
+            if (index >= 0 && index < 4) {
+                bindings.put(index, binding);
+            }
             return this;
         }
     }

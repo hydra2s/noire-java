@@ -30,8 +30,8 @@ public class MemoryAllocationObj extends BasicObj {
 
     // probably, will be replaced by modules
     // not sure about that
-    public BufferObj bufferObj = null;
-    public ImageObj imageObj = null;
+    //public BufferObj bufferObj = null;
+    //public ImageObj imageObj = null;
 
     //
     public PointerBuffer deviceMemory = memAllocPointer(1);
