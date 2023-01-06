@@ -58,6 +58,14 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }});
     }
 
+    public long getBufferAddress() {
+        return this.bufferHeap.getDeviceAddress();
+    }
+
+    public VkDescriptorBufferInfo getBufferRange() {
+        return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
+    }
+
     // TODO: use synchronization from host with cmdBuf
     public VirtualVertexArrayHeap writeVertexArrays() {
         this.registry.forEach((obj)->{
@@ -75,8 +83,8 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         //public long BLASAddress = 0L;
         public HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
-        public long bufferOffset = 0L;
-        public long address = 0L;
+        protected long bufferOffset = 0L;
+        protected long address = 0L;
 
         //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
@@ -103,6 +111,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             //
             this.bindingsMapped = virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
             this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
+        }
+
+        //
+        public long getBufferAddress() {
+            return this.address;
         }
 
         //

@@ -27,8 +27,8 @@ import static org.lwjgl.vulkan.VK10.*;
 public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
     //
-    public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
-    public VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
+    protected PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
+    protected VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
     protected BufferObj bufferHeap = null;
 
     //
@@ -64,19 +64,25 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
     }
 
+    public long getBufferAddress() {
+        return this.bufferHeap.getDeviceAddress();
+    }
+
+    public VkDescriptorBufferInfo getBufferRange() {
+        return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
+    }
+
     // Will be able to deallocate and re-allocate again
     // TODO: add sub-buffer copying support (for command buffers)
     // TODO: getter for buffer ranges (handle-based)
     public static class VirtualMutableBufferObj extends VirtualGLObj {
-        public PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
-        public LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);
-        public long bufferSize = 0L;
-        public long blockSize = 0L;
-        public long address = 0L;
-        public ByteBuffer mapped = null;
-
-        //
-        public VmaVirtualAllocationCreateInfo allocCreateInfo = null;
+        protected PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
+        protected LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);
+        protected long bufferSize = 0L;
+        protected long blockSize = 0L;
+        protected long address = 0L;
+        protected ByteBuffer mapped = null;
+        protected VmaVirtualAllocationCreateInfo allocCreateInfo = null;
 
         //
         public VirtualMutableBufferObj(Handle base, Handle handle) {
@@ -111,7 +117,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         //
-        public long getAddress() {
+        public long getBufferAddress() {
             return this.address;
         }
 

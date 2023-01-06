@@ -10,6 +10,7 @@ import org.hydra2s.noire.objects.PipelineLayoutObj;
 // TODO: default descriptor index is -1
 // TODO: getting virtual GL vertex array with +1 index shift
 public class VirtualGLRegistry extends BasicObj {
+    // TODO: make it protected
     public PipelineLayoutObj.OutstandingArray<VirtualGLObj> registry = null;
 
     //
