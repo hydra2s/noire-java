@@ -2,15 +2,11 @@ package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.noire.descriptors.ImageCInfo;
-import org.hydra2s.noire.descriptors.ImageSetCInfo;
-import org.hydra2s.noire.descriptors.ImageViewCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
-import org.lwjgl.vulkan.VkOffset3D;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -101,17 +97,33 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdBackstageId(VkCommandBuffer cmdBuf, int I) {
-        this.previousImageViews.get(I).cmdCopyImageViewToImageView(cmdBuf, (((ImageSetCInfo)this.cInfo).extents).get(I),
-                VkOffset3D.calloc().x(0).y(0).z(0), 0, this.currentImageViews.get(I).handle.get(),
-                VkOffset3D.calloc().x(0).y(0).z(0), 0);
+        ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+            new CopyInfoCInfo.ImageViewCopyInfo(){{
+                device = base.get();
+                imageView = currentImageViews.get(I).handle.get();
+            }},
+            new CopyInfoCInfo.ImageViewCopyInfo(){{
+                device = base.get();
+                imageView = previousImageViews.get(I).handle.get();
+            }},
+            (((ImageSetCInfo)this.cInfo).extents).get(I)
+        );
         return this;
     }
 
     //
     public ImageSetObj cmdSwapstageId(VkCommandBuffer cmdBuf, int I) {
-        this.currentImageViews.get(I).cmdCopyImageViewToImageView(cmdBuf, (((ImageSetCInfo)this.cInfo).extents).get(I),
-                VkOffset3D.calloc().x(0).y(0).z(0), 0, this.writingImageViews.get(I).handle.get(),
-                VkOffset3D.calloc().x(0).y(0).z(0), 0);
+        ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+            new CopyInfoCInfo.ImageViewCopyInfo(){{
+                device = base.get();
+                imageView = writingImageViews.get(I).handle.get();
+            }},
+            new CopyInfoCInfo.ImageViewCopyInfo(){{
+                device = base.get();
+                imageView = currentImageViews.get(I).handle.get();
+            }},
+            (((ImageSetCInfo)this.cInfo).extents).get(I)
+        );
         return this;
     }
 
@@ -224,11 +236,17 @@ public class ImageSetObj extends BasicObj  {
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var extent = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
-
-                //
-                this.currentDepthStencilImageView.cmdCopyImageViewToImageView(cmdBuf, extent,
-                        VkOffset3D.calloc().x(0).y(0).z(0), 0, this.previousDepthStencilImageView.handle.get(),
-                        VkOffset3D.calloc().x(0).y(0).z(0), 0);
+                ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                        device = base.get();
+                        imageView = currentDepthStencilImageView.handle.get();
+                    }},
+                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                        device = base.get();
+                        imageView = previousDepthStencilImageView.handle.get();
+                    }},
+                    extent
+                );
             }
 
             //

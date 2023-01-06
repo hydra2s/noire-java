@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import org.hydra2s.noire.descriptors.CopyInfoCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.lwjgl.vulkan.*;
 
@@ -67,94 +68,105 @@ public class ImageViewObj extends BasicObj {
             .layerCount(subresourceRange.layerCount());
     }
 
-    // TODO: unidirectional support
-    public ImageViewObj cmdCopyBufferToImageView(
+    //
+    public static void cmdCopyBufferToImageView(
         VkCommandBuffer cmdBuf,
-
-        // TODO: multiple one support
-        VkExtent3D extent,
-        VkOffset3D dstOffset,
-        int dstMipLevel,
-
-        // TODO: structured one support
-        long srcBuffer,
-        long srcOffset
+        CopyInfoCInfo.BufferRangeCopyInfo srcBufferRange,
+        CopyInfoCInfo.ImageViewCopyInfo dstImageView,
+        VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device);
+        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", dstImageView.imageView));
 
         //
-        MemoryAllocationObj.cmdCopyBufferToImage(cmdBuf, srcBuffer, ((ImageViewCInfo)cInfo).image,
-            ((ImageViewCInfo)cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
+        MemoryAllocationObj.cmdCopyBufferToImage(cmdBuf, srcBufferRange.buffer, ((ImageViewCInfo)dstImageViewObj.cInfo).image,
+            ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
-                .bufferOffset(srcOffset)
-                .imageOffset(dstOffset).imageExtent(extent)
-                .imageSubresource(this.subresourceLayers(dstMipLevel))
+                .bufferOffset(srcBufferRange.offset)
+                .imageOffset(dstImageView.offset).imageExtent(extent)
+                .imageSubresource(dstImageViewObj.subresourceLayers(dstImageView.mipLevel))
         );
-
-        //
-        return this;
     }
 
-    // TODO: unidirectional support
-    public ImageViewObj cmdCopyImageViewToImageView(
+    //
+    public static void cmdCopyImageViewToBuffer(
         VkCommandBuffer cmdBuf,
-
-        // TODO: multiple one support
-        VkExtent3D extent,
-        VkOffset3D dstOffset,
-        int dstMipLevel,
-
-        // TODO: structured one support
-        long srcImageView,
-        VkOffset3D srcOffset,
-        int srcMipLevel
+        CopyInfoCInfo.ImageViewCopyInfo srcImageView,
+        CopyInfoCInfo.BufferRangeCopyInfo dstBufferRange,
+        VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView.imageView));
 
         //
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView));
-        var srcImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)srcImageViewObj.cInfo).image));
-        var dstImageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", ((ImageViewCInfo)cInfo).image));
-
-        //
-        this.cmdCopyImageToImageView(cmdBuf, extent, dstOffset, dstMipLevel, ((ImageViewCInfo)srcImageViewObj.cInfo).image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, srcOffset, srcImageViewObj.subresourceLayers(srcMipLevel));
-
-        //
-        return this;
+        MemoryAllocationObj.cmdCopyImageToBuffer(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstBufferRange.buffer,
+            ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
+                .bufferOffset(dstBufferRange.offset)
+                .imageOffset(srcImageView.offset).imageExtent(extent)
+                .imageSubresource(srcImageViewObj.subresourceLayers(srcImageView.mipLevel))
+        );
     }
 
-    // TODO: unidirectional support
-    public ImageViewObj cmdCopyImageToImageView(
+    //
+    public static void cmdCopyImageViewToImageView(
         VkCommandBuffer cmdBuf,
-
-        // TODO: multiple one support
-        VkExtent3D extent,
-        VkOffset3D dstOffset,
-        int dstMipLevel,
-
-        // TODO: structured one support
-        long srcImage,
-        int srcImageLayout,
-        VkOffset3D srcOffset,
-        VkImageSubresourceLayers srcSubresource
+        CopyInfoCInfo.ImageViewCopyInfo srcImageView,
+        CopyInfoCInfo.ImageViewCopyInfo dstImageView,
+        VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView.imageView));
 
         //
-        MemoryAllocationObj.cmdCopyImageToImage(cmdBuf, srcImage, ((ImageViewCInfo)cInfo).image, srcImageLayout,
-            ((ImageViewCInfo)cInfo).imageLayout, VkImageCopy2.calloc(1)
+        ImageViewObj.cmdCopyImageToImageView(cmdBuf, new CopyInfoCInfo.ImageCopyInfo(){{
+            image = ((ImageViewCInfo)srcImageViewObj.cInfo).image;
+            imageLayout = srcImageViewObj.getImageLayout();
+            offset = srcImageView.offset;
+            subresource = srcImageViewObj.subresourceLayers(srcImageView.mipLevel);
+        }}, dstImageView, extent);
+    }
+
+    //
+    public static void cmdCopyImageViewToImage(
+        VkCommandBuffer cmdBuf,
+        CopyInfoCInfo.ImageCopyInfo dstImage,
+        CopyInfoCInfo.ImageViewCopyInfo srcImageView,
+        VkExtent3D extent
+    ) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", srcImageView.imageView));
+
+        //
+        MemoryAllocationObj.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstImage.image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, dstImage.imageLayout,
+            VkImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
                 .extent(extent)
-                .dstOffset(dstOffset)
-                .srcOffset(srcOffset)
-                .dstSubresource(this.subresourceLayers(dstMipLevel))
-                .srcSubresource(srcSubresource));
+                .srcOffset(srcImageView.offset)
+                .dstOffset(dstImage.offset)
+                .srcSubresource(srcImageViewObj.subresourceLayers(srcImageView.mipLevel))
+                .dstSubresource(dstImage.subresource));
+    }
+
+    //
+    public static void cmdCopyImageToImageView(
+        VkCommandBuffer cmdBuf,
+        CopyInfoCInfo.ImageCopyInfo srcImage,
+        CopyInfoCInfo.ImageViewCopyInfo dstImageView,
+        VkExtent3D extent
+    ) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device);
+        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new Handle("ImageView", dstImageView.imageView));
 
         //
-        return this;
+        MemoryAllocationObj.cmdCopyImageToImage(cmdBuf, srcImage.image, ((ImageViewCInfo)dstImageViewObj.cInfo).image, srcImage.imageLayout, ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout,
+            VkImageCopy2.calloc(1)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
+                .extent(extent)
+                .dstOffset(dstImageView.offset)
+                .srcOffset(srcImage.offset)
+                .dstSubresource(dstImageViewObj.subresourceLayers(dstImageView.mipLevel))
+                .srcSubresource(srcImage.subresource));
     }
 
     public int getImageLayout() {
