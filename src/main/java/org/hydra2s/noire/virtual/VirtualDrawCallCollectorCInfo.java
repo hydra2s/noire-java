@@ -15,6 +15,7 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
         public long offset = 0L;
         public long range = VK_WHOLE_SIZE;
         public long address = 0L;
+        public long stride = 0L;
     }
 
     // TODO: use host memory too (directly, zero-copy)
@@ -23,7 +24,7 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
         public long offset = 0L;
         public long range = VK_WHOLE_SIZE;
         public long address = 0L;
-        public int indexType = VK_INDEX_TYPE_NONE_KHR;
+        public int type = VK_INDEX_TYPE_NONE_KHR;
     }
 
     //

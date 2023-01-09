@@ -100,6 +100,13 @@ public class PipelineLayoutObj extends BasicObj  {
             if (index >= 0) { this.removeIndex(index); };
             return index;
         }
+
+        //
+        @Override
+        public void clear() {
+            super.clear();
+            this.empty.clear();
+        }
     }
 
     //
