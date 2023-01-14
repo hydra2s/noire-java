@@ -6,18 +6,18 @@ import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.VkAccelerationStructureBuildRangeInfoKHR;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkMultiDrawInfoEXT;
+import org.lwjgl.vulkan.*;
 
 //
 import java.util.ArrayList;
 
 //
+import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // Will collect draw calls data for building acceleration structures
 public class VirtualDrawCallCollector extends VirtualGLRegistry {
@@ -229,7 +229,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         }
 
         // TODO: finish up such command
-        public VirtualDrawCallObj cmdCopyFrom(VkCommandBuffer copyCmd) {
+        public VirtualDrawCallObj cmdCopyFrom(VkCommandBuffer cmdBuf) {
             var cInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)this.cInfo;
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
@@ -239,7 +239,21 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(cInfo.vertexArrayObjectId);
             var vertexBinding = vertexArrayObj.bindings.get(0);
 
+            //
+            var vRange = vertexArrayHeap.getBufferRange();
+            var uRange = vertexArrayObj.getBufferRange();
+            var VaoOffset = 0L;
 
+            //
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vertexArrayHeap.bufferHeap.getHandle().get(), vertexBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range))
+            );
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, cInfo.indexData.handle, indexBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(cInfo.indexData.offset).dstOffset(indexBuffer.offset).size(min(cInfo.indexData.range, indexBuffer.range))
+            );
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, uRange.buffer(), uniformBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uRange.offset() + VaoOffset).dstOffset(uniformBuffer.offset).size(min(uRange.range(), uniformBuffer.range))
+            );
 
             return this;
         }
