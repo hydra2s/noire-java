@@ -58,7 +58,7 @@ public class VirtualGLRegistry extends BasicObj {
     public TreeMap<Long, VirtualGLObj> applyOrdering() {
         sorted.clear();
         registry.forEach((R)->{
-            sorted.put(((VirtualGLRegistryCInfo.VirtualGLObjCInfo)R.cInfo).mortonCode, R);
+            if (R != null) { sorted.put(((VirtualGLRegistryCInfo.VirtualGLObjCInfo) R.cInfo).mortonCode, R); }
         });
         return sorted;
     }

@@ -123,6 +123,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     // TODO: needs to add sorting and morton code support
     public VirtualDrawCallCollector finishCollection() {
+        this.applyOrdering();
+
+        //
         this.geometries = new ArrayList<>();
         this.ranges = VkAccelerationStructureBuildRangeInfoKHR.calloc(this.registry.size());
         this.multiDraw = VkMultiDrawInfoEXT.calloc(this.registry.size());
@@ -132,9 +135,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
-        //
-        for (var I=0;I<this.registry.size();I++) {
-            var drawCall = (VirtualDrawCallObj)this.registry.get(I);
+        // use sorted data for draw (and possible, culling)
+        for (var I=0;I<this.sorted.size();I++) {
+            var drawCall = (VirtualDrawCallObj)this.sorted.get(I);
             var drawCallCInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)drawCall.cInfo;
             var geometryInfo = new DataCInfo.TriangleGeometryCInfo();
             var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", drawCallCInfo.vertexArrayHeapHandle));
@@ -142,7 +145,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var vertexBinding = vertexArrayObj.bindings.get(0);
 
             //
-            if (drawCall != null) {
+            {
                 //
                 this.multiDraw.get(I).set(0, (int) drawCallCInfo.vertexCount);
                 this.ranges.get(I).set((int) (drawCallCInfo.vertexCount/3), 0, 0, 0);
@@ -163,7 +166,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             }
 
             //
-            geometries.add(geometryInfo);
+            this.geometries.add(geometryInfo);
         }
 
         return this;
