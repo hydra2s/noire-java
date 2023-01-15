@@ -4,14 +4,17 @@ package org.hydra2s.noire.virtual;
 import org.hydra2s.noire.objects.BasicObj;
 import org.hydra2s.noire.objects.PipelineLayoutObj;
 
+import java.util.LinkedHashMap;
+import java.util.TreeMap;
+
 // TODO: needs to add morton coding support (for registry)
 // TODO: also, needs to add ordering support (by morton code)
 // TODO: 3D-attach technology (based on sorting and morton codes)
 public class VirtualGLRegistry extends BasicObj {
 
-    // TODO: make it protected
-    // TODO: make by morton-code ordered
-    public PipelineLayoutObj.OutstandingArray<VirtualGLObj> registry = null;
+    //
+    protected PipelineLayoutObj.OutstandingArray<VirtualGLObj> registry = null;
+    protected TreeMap<Long, VirtualGLObj> sorted = null;
 
     //
     public VirtualGLRegistry(Handle base, Handle handle) {
@@ -52,6 +55,15 @@ public class VirtualGLRegistry extends BasicObj {
 
     public int dscIndexOf(VirtualGLObj obj) {
         return registry.indexOf(obj);
+    }
+
+    // sorting by morton-codes
+    public TreeMap<Long, VirtualGLObj> applyOrdering() {
+        sorted.clear();
+        registry.forEach((R)->{
+            sorted.put(((VirtualGLRegistryCInfo.VirtualGLObjCInfo)R.cInfo).mortonCode, R);
+        });
+        return sorted;
     }
 
     //
