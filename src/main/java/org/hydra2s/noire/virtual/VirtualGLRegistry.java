@@ -4,13 +4,13 @@ package org.hydra2s.noire.virtual;
 import org.hydra2s.noire.objects.BasicObj;
 import org.hydra2s.noire.objects.PipelineLayoutObj;
 
-// TODO: use virtual GL registry per heaps
-// TODO: add support for virtual GL indices
-// TODO: GL virtual index is always (descriptor index) + 1
-// TODO: default descriptor index is -1
-// TODO: getting virtual GL vertex array with +1 index shift
+// TODO: needs to add morton coding support (for registry)
+// TODO: also, needs to add ordering support (by morton code)
+// TODO: 3D-attach technology (based on sorting and morton codes)
 public class VirtualGLRegistry extends BasicObj {
+
     // TODO: make it protected
+    // TODO: make by morton-code ordered
     public PipelineLayoutObj.OutstandingArray<VirtualGLObj> registry = null;
 
     //
@@ -25,6 +25,33 @@ public class VirtualGLRegistry extends BasicObj {
         super(base, cInfo);
 
         this.registry = new PipelineLayoutObj.OutstandingArray<>();
+    }
+
+    // return by `dscId` + 1
+    public VirtualGLObj removeByGlId(int glId) {
+        return registry.removeIndex(glId-1);
+    }
+
+    public VirtualGLObj removeByDscId(int dscId) {
+        return registry.removeIndex(dscId);
+    }
+
+    // return by `dscId` + 1
+    public VirtualGLObj getByGlId(int glId) {
+        return registry.get(glId-1);
+    }
+
+    public VirtualGLObj getByDscId(int dscId) {
+        return registry.get(dscId);
+    }
+
+    // return by `dscId` + 1
+    public int glIndexOf(VirtualGLObj obj) {
+        return registry.indexOf(obj)+1;
+    }
+
+    public int dscIndexOf(VirtualGLObj obj) {
+        return registry.indexOf(obj);
     }
 
     //

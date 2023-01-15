@@ -1,7 +1,6 @@
 package org.hydra2s.noire.virtual;
 
 //
-
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
@@ -24,6 +23,7 @@ import static org.lwjgl.vulkan.VK10.*;
 // Will uses large buffer concept with virtual allocation (VMA)
 // When used draw collector system, recommended to use host-based memory
 // TODO: add support for multiple buffer heaps into one virtual GL registry
+// TODO: needs more correctly reusing same buffer-data
 public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
     //
@@ -64,17 +64,17 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
     }
 
+    //
     public long getBufferAddress() {
         return this.bufferHeap.getDeviceAddress();
     }
 
+    //
     public VkDescriptorBufferInfo getBufferRange() {
         return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
     }
 
     // Will be able to deallocate and re-allocate again
-    // TODO: add sub-buffer copying support (for command buffers)
-    // TODO: getter for buffer ranges (handle-based)
     public static class VirtualMutableBufferObj extends VirtualGLObj {
         protected PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
         protected LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);

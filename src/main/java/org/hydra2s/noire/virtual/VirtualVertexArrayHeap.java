@@ -6,6 +6,7 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 import java.nio.ByteBuffer;
@@ -24,6 +25,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
     //
     public static final int vertexArrayStride = 256;
     public static final int vertexBindingStride = 32;
+    public static final int maxBindings = vertexArrayStride / vertexBindingStride;
 
     //
     protected BufferObj bufferHeap = null;
@@ -66,12 +68,21 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
     }
 
-    // TODO: use synchronization from host with cmdBuf
+    //
     public VirtualVertexArrayHeap writeVertexArrays() {
         this.registry.forEach((obj)->{
             var VAO = (VirtualVertexArrayObj)obj;
             if (VAO != null) { VAO.writeData(); };
         });
+        return this;
+    }
+
+    public VirtualVertexArrayHeap cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
+        this.bufferHeap.cmdSynchronizeFromHost(cmdBuf);
+        return this;
+    }
+
+    public VirtualVertexArrayHeap cmdClear(VkCommandBuffer cmdBuf) {
         return this;
     }
 
@@ -140,7 +151,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         //
         public VirtualVertexArrayObj vertexBinding(int index, VirtualVertexArrayHeapCInfo.VertexBinding binding) {
-            if (index >= 0 && index < 4) {
+            if (index >= 0 && index < maxBindings) {
                 bindings.put(index, binding);
             }
             return this;

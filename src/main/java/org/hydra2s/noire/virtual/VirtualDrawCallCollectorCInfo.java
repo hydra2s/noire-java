@@ -1,5 +1,7 @@
 package org.hydra2s.noire.virtual;
 
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
+
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_INDEX_TYPE_NONE_KHR;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 
@@ -42,6 +44,11 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
         //
         public IndexRange indexData = null;
         public long vertexCount = 0;
+
+        //
+        public VkDescriptorBufferInfo uniformRange = null;
+
+
     }
 
 

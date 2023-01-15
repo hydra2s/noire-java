@@ -20,6 +20,7 @@ import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // Will collect draw calls data for building acceleration structures
+// TODO: needs add sorting support (per morton-code)
 public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     //
@@ -120,7 +121,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         return new VirtualDrawCallObj(this.base, drawCallInfo);
     }
 
-    // TODO: finalize dev on such feature, but I'm tired
+    // TODO: needs to add sorting and morton code support
     public VirtualDrawCallCollector finishCollection() {
         this.geometries = new ArrayList<>();
         this.ranges = VkAccelerationStructureBuildRangeInfoKHR.calloc(this.registry.size());
@@ -168,7 +169,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         return this;
     }
 
-    // TODO: finalize dev on such feature, but I'm tired
+    // TODO: needs add sorting support (per morton-code)
     public static class VirtualDrawCallObj extends VirtualGLRegistry.VirtualGLObj {
         //
         public VirtualDrawCallCollectorCInfo.BufferRange vertexBuffer = null;
@@ -228,8 +229,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             virtualDrawCallCollector.uniformDataBudget.offset += this.uniformBuffer.range;
         }
 
-        // TODO: finish up such command
-        public VirtualDrawCallObj cmdCopyFrom(VkCommandBuffer cmdBuf) {
+        //
+        public VirtualDrawCallObj cmdCopyFromSource(VkCommandBuffer cmdBuf) {
             var cInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)this.cInfo;
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
@@ -241,20 +242,25 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             //
             var vRange = vertexArrayHeap.getBufferRange();
-            var uRange = vertexArrayObj.getBufferRange();
-            var VaoOffset = 0L;
+            var vaoRange = vertexArrayObj.getBufferRange();
+            var uniRange = cInfo.uniformRange;
+            var indexRange = cInfo.indexData;
 
             //
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vertexArrayHeap.bufferHeap.getHandle().get(), vertexBuffer.handle,
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle,
                 VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range))
             );
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, cInfo.indexData.handle, indexBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(cInfo.indexData.offset).dstOffset(indexBuffer.offset).size(min(cInfo.indexData.range, indexBuffer.range))
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset).dstOffset(indexBuffer.offset).size(min(indexRange.range, indexBuffer.range))
             );
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, uRange.buffer(), uniformBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uRange.offset() + VaoOffset).dstOffset(uniformBuffer.offset).size(min(uRange.range(), uniformBuffer.range))
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vaoRange.offset()).dstOffset(uniformBuffer.offset).size(min(vaoRange.range(), uniformBuffer.range))
+            );
+            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle,
+                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uniRange.offset()).dstOffset(uniformBuffer.offset + vaoRange.range()).size(min(uniRange.range(), uniformBuffer.range))
             );
 
+            //
             return this;
         }
     }
