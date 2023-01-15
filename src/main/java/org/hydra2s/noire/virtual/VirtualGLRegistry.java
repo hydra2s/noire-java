@@ -34,7 +34,6 @@ public class VirtualGLRegistry extends BasicObj {
     public VirtualGLObj removeByGlId(int glId) {
         return registry.removeIndex(glId-1);
     }
-
     public VirtualGLObj removeByDscId(int dscId) {
         return registry.removeIndex(dscId);
     }
@@ -43,7 +42,6 @@ public class VirtualGLRegistry extends BasicObj {
     public VirtualGLObj getByGlId(int glId) {
         return registry.get(glId-1);
     }
-
     public VirtualGLObj getByDscId(int dscId) {
         return registry.get(dscId);
     }
@@ -52,7 +50,6 @@ public class VirtualGLRegistry extends BasicObj {
     public int glIndexOf(VirtualGLObj obj) {
         return registry.indexOf(obj)+1;
     }
-
     public int dscIndexOf(VirtualGLObj obj) {
         return registry.indexOf(obj);
     }

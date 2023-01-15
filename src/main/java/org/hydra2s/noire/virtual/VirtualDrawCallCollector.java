@@ -196,7 +196,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.DSC_ID = this.bound.registry.push(this);
             this.virtualGL = this.DSC_ID+1;
 
-            //
+            // TODO: use virtual allocation and morton code (i.e. reusing data)
             this.vertexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
                 offset = virtualDrawCallCollector.vertexDataBudget.offset;
                 stride = vertexBinding.stride;
@@ -205,7 +205,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                 handle = virtualDrawCallCollector.vertexDataBudget.bufferObj.getHandle().get();
             }};
 
-            //
+            // TODO: use virtual allocation and morton code (i.e. reusing data)
             this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
                 offset = virtualDrawCallCollector.indexDataBudget.offset;
                 stride = (cInfo.indexData.type == VK_INDEX_TYPE_UINT32 ? 4 : (cInfo.indexData.type == VK_INDEX_TYPE_UINT16 ? 2 : (cInfo.indexData.type == VK_INDEX_TYPE_UINT8_EXT ? 1 : 0)));
@@ -214,7 +214,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                 handle = virtualDrawCallCollector.indexDataBudget.bufferObj.getHandle().get();
             }};
 
-            //
+            // TODO: use virtual allocation and morton code (i.e. reusing data)
             this.uniformBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
                 offset = virtualDrawCallCollector.uniformDataBudget.offset;
                 stride = drawCallUniformStride;

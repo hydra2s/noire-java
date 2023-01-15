@@ -49,19 +49,22 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(memAllocLong(1)));
         deviceObj.handleMap.put(this.handle, this);
 
-        //
-        this.bufferHeap = new BufferObj(this.base, new BufferCInfo() {{
-            size = cInfo.bufferHeapSize;
-            usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-            memoryAllocator = cInfo.memoryAllocator;
-            memoryAllocationInfo = new MemoryAllocationCInfo(){{
-                isHost = cInfo.isHost;
-                isDevice = !cInfo.isHost;
-            }};
-        }});
+        // TODO: multiple heaps, one registry
+        // TODO: morton coding support
+        {
+            this.bufferHeap = new BufferObj(this.base, new BufferCInfo() {{
+                size = cInfo.bufferHeapSize;
+                usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                memoryAllocator = cInfo.memoryAllocator;
+                memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                    isHost = cInfo.isHost;
+                    isDevice = !cInfo.isHost;
+                }};
+            }});
 
-        //
-        vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+            //
+            vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+        }
     }
 
     //
@@ -145,7 +148,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.mapped = null;
         }
 
-        //
+        // TODO: morton coding support
         public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
             final long MEM_BLOCK = 1024L * 3L;
             bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
