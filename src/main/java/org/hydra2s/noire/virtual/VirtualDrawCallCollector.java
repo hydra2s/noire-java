@@ -324,16 +324,16 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var indexRange = cInfo.indexData;
 
             //
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle,
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle,
                 VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range))
             );
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle,
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle,
                 VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset).dstOffset(indexBuffer.offset).size(min(indexRange.range, indexBuffer.range))
             );
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle,
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle,
                 VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vaoRange.offset()).dstOffset(uniformBuffer.offset).size(min(vaoRange.range(), uniformBuffer.range))
             );
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle,
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle,
                 VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uniRange.offset()).dstOffset(uniformBuffer.offset + vaoRange.range()).size(min(uniRange.range(), uniformBuffer.range))
             );
 

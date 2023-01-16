@@ -97,28 +97,7 @@ public class ImageObj extends BasicObj {
         }
     }
 
-    // TODO: special support for ImageView
-    public ImageObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
-        // TODO: correct stage and access per every imageLayout, it should increase some FPS
-        var memoryBarrier = VkImageMemoryBarrier2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-                .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .oldLayout(oldLayout)
-                .newLayout(newLayout)
-                .subresourceRange(subresourceRange)
-                .image(this.handle.get());
-
-        //
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
-        return this;
-    }
-
-    @Override // TODO: multiple queue family support
+    @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj delete() {
         var handle = this.handle;
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());

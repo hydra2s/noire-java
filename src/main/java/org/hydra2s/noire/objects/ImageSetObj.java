@@ -124,7 +124,7 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdBackstageId(VkCommandBuffer cmdBuf, int I) {
-        ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+        CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
             new CopyInfoCInfo.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = currentImageViews.get(I).handle.get();
@@ -140,7 +140,7 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdSwapstageId(VkCommandBuffer cmdBuf, int I) {
-        ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+        CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
             new CopyInfoCInfo.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = writingImageViews.get(I).handle.get();
@@ -263,7 +263,7 @@ public class ImageSetObj extends BasicObj  {
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var extent = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
-                ImageViewObj.cmdCopyImageViewToImageView(cmdBuf,
+                CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
                     new CopyInfoCInfo.ImageViewCopyInfo(){{
                         device = base.get();
                         imageView = currentDepthStencilImageView.handle.get();

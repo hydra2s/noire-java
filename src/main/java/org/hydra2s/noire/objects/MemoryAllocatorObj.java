@@ -12,6 +12,7 @@ import org.lwjgl.vulkan.*;
 
 //
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
@@ -28,6 +29,10 @@ public class MemoryAllocatorObj extends BasicObj  {
         protected boolean mapped = false;
         protected PointerBuffer mappedPtr = null;
 
+        // TODO: interval tree support
+        protected ArrayList<MemoryAllocationObj> allocations = null;
+
+        //
         public DeviceMemoryObj(Handle base, Handle handle) {
             super(base, handle);
 
@@ -38,10 +43,13 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
+            this.allocations = new ArrayList<MemoryAllocationObj>();
+
             deviceObj.handleMap.put(this.handle, this);
             memoryAllocatorObj.handleMap.put(this.handle, this);
         }
 
+        //
         public DeviceMemoryObj(Handle base, MemoryAllocationCInfo cInfo) {
             super(base, cInfo);
 
@@ -103,8 +111,10 @@ public class MemoryAllocatorObj extends BasicObj  {
             //
             deviceObj.handleMap.put(this.handle, this);
             this.mappedPtr = memAllocPointer(1);
+            this.allocations = new ArrayList<MemoryAllocationObj>();
         }
 
+        //
         public ByteBuffer map(long byteLength, long byteOffset) {
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
@@ -127,6 +137,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             return memSlice(memByteBuffer(this.mappedPtr.get(0), (int) ((VkMemoryAllocateInfo)this.allocInfo).allocationSize()), (int)BO, (int)BM);
         }
 
+        //
         public void unmap() {
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
@@ -173,9 +184,14 @@ public class MemoryAllocatorObj extends BasicObj  {
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
         //
+        var deviceMemory = new DeviceMemoryObj(this.handle, cInfo);
         memoryAllocationObj.memoryOffset = 0L;
-        memoryAllocationObj.deviceMemory = (new DeviceMemoryObj(this.handle, cInfo)).handle.ptr();
+        memoryAllocationObj.deviceMemory = deviceMemory.handle.ptr();
         memoryAllocationObj.memorySize = cInfo.memoryRequirements.size();
+
+        // register allocation
+        // TODO: shared pointer support (alike C++)
+        deviceMemory.allocations.add(memoryAllocationObj);
 
         //
         if (cInfo.buffer != null && cInfo.buffer.get(0) != 0) { vkBindBufferMemory(deviceObj.device, cInfo.buffer.get(0), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };

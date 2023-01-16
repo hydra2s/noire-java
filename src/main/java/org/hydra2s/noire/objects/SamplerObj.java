@@ -4,9 +4,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.SamplerCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
-import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 //
@@ -42,7 +40,7 @@ public class SamplerObj extends BasicObj  {
         }
     }
 
-    @Override // TODO: multiple queue family support
+    @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj delete() {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var cInfo = (ImageViewCInfo)this.cInfo;

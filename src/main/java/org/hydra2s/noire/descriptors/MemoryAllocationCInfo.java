@@ -12,7 +12,8 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     public VkMemoryRequirements memoryRequirements = null;
     public VkMemoryRequirements2 memoryRequirements2 = null;
 
-    //
+    // TODO: replace by VMA ideology
+    // TODO: add Resizable BAR for VMA support
     public boolean isHost = true;
     public boolean isDevice = true;
 
@@ -24,6 +25,7 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     //
     public long memoryAllocator = 0L;
 
+    //
     public MemoryAllocationCInfo() {
         this.buffer = memAllocPointer(1).put(0, 0);
         this.image = memAllocPointer(1).put(0, 0);

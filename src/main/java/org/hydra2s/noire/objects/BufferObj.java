@@ -173,7 +173,7 @@ public class BufferObj extends BasicObj {
         return this;
     }
 
-    @Override // TODO: multiple queue family support
+    @Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj delete() {
         var handle = this.handle;
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());

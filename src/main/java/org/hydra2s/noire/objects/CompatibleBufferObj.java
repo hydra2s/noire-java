@@ -46,7 +46,7 @@ public class CompatibleBufferObj extends BufferObj {
         if (this.hostBuffer == null) {
             super.cmdSynchronizeFromHost(cmdBuf);
         } else {
-            MemoryAllocationObj.cmdCopyBufferToBuffer(cmdBuf, this.hostBuffer.getHandle().get(), this.getHandle().get(), VkBufferCopy2.calloc(1)
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, this.hostBuffer.getHandle().get(), this.getHandle().get(), VkBufferCopy2.calloc(1)
                     .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
                     .srcOffset(0)
                     .dstOffset(0)
