@@ -1,17 +1,20 @@
 package org.hydra2s.noire.objects;
 
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.CopyInfoCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.util.stream.IntStream;
 
+import static org.hydra2s.noire.descriptors.BasicCInfo.pipelineStagesByAccessMask;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 import static org.lwjgl.vulkan.VK13.*;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
 
 // GRIB!
+// TODO: support for queue families
 abstract public class CopyUtilObj {
 
     //
@@ -117,7 +120,7 @@ abstract public class CopyUtilObj {
 
     //
     static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, long srcImage, long dstImage, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -127,11 +130,11 @@ abstract public class CopyUtilObj {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask( VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -168,7 +171,7 @@ abstract public class CopyUtilObj {
 
     //
     static public void cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long srcImage, long dstBuffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -178,11 +181,11 @@ abstract public class CopyUtilObj {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask( VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -214,7 +217,7 @@ abstract public class CopyUtilObj {
 
     //
     static public void cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long srcBuffer, long dstImage, int imageLayout, VkBufferImageCopy2.Buffer regions) {
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -224,11 +227,11 @@ abstract public class CopyUtilObj {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask( VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -260,7 +263,7 @@ abstract public class CopyUtilObj {
 
     //
     static public void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long srcBuffer, long dstBuffer, VkBufferCopy2.Buffer regions) {
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -270,7 +273,7 @@ abstract public class CopyUtilObj {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
+        // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -295,16 +298,24 @@ abstract public class CopyUtilObj {
         //return this;
     }
 
-
-    //
+    // TODO: support for queue families
     public static void cmdTransitionBarrier(VkCommandBuffer cmdBuf, long image, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
-        // TODO: correct stage and access per every imageLayout, it should increase some FPS
+        // get correct access mask by image layouts
+        var dstAccessMask = BasicCInfo.getCorrectAccessMaskByImageLayout(newLayout);
+        var srcAccessMask = BasicCInfo.getCorrectAccessMaskByImageLayout(oldLayout);
+
+        // if undefined, use memory mask
+        if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
+        if (srcAccessMask == 0) { srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
+
+        // barrier by image layout
+        // TODO: support for queue families
         var memoryBarrier = VkImageMemoryBarrier2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcStageMask(BasicCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask))
+            .srcAccessMask(srcAccessMask)
+            .dstStageMask(BasicCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask))
+            .dstAccessMask(dstAccessMask)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(oldLayout)
@@ -314,6 +325,26 @@ abstract public class CopyUtilObj {
 
         //
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
+    }
+
+    // TODO: support for queue families
+    public static void cmdSynchronizeFromHost(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo range) {
+        // for `map()` or copy operations
+        // TODO: support for queue families
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1)
+            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .buffer(range.buffer())
+            .offset(range.offset())
+            .size(range.range()); // TODO: support partial synchronization
+
+        //
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
     }
 
 }

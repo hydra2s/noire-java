@@ -131,45 +131,17 @@ public class BufferObj extends BasicObj {
     // necessary after `unmap()` op
     // Resizable BAR!
     public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
-        // for `map()` or copy operations
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
-                .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .buffer(this.handle.get())
-                .offset(0L)
-                .size(VK_WHOLE_SIZE); // TODO: support partial synchronization
-
-        //
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
-
+        CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
         return this;
     }
 
     // unrecommended if you have ResizableBAR support
     // mostly, usable for uniform data and buffers
     // also, support partial synchronization
+    // bounds updating data into command buffer
     public BufferObj cmdUpdateBuffer(VkCommandBuffer cmdBuf, ByteBuffer data, long byteOffset) {
-
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
-                .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .buffer(this.handle.get())
-                .offset(byteOffset)
-                .size(data.remaining());
-
-        //
         vkCmdUpdateBuffer(cmdBuf, this.handle.get(), byteOffset, data);
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+        CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), byteOffset, data.remaining()));
         return this;
     }
 

@@ -15,6 +15,7 @@ import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RAST
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
@@ -180,7 +181,7 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
             this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             this.createInfo = VkGraphicsPipelineCreateInfo.calloc(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            this.dynamicStates = memAllocInt(3);
+            this.dynamicStates = memAllocInt(15); // HARDCORE!
 
             //
             this.inputAssemblyStateInfo
@@ -219,8 +220,11 @@ public class PipelineObj extends BasicObj  {
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
                 .pAttachments(fbLayout.blendAttachments)
-                .blendConstants(memAllocFloat(4).put(0, 0.0F).put(1, 0.0F).put(2, 0.0F).put(3, 0.0F));
-
+                .blendConstants(memAllocFloat(4)
+                    .put(0, 0.0F)
+                    .put(1, 0.0F)
+                    .put(2, 0.0F)
+                    .put(3, 0.0F));
             //
             //this.attachmentFormats.put();
             // TODO: depth only or stencil only support
@@ -234,7 +238,19 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStates
                 .put(0, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
                 .put(1, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
-                .put(2, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+                .put(2, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
+                .put(3, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
+                .put(4, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
+                .put(5, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
+                .put(6, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)
+                .put(7, VK_DYNAMIC_STATE_STENCIL_OP)
+                .put(8, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)
+                .put(9, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)
+                .put(10, VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)
+                .put(11, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)
+                .put(12, VK_DYNAMIC_STATE_BLEND_CONSTANTS)
+                .put(13, VK_DYNAMIC_STATE_CULL_MODE)
+                .put(14, VK_DYNAMIC_STATE_FRONT_FACE);
             this.dynamicStateInfo.pDynamicStates(this.dynamicStates);
 
             //
@@ -340,6 +356,40 @@ public class PipelineObj extends BasicObj  {
 
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
+
+            // JPEG XT!
+            // TODO: make single batch
+            for (var I=0;I<fbLayout.blendAttachments.remaining();I++) {
+                var blendAttachment = fbLayout.blendAttachments.get(I);
+                var blendEquation = VkColorBlendEquationEXT.calloc(1);
+                blendEquation.get(0).set(
+                    blendAttachment.srcColorBlendFactor(),
+                    blendAttachment.dstColorBlendFactor(),
+                    blendAttachment.colorBlendOp(),
+                    blendAttachment.srcAlphaBlendFactor(),
+                    blendAttachment.dstAlphaBlendFactor(),
+                    blendAttachment.alphaBlendOp()
+                );
+
+                // requires dynamic state 3 or Vulkan API 1.4
+                vkCmdSetColorBlendEquationEXT(cmdBuf, I, blendEquation);
+                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.blendEnable()?1:0});
+                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{blendAttachment.colorWriteMask()});
+
+                // TODO: logic op support
+                vkCmdSetLogicOpEnableEXT(cmdBuf, false);
+            }
+
+            //
+            vkCmdSetDepthTestEnable(cmdBuf, hasDepth);
+
+            // TODO: add stencil support
+            vkCmdSetStencilTestEnable(cmdBuf, false);
+
+            // TODO: add support for dynamic depth test op
+            vkCmdSetDepthCompareOp(cmdBuf, VK_COMPARE_OP_LESS_OR_EQUAL);
+
+            //
             vkCmdSetVertexInputEXT(cmdBuf, null, null);
             vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
             vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
@@ -355,6 +405,8 @@ public class PipelineObj extends BasicObj  {
                 }
             }
             vkCmdEndRendering(cmdBuf);
+
+            // after draw needs to barrier
             vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT)
                 .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
