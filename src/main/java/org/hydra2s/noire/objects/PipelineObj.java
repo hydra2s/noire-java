@@ -224,12 +224,13 @@ public class PipelineObj extends BasicObj  {
             //
             //this.attachmentFormats.put();
             // TODO: depth only or stencil only support
+            // TODO: dynamic depth and stencil state
             this.dynamicRenderingPipelineInfo
                 .pColorAttachmentFormats(fbLayout.formats)
                 .depthAttachmentFormat(fbLayout.depthStencilFormat)
                 .stencilAttachmentFormat(fbLayout.depthStencilFormat);
 
-            //
+            // TODO: dynamic depth and stencil state
             this.dynamicStates
                 .put(0, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
                 .put(1, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
