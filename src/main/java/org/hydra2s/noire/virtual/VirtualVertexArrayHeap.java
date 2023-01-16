@@ -138,7 +138,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
-            var heap = ((VirtualMutableBufferHeap)this.bound).bufferHeap;
+            var heap = ((VirtualVertexArrayHeap)this.bound).bufferHeap;
             return VkDescriptorBufferInfo.calloc().set(heap.getHandle().get(), this.bufferOffset, vertexArrayStride);
         }
 

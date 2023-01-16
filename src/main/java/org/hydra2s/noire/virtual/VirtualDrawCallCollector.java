@@ -12,16 +12,22 @@ import org.lwjgl.vulkan.*;
 import java.util.ArrayList;
 
 //
+import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static org.hydra2s.noire.virtual.VirtualVertexArrayHeap.vertexArrayStride;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
-import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // Will collect draw calls data for building acceleration structures
 // TODO: needs add sorting support (per morton-code)
+// What does or should to do morton code?
+// - Partially control of memory order
+// - Partially control randomization when draw call
+// - Partially fix some dis-orders
+// - Partially fix acceleration structure memory re-using
 public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     //
@@ -39,7 +45,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     //
     public final static int vertexAverageStride = 32;
     public final static int vertexAverageCount = 768;
-    public final static int drawCallUniformStride = 384;
+    public final static int drawCallUniformStride = 384 + vertexArrayStride;
 
     //
     public VkMultiDrawInfoEXT.Buffer multiDraw = null;
@@ -155,7 +161,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         })));
     }
 
-    //
+    // TODO: reusing same memory support
+    // Also, using similar of transform feedback
     @Override
     public VirtualDrawCallCollector clear() {
         super.clear();
@@ -172,10 +179,10 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     // TODO: multiple instance support
     public VirtualDrawCallCollector cmdBuildAccelerationStructure(VkCommandBuffer cmdBuf) {
-        bottomLvl.recallGeometryInfo();
-        bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
-        instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
-        topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
+        this.bottomLvl.recallGeometryInfo();
+        this.bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+        this.instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
+        this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
                 .primitiveCount(1)
                 .firstVertex(0)
                 .primitiveOffset(0)
@@ -185,6 +192,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     }
 
     // TODO: needs to add sorting and morton code support
+    // TODO: reusing same memory support
     public VirtualDrawCallCollector finishCollection() {
         this.applyOrdering();
 
@@ -202,31 +210,28 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         for (var I=0;I<this.sorted.size();I++) {
             var drawCall = (VirtualDrawCallObj)this.sorted.get(I);
             var drawCallCInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)drawCall.cInfo;
-            var geometryInfo = new DataCInfo.TriangleGeometryCInfo();
+
             var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", drawCallCInfo.vertexArrayHeapHandle));
             var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
-            var vertexBinding = vertexArrayObj.bindings.get(0);
+            var vertexBinding0 = vertexArrayObj.bindings.get(0);
 
             //
-            {
-                //
-                this.multiDraw.get(I).set(0, (int) drawCallCInfo.vertexCount);
-                this.ranges.get(I).set((int) (drawCallCInfo.vertexCount/3), 0, 0, 0);
-
-                //
-                geometryInfo.transformAddress = drawCall.uniformBuffer.address;
-                geometryInfo.indexBinding = new DataCInfo.IndexBindingCInfo(){{
+            this.multiDraw.get(I).set(0, (int) drawCallCInfo.vertexCount);
+            this.ranges.get(I).set((int) (drawCallCInfo.vertexCount/3), 0, 0, 0);
+            this.geometries.add(new DataCInfo.TriangleGeometryCInfo() {{
+                transformAddress = drawCall.uniformBuffer.address + vertexArrayStride;
+                indexBinding = new DataCInfo.IndexBindingCInfo(){{
                     address = drawCallCInfo.indexData.address;
-                    type = drawCallCInfo.indexData.type;
+                    type = drawCallCInfo.indexData.address != 0 ? drawCallCInfo.indexData.type : VK_INDEX_TYPE_NONE_KHR;
                     vertexCount = (int) drawCallCInfo.vertexCount;
                 }};
-                geometryInfo.vertexBinding = new DataCInfo.VertexBindingCInfo() {{
-                    address = vertexBinding.bufferAddress;
-                    stride = vertexBinding.stride;
+                vertexBinding = new DataCInfo.VertexBindingCInfo() {{
+                    address = vertexBinding0.bufferAddress;
+                    stride = vertexBinding0.stride;
                     vertexCount = (int) drawCallCInfo.vertexCount;
-                    format = vertexBinding.format;
+                    format = vertexBinding0.format;
                 }};
-            }
+            }});
 
             //
             this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
@@ -238,11 +243,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                     }};
                 }};
             }});
-
-            //
-            this.geometries.add(geometryInfo);
         }
 
+        //
         return this;
     }
 
@@ -306,16 +309,13 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             virtualDrawCallCollector.uniformDataBudget.offset += this.uniformBuffer.range;
         }
 
-        //
+        // TODO: add additional meta information about draw call
         public VirtualDrawCallObj cmdCopyFromSource(VkCommandBuffer cmdBuf) {
             var cInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)this.cInfo;
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
-            var virtualDrawCallCollector = (VirtualDrawCallCollector)deviceObj.handleMap.get(new Handle("VirtualDrawCallCollector", cInfo.registryHandle));
             var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.vertexArrayHeapHandle));
             var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(cInfo.vertexArrayObjectId);
-            var vertexBinding = vertexArrayObj.bindings.get(0);
 
             //
             var vRange = vertexArrayHeap.getBufferRange();
@@ -323,19 +323,14 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var uniRange = cInfo.uniformRange;
             var indexRange = cInfo.indexData;
 
-            //
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range))
-            );
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset).dstOffset(indexBuffer.offset).size(min(indexRange.range, indexBuffer.range))
-            );
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vaoRange.offset()).dstOffset(uniformBuffer.offset).size(min(vaoRange.range(), uniformBuffer.range))
-            );
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle,
-                VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uniRange.offset()).dstOffset(uniformBuffer.offset + vaoRange.range()).size(min(uniRange.range(), uniformBuffer.range))
-            );
+            // copy draw data
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range)));
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset).dstOffset(indexBuffer.offset).size(min(indexRange.range, indexBuffer.range)));
+
+            // firstly, going VAO data (256 bytes), then uniform (384 bytes)
+            // for uniform, firstly should to be going transform matrix
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vaoRange.offset()).dstOffset(uniformBuffer.offset).size(max(min(vaoRange.range(), uniformBuffer.range), 0L)));
+            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uniRange.offset()).dstOffset(uniformBuffer.offset + vaoRange.range()).size(max(min(uniRange.range(), uniformBuffer.range-vaoRange.range()), 0L)));
 
             //
             return this;
