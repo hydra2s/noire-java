@@ -1,6 +1,7 @@
 package org.hydra2s.noire.virtual;
 
 //
+import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -13,9 +14,10 @@ import java.util.ArrayList;
 
 //
 import static java.lang.Math.min;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
@@ -54,6 +56,12 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     protected BufferBudget uniformDataBudget = null;
 
     //
+    public AccelerationStructureObj.BottomAccelerationStructureObj bottomLvl = null;
+    public AccelerationStructureObj.TopAccelerationStructureObj topLvl = null;
+    public BufferObj instanceBuffer = null;
+    public VkAccelerationStructureInstanceKHR instanceInfo = null;
+
+    //
     public VirtualDrawCallCollector(Handle base, VirtualDrawCallCollectorCInfo cInfo) throws Exception {
         super(base, cInfo);
 
@@ -63,7 +71,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
         //
-        this.handle = new Handle("VirtualDrawCallCollector", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("VirtualDrawCallCollector", memAddress(memAllocLong(1)));
         deviceObj.handleMap.put(this.handle, this);
 
         //
@@ -105,6 +113,47 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             }});
         }};
 
+        //
+        this.bottomLvl = new AccelerationStructureObj.BottomAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.BottomAccelerationStructureCInfo(){{
+            memoryAllocator = memoryAllocatorObj.getHandle().get();
+            geometries = new ArrayList<>() {{
+                for (int I = 0; I < cInfo.maxDrawCalls; I++) {
+                    add(new DataCInfo.TriangleGeometryCInfo() {{
+                        vertexBinding = new DataCInfo.VertexBindingCInfo() {{
+                            stride = 48;
+                            vertexCount = (int) (vertexAverageCount * 3);
+                            format = VK_FORMAT_R32G32B32_SFLOAT;
+                        }};
+                        indexBinding = new DataCInfo.IndexBindingCInfo() {{
+                            vertexCount = (int) (vertexAverageCount * 3);
+                            type = VK_INDEX_TYPE_UINT32;
+                        }};
+                    }});
+                }
+            }};
+        }});
+
+        //
+        instanceBuffer = new BufferObj(deviceObj.getHandle(), new BufferCInfo(){{
+            memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                isHost = true;
+                isDevice = true;
+            }};
+            size = VkAccelerationStructureInstanceKHR.SIZEOF;
+            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            memoryAllocator = cInfo.memoryAllocator;
+        }});
+
+        //
+        instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0)));
+        instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
+
+        // will be changed into camera position shifting
+        instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
+            1.0F, 0.0F, 0.0F, 0.0F,
+            0.0F, 1.0F, 0.0F, 0.0F,
+            0.0F, 0.0F, 1.0F, 0.0F
+        })));
     }
 
     //
@@ -119,6 +168,20 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     //
     public VirtualDrawCallObj collectDrawCall(VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo drawCallInfo) {
         return new VirtualDrawCallObj(this.base, drawCallInfo);
+    }
+
+    // TODO: multiple instance support
+    public VirtualDrawCallCollector cmdBuildAccelerationStructure(VkCommandBuffer cmdBuf) {
+        bottomLvl.recallGeometryInfo();
+        bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+        instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
+        topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
+                .primitiveCount(1)
+                .firstVertex(0)
+                .primitiveOffset(0)
+                .transformOffset(0),
+            VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+        return this;
     }
 
     // TODO: needs to add sorting and morton code support
@@ -164,6 +227,17 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                     format = vertexBinding.format;
                 }};
             }
+
+            //
+            this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
+                memoryAllocator = memoryAllocatorObj.getHandle().get();
+                instances = new DataCInfo.InstanceGeometryCInfo(){{
+                    instanceBinding = new DataCInfo.InstanceBindingCInfo(){{
+                        address = instanceBuffer.getDeviceAddress();
+                        vertexCount = 1;
+                    }};
+                }};
+            }});
 
             //
             this.geometries.add(geometryInfo);
