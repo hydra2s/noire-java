@@ -6,7 +6,6 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
-import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
 //

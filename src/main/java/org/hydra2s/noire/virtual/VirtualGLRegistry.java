@@ -4,7 +4,6 @@ package org.hydra2s.noire.virtual;
 import org.hydra2s.noire.objects.BasicObj;
 import org.hydra2s.noire.objects.PipelineLayoutObj;
 
-import java.util.LinkedHashMap;
 import java.util.TreeMap;
 
 // TODO: needs to add morton coding support (for registry)

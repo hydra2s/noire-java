@@ -1,6 +1,5 @@
 package org.hydra2s.noire.objects;
 
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.SemaphoreCInfo;
 import org.lwjgl.vulkan.VkExportSemaphoreCreateInfoKHR;
 import org.lwjgl.vulkan.VkSemaphoreCreateInfo;
