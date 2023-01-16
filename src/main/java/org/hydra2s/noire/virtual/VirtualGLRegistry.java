@@ -54,6 +54,11 @@ public class VirtualGLRegistry extends BasicObj {
         return registry.indexOf(obj);
     }
 
+    public VirtualGLRegistry clear() {
+        this.registry.clear();
+        return this;
+    }
+
     // sorting by morton-codes
     public TreeMap<Long, VirtualGLObj> applyOrdering() {
         sorted.clear();

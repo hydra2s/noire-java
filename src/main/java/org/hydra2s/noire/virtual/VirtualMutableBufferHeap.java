@@ -67,6 +67,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
     }
 
+    @Override
+    public VirtualMutableBufferHeap clear() {
+        super.clear();
+        vmaClearVirtualBlock(this.virtualBlock.get(0));
+        return this;
+    }
+
     //
     public long getBufferAddress() {
         return this.bufferHeap.getDeviceAddress();

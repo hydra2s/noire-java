@@ -1,7 +1,6 @@
 package org.hydra2s.noire.virtual;
 
 //
-
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
@@ -9,10 +8,12 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
+//
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.stream.IntStream;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
@@ -60,10 +61,12 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }});
     }
 
+    //
     public long getBufferAddress() {
         return this.bufferHeap.getDeviceAddress();
     }
 
+    //
     public VkDescriptorBufferInfo getBufferRange() {
         return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
     }
@@ -77,11 +80,13 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         return this;
     }
 
+    //
     public VirtualVertexArrayHeap cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
         this.bufferHeap.cmdSynchronizeFromHost(cmdBuf);
         return this;
     }
 
+    //
     public VirtualVertexArrayHeap cmdClear(VkCommandBuffer cmdBuf) {
         return this;
     }
@@ -94,6 +99,8 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         //public long BLASAddress = 0L;
         public HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
+
+        //
         protected long bufferOffset = 0L;
         protected long address = 0L;
 

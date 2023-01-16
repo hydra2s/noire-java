@@ -51,47 +51,46 @@ public class DeviceObj extends BasicObj {
 
         //
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(base.get());
-        List<Long> extbuf = Arrays.asList(
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_swapchain")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_deferred_host_operations")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_acceleration_structure")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_query")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_conservative_rasterization")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_extended_dynamic_state3")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_robustness2")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_vertex_input_dynamic_state")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_descriptor_buffer")), // needs termination code here
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_multi_draw")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_fragment_shader_barycentric")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mesh_shader")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_pipeline_robustness")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_image_atomic_int64")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_shader_clock")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_ray_tracing_maintenance1")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_workgroup_memory_explicit_layout")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_mutable_descriptor_type")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_transform_feedback")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_shader_atomic_float2")), // broken support in NVIDIA
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_memory_budget")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_image_2d_view_of_3d")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_index_type_uint8")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_VALVE_mutable_descriptor_type")),
+        List<String> extbuf = Arrays.asList(
+            "VK_KHR_swapchain",
+            "VK_KHR_deferred_host_operations",
+            "VK_KHR_acceleration_structure",
+            "VK_KHR_ray_query",
+            "VK_EXT_conservative_rasterization",
+            "VK_EXT_extended_dynamic_state3",
+            "VK_EXT_robustness2",
+            "VK_EXT_vertex_input_dynamic_state",
+            "VK_EXT_descriptor_buffer", // needs termination code here
+            "VK_EXT_multi_draw",
+            "VK_KHR_fragment_shader_barycentric",
+            "VK_EXT_mesh_shader",
+            "VK_EXT_pipeline_robustness",
+            "VK_EXT_shader_image_atomic_int64",
+            "VK_EXT_shader_atomic_float",
+            "VK_KHR_shader_clock",
+            "VK_KHR_ray_tracing_maintenance1",
+            "VK_KHR_workgroup_memory_explicit_layout",
+            "VK_EXT_mutable_descriptor_type",
+            "VK_EXT_transform_feedback",
+            "VK_EXT_shader_atomic_float2", // broken support in NVIDIA
+            "VK_EXT_memory_budget",
+            "VK_EXT_image_2d_view_of_3d",
+            "VK_EXT_index_type_uint8",
+            "VK_VALVE_mutable_descriptor_type",
 
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_semaphore")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_semaphore_win32")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_semaphore_fd")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_memory")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_memory_win32")),
-            MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_external_memory_fd"))
+            "VK_KHR_external_semaphore",
+            "VK_KHR_external_semaphore_win32",
+            "VK_KHR_external_semaphore_fd",
+            "VK_KHR_external_memory",
+            "VK_KHR_external_memory_win32",
+            "VK_KHR_external_memory_fd"
         );
 
         //
-        var deviceExtensions = (List<Long>)(extbuf.stream().filter((Ep) -> {
+        var deviceExtensions = (extbuf.stream().filter((E) -> {
             Boolean found = false;
             for (int K = 0; K < physicalDeviceObj.extensions.remaining(); K++) {
                 String X = MemoryUtil.memUTF8(physicalDeviceObj.extensions.get(K).extensionName());
-                String E = MemoryUtil.memUTF8(Ep);
                 if (X.contains(E)) {
                     found = true;
                     break;
@@ -103,7 +102,7 @@ public class DeviceObj extends BasicObj {
         // Extensions
         this.extensions = PointerBuffer.allocateDirect(deviceExtensions.size());
         for (int I = 0; I < this.extensions.remaining(); I++) {
-            this.extensions.put(I, deviceExtensions.get(I));
+            this.extensions.put(I, memUTF8(deviceExtensions.get(I)));
         }
         this.queueFamiliesCInfo = org.lwjgl.vulkan.VkDeviceQueueCreateInfo.calloc(cInfo.queueFamilies.size());
         this.queueFamilyIndices = memAllocInt(cInfo.queueFamilies.size());

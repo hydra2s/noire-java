@@ -134,7 +134,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         }});
 
         //
-        instanceBuffer = new BufferObj(deviceObj.getHandle(), new BufferCInfo(){{
+        this.instanceBuffer = new BufferObj(deviceObj.getHandle(), new BufferCInfo(){{
             memoryAllocationInfo = new MemoryAllocationCInfo() {{
                 isHost = true;
                 isDevice = true;
@@ -145,11 +145,11 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         }});
 
         //
-        instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0)));
-        instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
+        this.instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0)));
+        this.instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
 
         // will be changed into camera position shifting
-        instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
+        this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
             1.0F, 0.0F, 0.0F, 0.0F,
             0.0F, 1.0F, 0.0F, 0.0F,
             0.0F, 0.0F, 1.0F, 0.0F
@@ -157,8 +157,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     }
 
     //
-    public VirtualDrawCallCollector resetDrawCalls() {
-        this.registry.clear();
+    @Override
+    public VirtualDrawCallCollector clear() {
+        super.clear();
         this.vertexDataBudget.reset();
         this.indexDataBudget.reset();
         this.uniformDataBudget.reset();
