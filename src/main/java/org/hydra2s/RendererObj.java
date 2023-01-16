@@ -287,25 +287,24 @@ public class RendererObj extends BasicObj {
         return (this.processor = new Generator<Integer>() {
             @Override
             protected void run() throws InterruptedException {
-            var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.getHandle().get());
-            var promise = promises.get(imageIndex);
+                var imageIndex = swapchain.acquireImageIndex(swapchain.semaphoreImageAvailable.getHandle().get());
+                var promise = promises.get(imageIndex);
 
-            //
-            while (promise.promise.state().equals(Future.State.RUNNING)) {
-                this.yield(VK_NOT_READY);
-            };
+                //
+                while (promise.promise.state().equals(Future.State.RUNNING)) {
+                    this.yield(VK_NOT_READY);
+                };
 
-            //
-            var _queue = logicalDevice.getQueue(0, 0);
-            var fence = logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
-                signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
-                dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-                queue = _queue;
-                cmdBuf = commandBuffers.get(imageIndex);
-            }});
-            promises.set(imageIndex, fence);
-            swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
+                //
+                var _queue = logicalDevice.getQueue(0, 0);
+                promises.set(imageIndex, logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+                    waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
+                    signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
+                    dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+                    queue = _queue;
+                    cmdBuf = commandBuffers.get(imageIndex);
+                }}));
+                swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
             }
         });
     }
