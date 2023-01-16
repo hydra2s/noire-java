@@ -23,6 +23,14 @@ public class WindowObj extends BasicObj  {
         super(base, handle);
     }
 
+    // the NEW constructor (special for Minecraft)
+    public WindowObj(Handle base, long window) {
+        super(base, new Handle("Window", window));
+
+        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
+        glfwCreateWindowSurface(instanceObj.instance, this.handle.get(), null, this.surface = memAllocLong(1));
+    }
+
     public WindowObj(Handle base, WindowCInfo cInfo) {
         super(base, cInfo);
 
