@@ -1,7 +1,6 @@
 package org.hydra2s.noire.objects;
 
 //
-
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
@@ -10,13 +9,14 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
+//
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
-import java.util.concurrent.Future;
 import java.util.function.Function;
 
+//
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -192,13 +192,27 @@ public class DeviceObj extends BasicObj {
         return cmdBuf;
     }
 
-    //
+    // you also needs `device.doPolling` or `device.waitFence`
     public static class FenceProcess {
         public LongBuffer fence = null;
         public Function<LongBuffer, Integer> deallocProcess = null;
+        public Promise<Integer> promise = null; // for getting status
     };
 
-    //
+    // for beginning of rendering
+    public FenceProcess makeSignaled() {
+        LongBuffer fence_ = memAllocLong(1);
+        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fence_);
+        var ref = new FenceProcess() {{
+            fence = fence_;
+            deallocProcess = null;
+            promise = new Promise();
+        }};
+        ref.promise.fulfill(VK_SUCCESS);
+        return ref;
+    }
+
+    // TODO: support for submission v2
     public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
         LongBuffer fence_ = memAllocLong(1);
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
@@ -211,13 +225,16 @@ public class DeviceObj extends BasicObj {
             .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0), fence_.get(0));
 
         //
+        if (cmd.onDone == null) { cmd.onDone = new Promise(); };
+
+        //
         var ref = new FenceProcess() {{
             fence = fence_;
             deallocProcess = null;
+            promise = cmd.onDone;
         }};
 
         //
-        if (cmd.onDone == null) { cmd.onDone = new Promise(); };
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             int status = vkGetFenceStatus(this.device, fence_.get(0));
             if (status != VK_NOT_READY) {
@@ -242,7 +259,7 @@ public class DeviceObj extends BasicObj {
         return status;
     }
 
-    //
+    // TODO: support multiple commands
     public VkCommandBuffer allocateCommand(long commandPool) {
         PointerBuffer commands = memAllocPointer(1);
         vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()
@@ -250,8 +267,7 @@ public class DeviceObj extends BasicObj {
             .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
             .commandPool(commandPool)
             .commandBufferCount(1), commands);
-        var cmdBuf = new VkCommandBuffer(commands.get(0), this.device);
-        return cmdBuf;
+        return new VkCommandBuffer(commands.get(0), this.device);
     }
 
     //

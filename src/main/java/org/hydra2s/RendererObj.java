@@ -35,7 +35,7 @@ public class RendererObj extends BasicObj {
     public Generator<Integer> processor;
 
     public LongBuffer fences;
-    public ArrayList<Promise<Integer>> promises = new ArrayList<Promise<Integer>>();
+    public ArrayList<DeviceObj.FenceProcess> promises = new ArrayList<DeviceObj.FenceProcess>();
     public ArrayList<VkCommandBuffer> commandBuffers = new ArrayList<VkCommandBuffer>();
     public Iterator<Integer> process;
     public PipelineObj.ComputePipelineObj finalComp;
@@ -291,24 +291,20 @@ public class RendererObj extends BasicObj {
             var promise = promises.get(imageIndex);
 
             //
-            do {
-                if (promise.state().equals(Future.State.RUNNING)) {
-                    this.yield(VK_NOT_READY);
-                }
-            } while(promise.state().equals(Future.State.RUNNING));
+            while (promise.promise.state().equals(Future.State.RUNNING)) {
+                this.yield(VK_NOT_READY);
+            };
 
             //
-            var promised = promises.get(imageIndex);
             var _queue = logicalDevice.getQueue(0, 0);
-            logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
+            var fence = logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
                 waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
                 signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
                 dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
                 queue = _queue;
                 cmdBuf = commandBuffers.get(imageIndex);
-                onDone = promised;
             }});
-            promises.set(imageIndex, promised);
+            promises.set(imageIndex, fence);
             swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
             }
         });
@@ -373,13 +369,11 @@ public class RendererObj extends BasicObj {
 
         //
         this.fences = memAllocLong(this.swapchain.getImageCount());
-        this.promises = new ArrayList<Promise<Integer>>();
+        this.promises = new ArrayList<DeviceObj.FenceProcess>();
 
         // EXAMPLE!
         for (var I=0;I<fences.remaining();I++) {
-            vkCreateFence(logicalDevice.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fences.slice(I, 1));
-            this.promises.add(new Promise<Integer>());
-            this.promises.get(I).fulfill(VK_SUCCESS);
+            this.promises.add(this.logicalDevice.makeSignaled());
         }
 
         //
