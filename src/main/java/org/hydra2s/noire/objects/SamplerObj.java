@@ -1,13 +1,18 @@
 package org.hydra2s.noire.objects;
 
 //
+import org.hydra2s.noire.descriptors.BasicCInfo;
+import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.SamplerCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
+import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 //
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
-import static org.lwjgl.vulkan.VK10.vkCreateSampler;
+import static org.lwjgl.vulkan.VK10.*;
 
 //
 public class SamplerObj extends BasicObj  {
@@ -35,5 +40,29 @@ public class SamplerObj extends BasicObj  {
             this.DSC_ID = descriptorsObj.samplers.push(memLongBuffer(this.handle.get(), 1));
             descriptorsObj.writeDescriptors();
         }
+    }
+
+    @Override // TODO: multiple queue family support
+    public SamplerObj delete() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var cInfo = (ImageViewCInfo)this.cInfo;
+        var self = this;
+        deviceObj.submitOnce(deviceObj.getCommandPool((cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue((cInfo).queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)-> {
+                if (cInfo.pipelineLayout != 0) {
+                    var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+                    descriptorsObj.samplers.removeIndex(self.DSC_ID);
+                    self.DSC_ID = -1;
+                }
+
+                vkDestroySampler(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
+        }}, (cmdBuf)->{
+            return VK_SUCCESS;
+        });
+        return this;
     }
 }

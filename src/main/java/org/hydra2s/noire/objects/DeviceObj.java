@@ -14,12 +14,14 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
+// TODO: implement await all fences and do all actions
 public class DeviceObj extends BasicObj {
 
     public IntBuffer queueFamilyIndices = null;
@@ -191,24 +193,35 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public LongBuffer submitCommand(BasicCInfo.SubmitCmd cmd) {
-        LongBuffer fence = memAllocLong(1);
-        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence);
+    public static class FenceProcess {
+        public LongBuffer fence = null;
+        public Function<LongBuffer, Integer> deallocProcess = null;
+    };
+
+    //
+    public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
+        LongBuffer fence_ = memAllocLong(1);
+        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
         vkQueueSubmit(cmd.queue, VkSubmitInfo.calloc(1)
             .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
             .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
             .pWaitDstStageMask(cmd.dstStageMask)
             .pSignalSemaphores(cmd.signalSemaphores)
             .pWaitSemaphores(cmd.waitSemaphores)
-            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0), fence.get(0));
+            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0), fence_.get(0));
 
         //
-        var ref = new Object() { Function<LongBuffer, Integer> deallocProcess = null; };
+        var ref = new FenceProcess() {{
+            fence = fence_;
+            deallocProcess = null;
+        }};
+
+        //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
         this.whenDone.add(ref.deallocProcess = (_null_)->{
-            int status = vkGetFenceStatus(this.device, fence.get(0));
+            int status = vkGetFenceStatus(this.device, fence_.get(0));
             if (status != VK_NOT_READY) {
-                vkDestroyFence(this.device, fence.get(0), null); fence.put(0, 0);
+                vkDestroyFence(this.device, fence_.get(0), null); fence_.put(0, 0);
                 this.whenDone.remove(ref.deallocProcess);
                 cmd.onDone.fulfill(status);
                 return status;
@@ -217,7 +230,16 @@ public class DeviceObj extends BasicObj {
         });
 
         //
-        return fence;
+        return ref;
+    }
+
+    // TODO: fence registry, and correctly wait by fence
+    public int waitFence(FenceProcess process) {
+        var status = VK_NOT_READY;
+        while((status = process.deallocProcess.apply(process.fence)) == VK_NOT_READY) {
+            this.doPolling();
+        };
+        return status;
     }
 
     //
@@ -233,7 +255,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public LongBuffer submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
+    public FenceProcess submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         //
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)

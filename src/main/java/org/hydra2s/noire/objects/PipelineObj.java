@@ -2,9 +2,8 @@ package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.noire.descriptors.BufferCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.PipelineCInfo;
+import org.hydra2s.noire.descriptors.*;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -366,4 +365,22 @@ public class PipelineObj extends BasicObj  {
         }
         
     }
+
+    @Override // TODO: multiple queue family support
+    public PipelineObj delete() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)->{
+                vkDestroyPipeline(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
+        }}, (cmdBuf)->{
+            return VK_SUCCESS;
+        });
+        return this;
+    }
+
 }

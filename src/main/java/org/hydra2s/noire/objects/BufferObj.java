@@ -2,7 +2,10 @@ package org.hydra2s.noire.objects;
 
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -167,6 +170,23 @@ public class BufferObj extends BasicObj {
         //
         vkCmdUpdateBuffer(cmdBuf, this.handle.get(), byteOffset, data);
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support
+    public BufferObj delete() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)->{
+                vkDestroyBuffer(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
+        }}, (cmdBuf)->{
+            return VK_SUCCESS;
+        });
         return this;
     }
 }

@@ -120,8 +120,10 @@ public class BasicObj {
         }
     }
 
+    // TODO: add destructors support
+    // TODO: add parameters support
     public BasicObj delete() {
-        // TODO: add destructors support
+
         return this;
     }
 

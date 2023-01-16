@@ -265,4 +265,25 @@ public class SwapChainObj extends BasicObj  {
 
     }
 
+    @Override // TODO: multiple queue family support
+    public SwapChainObj delete() {
+        for (var i=0;i<this.imageViews.size();i++) {
+            this.imageViews.get(i).delete();
+            this.imagesObj.get(i).delete();
+        }
+
+        //
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+        }}, (cmdBuf)->{
+            vkDestroySwapchainKHR(deviceObj.device, this.handle.get(), null);
+            deviceObj.handleMap.remove(handle);
+            return VK_SUCCESS;
+        });
+
+        //
+        return this;
+    }
+
 }

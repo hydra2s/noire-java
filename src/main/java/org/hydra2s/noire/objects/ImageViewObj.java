@@ -2,8 +2,11 @@ package org.hydra2s.noire.objects;
 
 //
 
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.CopyInfoCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
@@ -198,6 +201,32 @@ public class ImageViewObj extends BasicObj {
         ((ImageViewCInfo)cInfo).imageLayout = dstImageLayout;
 
         //
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support
+    public ImageViewObj delete() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var handle = this.handle;
+        var cInfo = (ImageViewCInfo)this.cInfo;
+        var self = this;
+        deviceObj.submitOnce(deviceObj.getCommandPool((cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue((cInfo).queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)-> {
+                //
+                if (cInfo.pipelineLayout != 0) {
+                    var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+                    descriptorsObj.resources.removeIndex(self.DSC_ID);
+                    self.DSC_ID = -1;
+                }
+
+                vkDestroyImageView(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
+        }}, (cmdBuf)->{
+            return VK_SUCCESS;
+        });
         return this;
     }
 }

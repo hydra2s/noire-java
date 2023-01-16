@@ -1,12 +1,16 @@
 package org.hydra2s.noire.objects;
 
 
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+import static org.lwjgl.vulkan.KHRSwapchain.vkDestroySwapchainKHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK13.*;
@@ -111,6 +115,23 @@ public class ImageObj extends BasicObj {
 
         //
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support
+    public ImageObj delete() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)->{
+                vkDestroyImage(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
+        }}, (cmdBuf)->{
+            return VK_SUCCESS;
+        });
         return this;
     }
 }

@@ -33,6 +33,9 @@ import static org.lwjgl.vulkan.VK13.*;
 //
 public class BasicCInfo {
 
+    public int queueFamilyIndex = 0;
+    public IntBuffer queueFamilyIndices = null;
+
     static public class VkFormatCompatibilityClass extends BasicCInfo {
         static public int
                 VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT = 0,

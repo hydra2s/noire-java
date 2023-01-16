@@ -1,17 +1,18 @@
 package org.hydra2s.noire.objects;
 
 //
-
 import org.hydra2s.noire.descriptors.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
 
+//
 import java.util.ArrayList;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+//
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.VK10.*;
 
