@@ -53,6 +53,7 @@ public class VirtualGLRegistry extends BasicObj {
         return registry.indexOf(obj);
     }
 
+    //
     public VirtualGLRegistry clear() {
         this.registry.clear();
         return this;
