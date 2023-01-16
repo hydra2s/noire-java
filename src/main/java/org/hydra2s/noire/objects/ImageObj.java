@@ -132,6 +132,10 @@ public class ImageObj extends BasicObj {
         }}, (cmdBuf)->{
             return VK_SUCCESS;
         });
+
+        // TODO: Use Shared PTR (alike C++)
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+        allocationObj.delete();
         return this;
     }
 }

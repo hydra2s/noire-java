@@ -2,7 +2,10 @@ package org.hydra2s.noire.objects;
 
 //
 
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -267,6 +270,17 @@ public class MemoryAllocationObj extends BasicObj {
 
         //
         //return this;
+    }
+
+    @Override // TODO: multiple queue family support
+    public MemoryAllocationObj delete() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+
+        // TODO: Use Shared PTR (alike C++)
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        deviceMemoryObj.delete();
+        return this;
     }
 
 }

@@ -28,7 +28,7 @@ public class DeviceObj extends BasicObj {
     //
     protected IntBuffer layersAmount = memAllocInt(1).put(0, 0);
 
-    //
+    // TODO: use per queue family dedicate
     public ArrayList<Function<LongBuffer, Integer>> whenDone = new ArrayList<Function<LongBuffer, Integer>>();
 
     //

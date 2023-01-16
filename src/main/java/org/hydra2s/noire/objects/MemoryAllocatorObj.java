@@ -1,8 +1,11 @@
 package org.hydra2s.noire.objects;
 
 //
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
@@ -131,6 +134,23 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             vkUnmapMemory(deviceObj.device, this.handle.get()); mapped = false;
+        }
+
+        @Override // TODO: multiple queue family support
+        public DeviceMemoryObj delete() {
+            var handle = this.handle;
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+                onDone = new Promise<>().thenApply((result)->{
+                    vkFreeMemory(deviceObj.device, handle.get(), null);
+                    deviceObj.handleMap.remove(handle);
+                    return null;
+                });
+            }}, (cmdBuf)->{
+                return VK_SUCCESS;
+            });
+            return this;
         }
     }
 
