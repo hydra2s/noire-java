@@ -1,26 +1,30 @@
 package org.hydra2s.noire.objects;
 
 //
-
 import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
+//
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
+//
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_DYNAMIC_STATE_LOGIC_OP_EXT;
+import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
+import static org.lwjgl.vulkan.VK13.vkCmdSetDepthWriteEnable;
 
 //
 public class PipelineObj extends BasicObj  {
@@ -181,7 +185,7 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
             this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             this.createInfo = VkGraphicsPipelineCreateInfo.calloc(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            this.dynamicStates = memAllocInt(15); // HARDCORE!
+            this.dynamicStates = memAllocInt(18); // HARDCORE!
 
             //
             this.inputAssemblyStateInfo
@@ -217,9 +221,25 @@ public class PipelineObj extends BasicObj  {
                 .alphaToOneEnable(false);
 
             //
+            var blendAttachments = VkPipelineColorBlendAttachmentState.calloc(fbLayout.blendStates.size());
+            for (var I=0;I<fbLayout.blendStates.size();I++) {
+                var blendState = fbLayout.blendStates.get(I);
+                blendAttachments.get(I).set(
+                    blendState.enabled,
+                    blendState.srcRgbFactor,
+                    blendState.dstRgbFactor,
+                    blendState.blendOp, // TODO: support for RGB and alpha blend op
+                    blendState.srcAlphaFactor,
+                    blendState.dstAlphaFactor,
+                    blendState.blendOp, // TODO: support for RGB and alpha blend op
+                    fbLayout.colorMask.get(I).colorMask
+                );
+            }
+
+            //
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
-                .pAttachments(fbLayout.blendAttachments)
+                .pAttachments(blendAttachments)
                 .blendConstants(memAllocFloat(4)
                     .put(0, 0.0F)
                     .put(1, 0.0F)
@@ -250,7 +270,10 @@ public class PipelineObj extends BasicObj  {
                 .put(11, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)
                 .put(12, VK_DYNAMIC_STATE_BLEND_CONSTANTS)
                 .put(13, VK_DYNAMIC_STATE_CULL_MODE)
-                .put(14, VK_DYNAMIC_STATE_FRONT_FACE);
+                .put(14, VK_DYNAMIC_STATE_FRONT_FACE)
+                .put(15, VK_DYNAMIC_STATE_LOGIC_OP_EXT)
+                .put(16, VK_DYNAMIC_STATE_DEPTH_BIAS)
+                .put(17, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
             this.dynamicStateInfo.pDynamicStates(this.dynamicStates);
 
             //
@@ -357,37 +380,43 @@ public class PipelineObj extends BasicObj  {
             //
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
 
-            // JPEG XT!
-            // TODO: make single batch
-            for (var I=0;I<fbLayout.blendAttachments.remaining();I++) {
-                var blendAttachment = fbLayout.blendAttachments.get(I);
+            //
+            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
+            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
+
+            // TODO: add support cull mode from instance
+            //vkCmdSetCullMode(cmdBuf, );
+
+            //
+            for (var I=0;I<fbLayout.blendStates.size();I++) {
+                var blendAttachment = fbLayout.blendStates.get(I);
                 var blendEquation = VkColorBlendEquationEXT.calloc(1);
                 blendEquation.get(0).set(
-                    blendAttachment.srcColorBlendFactor(),
-                    blendAttachment.dstColorBlendFactor(),
-                    blendAttachment.colorBlendOp(),
-                    blendAttachment.srcAlphaBlendFactor(),
-                    blendAttachment.dstAlphaBlendFactor(),
-                    blendAttachment.alphaBlendOp()
+                    blendAttachment.srcRgbFactor,
+                    blendAttachment.dstRgbFactor,
+                    blendAttachment.blendOp, // TODO: support for RGB and alpha blend op
+                    blendAttachment.srcAlphaFactor,
+                    blendAttachment.dstAlphaFactor,
+                    blendAttachment.blendOp  // TODO: support for RGB and alpha blend op
                 );
 
                 // requires dynamic state 3 or Vulkan API 1.4
                 vkCmdSetColorBlendEquationEXT(cmdBuf, I, blendEquation);
-                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.blendEnable()?1:0});
-                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{blendAttachment.colorWriteMask()});
-
-                // TODO: logic op support
-                vkCmdSetLogicOpEnableEXT(cmdBuf, false);
+                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.enabled?1:0});
+                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{fbLayout.colorMask.get(I).colorMask});
             }
 
             //
-            vkCmdSetDepthTestEnable(cmdBuf, hasDepth);
+            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
+            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
 
             // TODO: add stencil support
             vkCmdSetStencilTestEnable(cmdBuf, false);
 
-            // TODO: add support for dynamic depth test op
-            vkCmdSetDepthCompareOp(cmdBuf, VK_COMPARE_OP_LESS_OR_EQUAL);
+            //
+            vkCmdSetDepthWriteEnable(cmdBuf, hasDepth && fbLayout.depthState.depthTest);
+            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
+            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
 
             //
             vkCmdSetVertexInputEXT(cmdBuf, null, null);

@@ -122,7 +122,7 @@ public class BasicObj {
 
     // TODO: add destructors support
     // TODO: add parameters support
-    public BasicObj delete() {
+    public BasicObj delete() throws Exception {
 
         return this;
     }

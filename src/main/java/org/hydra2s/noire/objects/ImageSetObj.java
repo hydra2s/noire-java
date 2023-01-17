@@ -25,30 +25,7 @@ public class ImageSetObj extends BasicObj  {
     public ArrayList<ImageViewObj> currentImageViews = new ArrayList<ImageViewObj>();
     public ArrayList<ImageViewObj> previousImageViews = new ArrayList<ImageViewObj>();
 
-    //
-    public static class ColorMask {
-        public final int colorMask;
 
-        public ColorMask(boolean r, boolean g, boolean b, boolean a) {
-            this.colorMask = (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
-        }
-
-        public ColorMask(int mask) {
-            this.colorMask = mask;
-        }
-
-        public static int getColorMask(boolean r, boolean g, boolean b, boolean a) {
-            return (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ColorMask colorMask = (ColorMask) o;
-            return this.colorMask == colorMask.colorMask;
-        }
-    }
 
     //
     public ImageSetObj(Handle base, Handle handle) {

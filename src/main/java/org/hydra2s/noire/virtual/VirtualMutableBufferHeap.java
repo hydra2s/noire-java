@@ -5,7 +5,6 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
@@ -150,6 +149,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         //
+        public long getBufferSize() {
+            return bufferSize;
+        }
+
+        //
         public VirtualMutableBufferObj(Handle base, VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo cInfo) {
             super(base, cInfo);
 
@@ -261,6 +265,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 this.bufferOffset.put(0, 0L);
                 this.allocId.put(0, 0L);
             }
+            return this;
+        }
+
+        @Override
+        public VirtualMutableBufferObj delete() throws Exception {
+            this.deallocate();
+            this.bound.registry.remove(this.DSC_ID);
             return this;
         }
     }

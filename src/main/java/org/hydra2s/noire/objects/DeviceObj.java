@@ -60,6 +60,7 @@ public class DeviceObj extends BasicObj {
             "VK_KHR_ray_query",
             "VK_EXT_conservative_rasterization",
             "VK_EXT_extended_dynamic_state3",
+            "VK_EXT_extended_dynamic_state2",
             "VK_EXT_robustness2",
             "VK_EXT_vertex_input_dynamic_state",
             "VK_EXT_descriptor_buffer", // needs termination code here

@@ -32,19 +32,34 @@ public class ImageSetCInfo extends BasicCInfo  {
         .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
         .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
+    public static class DepthBias {
+        //
+        public boolean enabled = false;
+         public float units = 0.F;
+         public float factor = 0.F;
+
+        //
+        public DepthBias(boolean enabled, float units, float factor) {
+            this.enabled = enabled;
+            this.units = units;
+            this.factor = factor;
+        }
+    }
+
     //
     public static class DepthState {
-        public final boolean depthTest;
-        public final boolean depthMask;
-        public final int function;
+        //
+        final public boolean depthTest;
+        final public boolean depthMask;
+        final public int function;
 
         public DepthState(boolean depthTest, boolean depthMask, int function) {
             this.depthTest = depthTest;
             this.depthMask = depthMask;
-            this.function = glToVulkan(function);
+            this.function = function;//glToVulkan(function);
         }
 
-        private static int glToVulkan(int value) {
+        public static int glToVulkan(int value) {
             return switch (value) {
                 case 515 -> VK_COMPARE_OP_LESS_OR_EQUAL;
                 case 519 -> VK_COMPARE_OP_ALWAYS;
@@ -82,7 +97,7 @@ public class ImageSetCInfo extends BasicCInfo  {
             this(true, glToVulkan(srcRgb), glToVulkan(dstRgb), glToVulkan(srcAlpha), glToVulkan(dstAlpha));
         }
 
-        protected BlendState(boolean enabled, int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
+        public BlendState(boolean enabled, int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
             this.enabled = enabled;
             this.srcRgbFactor = srcRgb;
             this.dstRgbFactor = dstRgb;
@@ -152,6 +167,31 @@ public class ImageSetCInfo extends BasicCInfo  {
     }
 
     //
+    public static class ColorMask {
+        public final int colorMask;
+
+        public ColorMask(boolean r, boolean g, boolean b, boolean a) {
+            this.colorMask = (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
+        }
+
+        public ColorMask(int mask) {
+            this.colorMask = mask;
+        }
+
+        public static int getColorMask(boolean r, boolean g, boolean b, boolean a) {
+            return (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ColorMask colorMask = (ColorMask) o;
+            return this.colorMask == colorMask.colorMask;
+        }
+    }
+
+    //
     static public class FBLayout extends ImageSetCInfo {
 
         // planned a auto-detection
@@ -162,7 +202,16 @@ public class ImageSetCInfo extends BasicCInfo  {
 
         //
         public VkRenderingAttachmentInfo.Buffer attachmentInfos = null;
-        public VkPipelineColorBlendAttachmentState.Buffer blendAttachments = null;
+        public DepthState depthState = new DepthState(false, false, VK_COMPARE_OP_ALWAYS);
+        public DepthBias depthBias = new DepthBias(false, 0.F, 0.F);
+
+        public ArrayList<BlendState> blendStates = new ArrayList<>(){{
+            add(new BlendState(false, 0, 0, 0, 0));
+        }};
+        public LogicOpState logicOp = new LogicOpState(false, 0);
+        public ArrayList<ColorMask> colorMask = new ArrayList<>(){{
+            add(new ColorMask(true, true, true, true));
+        }};
 
         //
         public VkImageMemoryBarrier2 depthStencilBarrier = VkImageMemoryBarrier2.calloc()
