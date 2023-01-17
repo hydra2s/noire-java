@@ -5,9 +5,12 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
+import org.lwjgl.vulkan.VkBufferCopy2;
+import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 import java.nio.ByteBuffer;
@@ -15,6 +18,7 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
@@ -117,6 +121,17 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             memoryHeaps.get(I).clear();
         }
         return this;
+    }
+
+    // virtual buffer copying version
+    public static void cmdCopyVBufferToVBuffer(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo src, VkDescriptorBufferInfo dst, VkBufferCopy2.Buffer copies) {
+        // TODO: fix VK_WHOLE_SIZE issues!
+        var modified = copies.stream().map((cp)-> cp
+            .dstOffset(cp.dstOffset()+dst.offset())
+            .srcOffset(cp.srcOffset()+src.offset())
+            .size(min(cp.size(), min(src.range(), dst.range())))).toList();
+        for (var I=0;I<copies.size();I++) { copies.get(I).set(modified.get(I)); } // modify copies
+        CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
     }
 
     // Will be able to deallocate and re-allocate again
