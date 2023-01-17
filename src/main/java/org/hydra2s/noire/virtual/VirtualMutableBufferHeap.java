@@ -95,6 +95,20 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
     }
 
+    //
+    public VirtualMutableBufferObj createBuffer(int heapId_) {
+        return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
+            heapId = heapId_;
+        }});
+    }
+
+    //
+    public VirtualMutableBufferObj createBuffer(int heapId_, long size) throws Exception {
+        return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
+            heapId = heapId_;
+        }}).allocate(size);
+    }
+
     @Override
     public VirtualMutableBufferHeap clear() {
         super.clear();
