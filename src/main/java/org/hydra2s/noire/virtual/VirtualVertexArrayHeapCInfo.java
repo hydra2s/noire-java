@@ -12,6 +12,12 @@ public class VirtualVertexArrayHeapCInfo extends VirtualGLRegistryCInfo {
     public long memoryAllocator = 0L;
 
     //
+    public static final int vertexArrayMeta = 256; // there is also can to be had index buffer
+    public static final int vertexArrayStride = 256 + vertexArrayMeta;
+    public static final int vertexBindingStride = 32;
+    public static final int maxBindings = 8;
+
+    //
     static public class VirtualVertexArrayCInfo extends VirtualGLObjCInfo {
 
     }

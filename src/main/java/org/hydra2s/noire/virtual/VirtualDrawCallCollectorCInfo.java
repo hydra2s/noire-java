@@ -2,10 +2,16 @@ package org.hydra2s.noire.virtual;
 
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
+import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.vertexArrayStride;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_INDEX_TYPE_NONE_KHR;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 
 public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
+
+    //
+    public final static int vertexAverageStride = 32;
+    public final static int vertexAverageCount = 768;
+    public final static int drawCallUniformStride = 384 + vertexArrayStride;
 
     //
     public long maxDrawCalls = 1024L;

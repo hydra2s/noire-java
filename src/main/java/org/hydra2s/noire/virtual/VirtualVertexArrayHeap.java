@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.stream.IntStream;
 
 //
+import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.*;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
@@ -22,12 +23,6 @@ import static org.lwjgl.vulkan.VK10.*;
 // Will uses outstanding array
 // Bindings depends on shaders
 public class VirtualVertexArrayHeap extends VirtualGLRegistry {
-
-    //
-    public static final int vertexArrayStride = 256;
-    public static final int vertexBindingStride = 32;
-    public static final int maxBindings = vertexArrayStride / vertexBindingStride;
-
     //
     protected BufferObj bufferHeap = null;
 

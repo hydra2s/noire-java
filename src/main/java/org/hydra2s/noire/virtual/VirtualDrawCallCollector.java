@@ -14,7 +14,8 @@ import java.util.ArrayList;
 //
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static org.hydra2s.noire.virtual.VirtualVertexArrayHeap.vertexArrayStride;
+import static org.hydra2s.noire.virtual.VirtualDrawCallCollectorCInfo.*;
+import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.vertexArrayStride;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
@@ -41,11 +42,6 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             return this;
         }
     }
-
-    //
-    public final static int vertexAverageStride = 32;
-    public final static int vertexAverageCount = 768;
-    public final static int drawCallUniformStride = 384 + vertexArrayStride;
 
     //
     public VkMultiDrawInfoEXT.Buffer multiDraw = null;

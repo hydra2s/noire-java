@@ -191,6 +191,10 @@ public class ImageSetCInfo extends BasicCInfo  {
         }
     }
 
+    public static final LogicOpState DEFAULT_LOGICOP_STATE = new LogicOpState(false, 0);
+    public static final ColorMask DEFAULT_COLORMASK = new ColorMask(true, true, true, true);
+    public static final BlendState NO_BLEND_STATE = new BlendState(false, 0, 0, 0, 0);
+
     //
     static public class FBLayout extends ImageSetCInfo {
 
@@ -212,6 +216,9 @@ public class ImageSetCInfo extends BasicCInfo  {
         public ArrayList<ColorMask> colorMask = new ArrayList<>(){{
             add(new ColorMask(true, true, true, true));
         }};
+
+        // TODO: bound with vertex state
+        public boolean cullState;
 
         //
         public VkImageMemoryBarrier2 depthStencilBarrier = VkImageMemoryBarrier2.calloc()

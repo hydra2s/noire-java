@@ -10,8 +10,10 @@ public class DataCInfo extends BasicCInfo {
 
     //
     public static class VertexBindingCInfo extends DataCInfo {
+        public int location = 0;
         public int format = VK_FORMAT_R32G32B32_SFLOAT;
         public int stride = 16;
+        public int offset = 0;
     }
 
     //
