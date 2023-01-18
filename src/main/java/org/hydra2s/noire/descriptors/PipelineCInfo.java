@@ -9,6 +9,7 @@ public class PipelineCInfo extends BasicCInfo  {
 
     public long pipelineLayout = 0L;
     public long memoryAllocator = 0L;
+    public long uniformBufferSize = 2048L;
 
     static public class ComputePipelineCInfo extends PipelineCInfo {
         public ByteBuffer computeCode = null;

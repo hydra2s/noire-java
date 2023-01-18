@@ -57,7 +57,7 @@ public class PipelineObj extends BasicObj  {
         public int pushConstByteOffset = 0;
     }
 
-    public static final long uniformBufferSize = 2048L;
+
 
     public static class ComputePipelineObj extends PipelineObj {
 
@@ -90,7 +90,7 @@ public class PipelineObj extends BasicObj  {
             //
             if (cInfo.memoryAllocator != 0) {
                 this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
-                    size = uniformBufferSize;
+                    size = cInfo.uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
                     memoryAllocator = cInfo.memoryAllocator;
                     memoryAllocationInfo = new MemoryAllocationCInfo(){{
@@ -307,7 +307,7 @@ public class PipelineObj extends BasicObj  {
             //
             if (cInfo.memoryAllocator != 0) {
                 this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
-                    size = uniformBufferSize;
+                    size = cInfo.uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
                     memoryAllocator = cInfo.memoryAllocator;
                     memoryAllocationInfo = new MemoryAllocationCInfo(){{

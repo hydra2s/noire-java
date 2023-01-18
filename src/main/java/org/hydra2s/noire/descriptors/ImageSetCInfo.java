@@ -1,6 +1,8 @@
 package org.hydra2s.noire.descriptors;
 
 //
+import com.mojang.blaze3d.platform.GlStateManager;
+import net.vulkanmod.vulkan.Pipeline;
 import org.lwjgl.vulkan.*;
 
 //
@@ -49,9 +51,9 @@ public class ImageSetCInfo extends BasicCInfo  {
     //
     public static class DepthState {
         //
-        final public boolean depthTest;
-        final public boolean depthMask;
-        final public int function;
+        public boolean depthTest;
+        public boolean depthMask;
+        public int function;
 
         public DepthState(boolean depthTest, boolean depthMask, int function) {
             this.depthTest = depthTest;
@@ -105,7 +107,7 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.dstAlphaFactor = dstAlpha;
         }
 
-        private static int glToVulkan(int value) {
+        public static int glToVulkan(int value) {
             return switch (value) {
                 case 1 -> VK_BLEND_FACTOR_ONE;
                 case 0 -> VK_BLEND_FACTOR_ZERO;
@@ -142,6 +144,28 @@ public class ImageSetCInfo extends BasicCInfo  {
         public LogicOpState(boolean enable, int op) {
             this.enabled = enable;
             this.logicOp = op;
+        }
+
+        public static int glToVulkan(int value) {
+            return switch (value) {
+                case 5377 -> VK_LOGIC_OP_AND;
+                case 5380 -> VK_LOGIC_OP_AND_INVERTED;
+                case 5378 -> VK_LOGIC_OP_AND_REVERSE;
+                case 5376 -> VK_LOGIC_OP_CLEAR;
+                case 5379 -> VK_LOGIC_OP_COPY;
+                case 5388 -> VK_LOGIC_OP_COPY_INVERTED;
+                case 5385 -> VK_LOGIC_OP_EQUIVALENT;
+                case 5386 -> VK_LOGIC_OP_INVERT;
+                case 5390 -> VK_LOGIC_OP_NAND;
+                case 5381 -> VK_LOGIC_OP_NO_OP;
+                case 5384 -> VK_LOGIC_OP_NOR;
+                case 5383 -> VK_LOGIC_OP_OR;
+                case 5389 -> VK_LOGIC_OP_OR_INVERTED;
+                case 5387 -> VK_LOGIC_OP_OR_REVERSE;
+                case 5391 -> VK_LOGIC_OP_SET;
+                case 5382 -> VK_LOGIC_OP_XOR;
+                default -> throw new RuntimeException("unknown logic op..");
+            };
         }
 
         public void setLogicOp(int logicOp) {
@@ -194,6 +218,7 @@ public class ImageSetCInfo extends BasicCInfo  {
     public static final LogicOpState DEFAULT_LOGICOP_STATE = new LogicOpState(false, 0);
     public static final ColorMask DEFAULT_COLORMASK = new ColorMask(true, true, true, true);
     public static final BlendState NO_BLEND_STATE = new BlendState(false, 0, 0, 0, 0);
+    public static final BlendState DEFAULT_BLEND_STATE = new BlendState(false, VK_BLEND_FACTOR_SRC_ALPHA, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ZERO);
 
     //
     static public class FBLayout extends ImageSetCInfo {
