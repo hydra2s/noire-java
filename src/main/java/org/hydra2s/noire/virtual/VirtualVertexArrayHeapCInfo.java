@@ -12,14 +12,14 @@ public class VirtualVertexArrayHeapCInfo extends VirtualGLRegistryCInfo {
     public long memoryAllocator = 0L;
 
     //
-    public static final int vertexArrayMeta = 256; // there is also can to be had index buffer
-    public static final int vertexArrayStride = 256 + vertexArrayMeta;
-    public static final int vertexBindingStride = 32;
     public static final int maxBindings = 8;
+    public static final int vertexArrayPayload = 256; // there is also can to be had index buffer
+    public static final int vertexBindingStride = 32;
+    public static final int vertexArrayStride = vertexBindingStride * maxBindings + vertexArrayPayload;
 
-    //
+    // TODO: payload data support
     static public class VirtualVertexArrayCInfo extends VirtualGLObjCInfo {
-
+        public ByteBuffer payloadData;
     }
 
     // byte-based structure data
@@ -33,6 +33,7 @@ public class VirtualVertexArrayHeapCInfo extends VirtualGLRegistryCInfo {
         public int stride = 0;
         public int format = 0;
         public int unknown = 0;
+        public int location = 0;
 
         //
         public VertexBinding writeData(ByteBuffer bindingsMapped, long offset) {

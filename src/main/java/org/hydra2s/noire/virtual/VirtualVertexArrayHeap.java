@@ -151,10 +151,25 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             return this;
         }
 
+        // for such games, as Minecraft with VulkanMod or Vanilla
+        // TODO: multiple buffer bindings support
+        public VirtualVertexArrayObj vertexBufferForAll(long bufferAddress, long bufferSize) {
+            var keySet = bindings.keySet().stream().toList();
+            IntStream.range(0, bindings.size()).forEach((I)->{
+                var index = keySet.get(I);
+                var binding = bindings.get(index);
+                if (binding != null) {
+                    binding.bufferAddress = bufferAddress;
+                    binding.bufferSize = bufferSize;
+                }
+            });
+            return this;
+        }
+
         //
         public VirtualVertexArrayObj vertexBinding(int index, VirtualVertexArrayHeapCInfo.VertexBinding binding) {
             if (index >= 0 && index < maxBindings) {
-                bindings.put(index, binding);
+                bindings.put(index + binding.location, binding);
             }
             return this;
         }
