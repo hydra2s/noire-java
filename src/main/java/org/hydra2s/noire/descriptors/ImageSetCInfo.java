@@ -89,10 +89,10 @@ public class ImageSetCInfo extends BasicCInfo  {
     //
     public static class BlendState {
         public final boolean enabled;
-        public final int srcRgbFactor;
-        public final int dstRgbFactor;
-        public final int srcAlphaFactor;
-        public final int dstAlphaFactor;
+        public int srcRgbFactor;
+        public int dstRgbFactor;
+        public int srcAlphaFactor;
+        public int dstAlphaFactor;
         public final int blendOp = 0;
 
         public BlendState(int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
@@ -101,6 +101,13 @@ public class ImageSetCInfo extends BasicCInfo  {
 
         public BlendState(boolean enabled, int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
             this.enabled = enabled;
+            this.srcRgbFactor = srcRgb;
+            this.dstRgbFactor = dstRgb;
+            this.srcAlphaFactor = srcAlpha;
+            this.dstAlphaFactor = dstAlpha;
+        }
+
+        public void setBlendFunction(int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
             this.srcRgbFactor = srcRgb;
             this.dstRgbFactor = dstRgb;
             this.srcAlphaFactor = srcAlpha;

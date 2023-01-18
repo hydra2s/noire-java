@@ -11,7 +11,9 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
     //
     public final static int vertexAverageStride = 32;
     public final static int vertexAverageCount = 768;
-    public final static int drawCallUniformStride = 384 + vertexArrayStride;
+
+    // uniform data + VAO bindings + inbound payload
+    public final static int drawCallUniformStride = 512 + VirtualVertexArrayHeapCInfo.vertexArrayStride;
 
     //
     public long maxDrawCalls = 1024L;
@@ -53,8 +55,6 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
 
         //
         public VkDescriptorBufferInfo uniformRange = null;
-
-
     }
 
 

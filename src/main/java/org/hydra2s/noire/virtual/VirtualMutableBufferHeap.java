@@ -1,6 +1,7 @@
 package org.hydra2s.noire.virtual;
 
 //
+import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.*;
@@ -38,7 +39,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long memoryAllocator) {
-            this.bufferHeap = new BufferObj(base, new BufferCInfo() {{
+            // TODO: add support for ResizableBAR! It's necessary!
+            this.bufferHeap = new CompatibleBufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
                 usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = memoryAllocator;
@@ -102,6 +104,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public VirtualMutableBufferObj createBuffer(int heapId_) {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
+            registryHandle = handle.get();
         }});
     }
 
@@ -109,6 +112,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public VirtualMutableBufferObj createBuffer(int heapId_, long size) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
+            registryHandle = handle.get();
         }}).allocate(size);
     }
 
