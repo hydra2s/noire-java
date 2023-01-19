@@ -45,28 +45,199 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static class ComputeDispatchInfo {
+        public long device = 0L;
+        public long pipelineLayout = 0L;
+        public long pipeline = 0L;
         public VkExtent3D dispatch = VkExtent3D.calloc().width(1).height(1).depth(1);
         public ByteBuffer pushConstRaw = null;
         public int pushConstByteOffset = 0;
     }
 
+    //
     public static class GraphicsDrawInfo {
-        public VkMultiDrawInfoEXT.Buffer multiDraw = null;
+        public long device = 0L;
+        public long pipelineLayout = 0L;
+        public long pipeline = 0L;
         public long imageSet = 0L;
+        public ImageSetCInfo.FBLayout fbLayout = null;
+        public VkMultiDrawInfoEXT.Buffer multiDraw = null;
         public ByteBuffer pushConstRaw = null;
         public int pushConstByteOffset = 0;
     }
 
+    //
+    public static void cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo) {
+        if (cmdInfo.pushConstRaw != null) {
+            vkCmdPushConstants(cmdBuf, cmdInfo.pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
+        }
 
+        //
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
+        //
+        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline));
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout));
+
+        //
+        if (pipelineLayoutObj != null) {
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
+        }
+
+        //
+        vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, cmdInfo.pipeline);
+        vkCmdDispatch(cmdBuf, cmdInfo.dispatch.width(), cmdInfo.dispatch.height(), cmdInfo.dispatch.depth());
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+            .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
+    }
+
+    //
+    public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+
+        //
+        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline));
+        var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout));
+        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet));
+
+        //
+        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)pipelineObj.cInfo).fbLayout;
+        var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
+        fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
+        for (var I=0;I<fbLayout.formats.remaining();I++) {
+            fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
+            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
+            fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
+            fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+
+            fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
+            fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
+            fbClearC.get(I).colorAttachment(I);
+        }
+
+        //
+        int layerCount = fbLayout.layerCounts.stream().min(Integer::compare).get();
+
+        //
+        boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+        boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+        boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+
+        //
+        if (hasDepthStencil) {
+            fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
+            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.currentDepthStencilImageView.getHandle().get());
+            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.currentDepthStencilImageView.getImageLayout());
+            fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
+            fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+        };
+
+        //
+        vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.calloc()
+            .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
+            .pColorAttachments(fbLayout.attachmentInfos)
+            .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
+            .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
+            .viewMask(0x0)
+            .layerCount(layerCount)
+            .renderArea(fbLayout.scissor)
+        );
+
+        //
+        if (cmdInfo.pushConstRaw != null) {
+            vkCmdPushConstants(cmdBuf, pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
+        }
+
+        //
+        if (pipelineLayoutObj != null) {
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
+        }
+
+        //
+        vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+
+        //
+        if (cmdInfo.pipeline != 0) {
+            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
+            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
+
+            // TODO: add support cull mode from instance
+            //vkCmdSetCullMode(cmdBuf, );
+
+            //
+            for (var I = 0; I < fbLayout.blendStates.size(); I++) {
+                var blendAttachment = fbLayout.blendStates.get(I);
+                var blendEquation = VkColorBlendEquationEXT.calloc(1);
+                blendEquation.get(0).set(
+                    blendAttachment.srcRgbFactor,
+                    blendAttachment.dstRgbFactor,
+                    blendAttachment.blendOp, // TODO: support for RGB and alpha blend op
+                    blendAttachment.srcAlphaFactor,
+                    blendAttachment.dstAlphaFactor,
+                    blendAttachment.blendOp  // TODO: support for RGB and alpha blend op
+                );
+
+                // requires dynamic state 3 or Vulkan API 1.4
+                vkCmdSetColorBlendEquationEXT(cmdBuf, I, blendEquation);
+                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.enabled ? 1 : 0});
+                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{fbLayout.colorMask.get(I).colorMask});
+            }
+
+            //
+            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
+            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
+
+            // TODO: add stencil support
+            vkCmdSetStencilTestEnable(cmdBuf, false);
+
+            //
+            vkCmdSetDepthWriteEnable(cmdBuf, hasDepth && fbLayout.depthState.depthTest);
+            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
+            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
+
+            //
+            vkCmdSetVertexInputEXT(cmdBuf, null, null);
+            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
+            vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
+        }
+
+        if (cmdInfo.multiDraw != null && cmdInfo.pipeline != 0) {
+            // use classic draw if one instance
+            if (cmdInfo.multiDraw.remaining() <= 1) {
+                vkCmdDraw(cmdBuf, cmdInfo.multiDraw.vertexCount(), 1, cmdInfo.multiDraw.firstVertex(), 0);
+            } else {
+                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
+            }
+        } else {
+            vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
+            if (hasDepthStencil) {
+                vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
+                    .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
+                    .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
+                    .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
+            }
+        }
+        vkCmdEndRendering(cmdBuf);
+
+        // after draw needs to barrier
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
+    }
+
+    //
     public static class ComputePipelineObj extends PipelineObj {
-
         public VkComputePipelineCreateInfo.Buffer createInfo = null;
-
         public ComputePipelineObj(Handle base, Handle handle) {
             super(base, handle);
-
-
         }
 
         public ComputePipelineObj(Handle base, PipelineCInfo.ComputePipelineCInfo cInfo) {
@@ -100,34 +271,9 @@ public class PipelineObj extends BasicObj  {
                 }});
             }
         }
-
-        public ComputePipelineObj cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo) {
-            if (cmdInfo.pushConstRaw != null) {
-                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
-            }
-
-            //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.ComputePipelineCInfo)this.cInfo).pipelineLayout));
-
-            //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.uniformDescriptorBuffer != null ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
-
-            //
-            vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, this.handle.get());
-            vkCmdDispatch(cmdBuf, cmdInfo.dispatch.width(), cmdInfo.dispatch.height(), cmdInfo.dispatch.depth());
-            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
-                .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
-
-            //
-            return this;
-        }
     }
 
+    //
     public static class GraphicsPipelineObj extends PipelineObj {
         public VkPipelineShaderStageCreateInfo.Buffer shaderStageInfo = null;
         public VkPipelineVertexInputStateCreateInfo vertexInputInfo = null;
@@ -148,8 +294,6 @@ public class PipelineObj extends BasicObj  {
         //
         public GraphicsPipelineObj(Handle base, Handle handle) {
             super(base, handle);
-            //TODO Auto-generated constructor stub
-
         }
 
         //
@@ -317,135 +461,6 @@ public class PipelineObj extends BasicObj  {
                 }});
             }
         }
-
-        //
-        public GraphicsPipelineObj cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout));
-            var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet));
-
-            //
-            var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
-            var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
-            fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
-            for (var I=0;I<fbLayout.formats.remaining();I++) {
-                fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-                fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
-                fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
-                fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
-                fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-
-                fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-                fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
-                fbClearC.get(I).colorAttachment(I);
-            }
-
-            //
-            int layerCount = fbLayout.layerCounts.stream().min(Integer::compare).get();
-
-            //
-            boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-            boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-            boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-
-            //
-            if (hasDepthStencil) {
-                fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-                fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.currentDepthStencilImageView.getHandle().get());
-                fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.currentDepthStencilImageView.getImageLayout());
-                fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
-                fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-            };
-
-            //
-            vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
-                .pColorAttachments(fbLayout.attachmentInfos)
-                .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
-                .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
-                .viewMask(0x0)
-                .layerCount(layerCount)
-                .renderArea(fbLayout.scissor)
-            );
-
-            //
-            if (cmdInfo.pushConstRaw != null) {
-                vkCmdPushConstants(cmdBuf, ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
-            }
-
-            //
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.uniformDescriptorBuffer != null ? this.uniformDescriptorBuffer.getHandle().get() : 0L);
-
-            //
-            vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, this.handle.get());
-
-            //
-            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
-            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
-
-            // TODO: add support cull mode from instance
-            //vkCmdSetCullMode(cmdBuf, );
-
-            //
-            for (var I=0;I<fbLayout.blendStates.size();I++) {
-                var blendAttachment = fbLayout.blendStates.get(I);
-                var blendEquation = VkColorBlendEquationEXT.calloc(1);
-                blendEquation.get(0).set(
-                    blendAttachment.srcRgbFactor,
-                    blendAttachment.dstRgbFactor,
-                    blendAttachment.blendOp, // TODO: support for RGB and alpha blend op
-                    blendAttachment.srcAlphaFactor,
-                    blendAttachment.dstAlphaFactor,
-                    blendAttachment.blendOp  // TODO: support for RGB and alpha blend op
-                );
-
-                // requires dynamic state 3 or Vulkan API 1.4
-                vkCmdSetColorBlendEquationEXT(cmdBuf, I, blendEquation);
-                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.enabled?1:0});
-                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{fbLayout.colorMask.get(I).colorMask});
-            }
-
-            //
-            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
-            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
-
-            // TODO: add stencil support
-            vkCmdSetStencilTestEnable(cmdBuf, false);
-
-            //
-            vkCmdSetDepthWriteEnable(cmdBuf, hasDepth && fbLayout.depthState.depthTest);
-            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
-            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
-
-            //
-            vkCmdSetVertexInputEXT(cmdBuf, null, null);
-            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
-            vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
-            if (cmdInfo.multiDraw != null) {
-                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
-            } else {
-                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
-                if (hasDepthStencil) {
-                    vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
-                        .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                        .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
-                        .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
-                }
-            }
-            vkCmdEndRendering(cmdBuf);
-
-            // after draw needs to barrier
-            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT)
-                .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
-
-            //
-            return this;
-        }
-        
     }
 
     @Override // TODO: multiple queue family support
