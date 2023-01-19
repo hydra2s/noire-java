@@ -36,7 +36,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 

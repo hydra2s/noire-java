@@ -25,7 +25,6 @@ public class CompatibleBufferObj extends BufferObj {
         //
         if (!cInfo.memoryAllocationInfo.isHost) {
             this.hostBuffer = new BufferObj(this.base, new BufferCInfo() {{
-
                 size = cInfo.size;
                 usage = 0;
                 memoryAllocator = cInfo.memoryAllocator;

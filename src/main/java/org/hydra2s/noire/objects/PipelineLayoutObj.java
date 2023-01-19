@@ -153,7 +153,7 @@ public class PipelineLayoutObj extends BasicObj  {
         vkCreateDescriptorSetLayout(deviceObj.device, this.uniformDescriptorSetLayoutCreateInfo, null, memLongBuffer(memAddress(this.descriptorLayout, 2), 1));
 
         // TODO: make group by type
-        this.pipelineDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK).descriptorCount((int) PipelineObj.uniformBufferSize);
+        this.pipelineDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK).descriptorCount((int) 512);
         this.pipelineDescriptorSetBindingFlags = memAllocInt(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
         this.pipelineDescriptorSetLayoutCreateInfoBindingFlags = VkDescriptorSetLayoutBindingFlagsCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO).pBindingFlags(this.pipelineDescriptorSetBindingFlags);
         this.pipelineDescriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo.calloc().flags(VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO).pNext(this.pipelineDescriptorSetLayoutCreateInfoBindingFlags.address()).pBindings(this.pipelineDescriptorSetBindings);

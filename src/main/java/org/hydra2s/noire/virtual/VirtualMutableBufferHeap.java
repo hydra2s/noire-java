@@ -38,12 +38,12 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public BufferObj bufferHeap = null;
 
         //
-        public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long memoryAllocator) {
+        public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
             // TODO: add support for ResizableBAR! It's necessary!
             this.bufferHeap = new CompatibleBufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
                 usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-                memoryAllocator = memoryAllocator;
+                memoryAllocator = $memoryAllocator;
                 memoryAllocationInfo = new MemoryAllocationCInfo() {{
                     isHost = cInfo.isHost;
                     isDevice = !cInfo.isHost;
@@ -84,7 +84,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
@@ -162,8 +162,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
             //

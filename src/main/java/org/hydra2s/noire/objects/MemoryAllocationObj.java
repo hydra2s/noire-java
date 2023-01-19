@@ -35,6 +35,15 @@ public class MemoryAllocationObj extends BasicObj {
     //
     public MemoryAllocationObj(Handle base, Handle handle) {
         super(base, handle);
+
+        //
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+
+        //
+        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(memAllocLong(1)));
+        deviceObj.handleMap.put(this.handle, this);
     }
 
     //
