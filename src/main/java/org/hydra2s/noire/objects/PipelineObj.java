@@ -150,17 +150,19 @@ public class PipelineObj extends BasicObj  {
         );
 
         //
-        if (cmdInfo.pushConstRaw != null) {
+        if (cmdInfo.pushConstRaw != null && pipelineLayout != 0) {
             vkCmdPushConstants(cmdBuf, pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
         }
 
         //
-        if (pipelineLayoutObj != null) {
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
+        if (pipelineLayoutObj != null && pipelineObj != null) {
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj != null && pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
         }
 
         //
-        vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+        if (cmdInfo.pipeline != 0) {
+            vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+        }
 
         //
         if (cmdInfo.pipeline != 0) {
