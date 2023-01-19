@@ -232,6 +232,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 // TODO: bound with memoryHeap
                 var virtualBufferHeap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
                 var oldAlloc = this.allocId.get(0);
+
+                // TODO: copy from old segment
+                // Avoid some data corruption
+                if (this.bound != null && oldAlloc != 0) {
+                    vmaVirtualFree(virtualBufferHeap.virtualBlock.get(0), oldAlloc);
+                }
+
                 this.bufferOffset.put(0, 0L);
                 int res = vmaVirtualAllocate(virtualBufferHeap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset);
                 if (res != VK_SUCCESS) {
@@ -241,12 +248,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 // get device address from
                 this.address = virtualBufferHeap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
-
-                // TODO: copy from old segment
-                // Avoid some data corruption
-                if (this.bound != null && oldAlloc != 0) {
-                    vmaVirtualFree(virtualBufferHeap.virtualBlock.get(0), oldAlloc);
-                }
             }
             return this;
         }
