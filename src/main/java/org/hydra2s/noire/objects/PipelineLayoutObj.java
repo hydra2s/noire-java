@@ -197,7 +197,7 @@ public class PipelineLayoutObj extends BasicObj  {
                 isDevice = true;
             }};
         }});
-        this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
+        this.uniformDescriptorBuffer = new CompatibleBufferObj(this.base, new BufferCInfo() {{
             size = uniformBufferSize;
             usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
             memoryAllocator = cInfo.memoryAllocator;
