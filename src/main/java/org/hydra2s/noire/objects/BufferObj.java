@@ -188,4 +188,9 @@ public class BufferObj extends BasicObj {
         allocationObj.delete();
         return this;
     }
+
+    //
+    public VkDescriptorBufferInfo getBufferRange() {
+        return VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, this.createInfo.size());
+    }
 }
