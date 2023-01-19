@@ -9,12 +9,16 @@ import org.lwjgl.vulkan.*;
 
 //
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.ArrayList;
 
 //
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.vulkan.EXTDebugUtils.*;
+import static org.lwjgl.vulkan.EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 
 // An America!
 public class InstanceObj extends BasicObj {
@@ -24,6 +28,8 @@ public class InstanceObj extends BasicObj {
 
     //
     public VkInstance instance = null;
+    public VkDebugUtilsMessengerCallbackEXT callbackEXT = null;
+    public LongBuffer messagerEXT = null;
 
     //
     public VkExtensionProperties.Buffer availableExtensions = null;
@@ -70,10 +76,11 @@ public class InstanceObj extends BasicObj {
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
-        this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 1);
+        this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 2);
         this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_get_surface_capabilities2")));
+        this.extensions.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_debug_utils")));
         for (int i=0;i<this.glfwExt.limit();i++) {
-            this.extensions.put(i+1, MemoryUtil.memAddress(MemoryUtil.memUTF8(this.glfwExt.getStringUTF8(i))));
+            this.extensions.put(i+2, MemoryUtil.memAddress(MemoryUtil.memUTF8(this.glfwExt.getStringUTF8(i))));
         }
 
         //
@@ -100,6 +107,91 @@ public class InstanceObj extends BasicObj {
         BasicObj.globalHandleMap.put(this.handle.get(), this);
         this.instance = new VkInstance(this.handle.get(), this.instanceInfo);
         System.out.println("Something wrong with Instance? " + Long.toHexString(this.handle.get()));
+
+        //
+        vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
+                .sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
+                .messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
+                .messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT)
+                .pfnUserCallback(callbackEXT = new VkDebugUtilsMessengerCallbackEXT() {
+                    @Override
+                    public int invoke(int messageSeverity, int messageTypes, long pCallbackData, long pUserData) {
+                        var debugCallbackData = VkDebugUtilsMessengerCallbackDataEXT.create(pCallbackData);
+
+                        //
+                        var cmdLabels = debugCallbackData.pCmdBufLabels();
+                        cmdLabels.forEach((labelEXT)->{
+                            System.out.println("Command Label: ");
+                            System.out.println(labelEXT.pLabelNameString());
+                        });
+
+                        //
+                        var queueLabels = debugCallbackData.pQueueLabels();
+                        queueLabels.forEach((labelEXT)->{
+                            System.out.println("Queue Label: ");
+                            System.out.println(labelEXT.pLabelNameString());
+                        });
+
+                        //
+                        var objects = debugCallbackData.pObjects();
+                        objects.forEach((objectNameInfoEXT)->{
+                            System.out.println("Object Name: ");
+                            System.out.println(objectNameInfoEXT.pObjectNameString());
+                        });
+
+                        //
+                        switch(messageTypes) {
+                            case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:
+                                System.out.println("Vulkan General Message...");
+                            break;
+
+                            case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:
+                                System.out.println("Vulkan Performance Message...");
+                            break;
+
+                            case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:
+                                System.out.println("Vulkan Validation Message...");
+                            break;
+
+                            case VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT:
+                                System.out.println("Vulkan Device Address Binding Message...");
+                            break;
+                        }
+
+                        //
+                        switch(messageSeverity) {
+                            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                                System.out.println("Vulkan Debug Error!");
+                                System.out.println(debugCallbackData.pMessageIdNameString());
+                                System.out.println(debugCallbackData.pMessageString());
+
+                                try {
+                                    throw new Exception(debugCallbackData.pMessageString());
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                                System.out.println("Vulkan Debug Warning!");
+                                System.out.println(debugCallbackData.pMessageIdNameString());
+                                System.out.println(debugCallbackData.pMessageString());
+                            break;
+
+                            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+                                System.out.println("Vulkan Debug Info!");
+                                System.out.println(debugCallbackData.pMessageIdNameString());
+                                System.out.println(debugCallbackData.pMessageString());
+                            break;
+
+                            //case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+                                //System.out.println("Vulkan Debug Verbose!");
+                                //System.out.println(debugCallbackData.pMessageIdNameString());
+                                //System.out.println(debugCallbackData.pMessageString());
+                            //break;
+                        }
+                        return 0;
+                    }
+                }), null, this.messagerEXT = memAllocLong(1));
     }
 
     //
