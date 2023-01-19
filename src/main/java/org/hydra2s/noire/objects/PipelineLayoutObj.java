@@ -227,19 +227,22 @@ public class PipelineLayoutObj extends BasicObj  {
 
         //
         for (var I=0;I<Math.min(this.resources.size(), 1024);I++) {
-            vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
-                .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                .type(((ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-                .data(VkDescriptorDataEXT.calloc().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets.get(0) + RSIZE * I), RSIZE));
-
+            if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
+                vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
+                    .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
+                    .type(((ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                    .data(VkDescriptorDataEXT.calloc().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets.get(0) + RSIZE * I), RSIZE));
+            }
         }
 
         //
         for (var I=0;I<Math.min(this.samplers.size(), 256);I++) {
-            vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
-                .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                .type(VK_DESCRIPTOR_TYPE_SAMPLER)
-                .data(VkDescriptorDataEXT.calloc().pSampler(this.samplers.get(I))), SMAP.slice((int) (this.offsets.get(1) + SSIZE * I), SSIZE));
+            if (this.samplers.get(I) != null && this.samplers.get(I).get(0) != 0) {
+                vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
+                    .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
+                    .type(VK_DESCRIPTOR_TYPE_SAMPLER)
+                    .data(VkDescriptorDataEXT.calloc().pSampler(this.samplers.get(I))), SMAP.slice((int) (this.offsets.get(1) + SSIZE * I), SSIZE));
+            }
         }
 
         //

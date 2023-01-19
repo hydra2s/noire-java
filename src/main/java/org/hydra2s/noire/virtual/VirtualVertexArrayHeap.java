@@ -107,8 +107,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
 
             //
@@ -122,6 +121,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             this.virtualGL = this.DSC_ID+1;
 
             //
+            this.bindings = new HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>();
             this.bindingsMapped = virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
             this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
         }

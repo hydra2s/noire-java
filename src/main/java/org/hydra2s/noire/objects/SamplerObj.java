@@ -8,8 +8,7 @@ import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 //
-import static org.lwjgl.system.MemoryUtil.memAddress;
-import static org.lwjgl.system.MemoryUtil.memLongBuffer;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -35,7 +34,7 @@ public class SamplerObj extends BasicObj  {
         //
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
-            this.DSC_ID = descriptorsObj.samplers.push(memLongBuffer(this.handle.get(), 1));
+            this.DSC_ID = descriptorsObj.samplers.push(memAllocLong(1).put(0, this.handle.get()));
             descriptorsObj.writeDescriptors();
         }
     }

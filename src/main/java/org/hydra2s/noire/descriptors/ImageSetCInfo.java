@@ -87,12 +87,12 @@ public class ImageSetCInfo extends BasicCInfo  {
 
     //
     public static class BlendState {
-        public final boolean enabled;
+        public boolean enabled = false;
         public int srcRgbFactor;
         public int dstRgbFactor;
         public int srcAlphaFactor;
         public int dstAlphaFactor;
-        public final int blendOp = 0;
+        public int blendOp = VK_BLEND_OP_ADD;
 
         public BlendState(int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
             this(true, glToVulkan(srcRgb), glToVulkan(dstRgb), glToVulkan(srcAlpha), glToVulkan(dstAlpha));
@@ -140,11 +140,16 @@ public class ImageSetCInfo extends BasicCInfo  {
         public int hashCode() {
             return Objects.hash(srcRgbFactor, dstRgbFactor, srcAlphaFactor, dstAlphaFactor, blendOp);
         }
+
+        public BlendState setEnabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
     }
 
     //
     public static class LogicOpState {
-        public final boolean enabled;
+        public boolean enabled;
         private int logicOp;
 
         public LogicOpState(boolean enable, int op) {
@@ -198,7 +203,7 @@ public class ImageSetCInfo extends BasicCInfo  {
 
     //
     public static class ColorMask {
-        public final int colorMask;
+        public int colorMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         public ColorMask(boolean r, boolean g, boolean b, boolean a) {
             this.colorMask = (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
