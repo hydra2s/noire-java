@@ -145,14 +145,18 @@ abstract public class CopyUtilObj {
 
         // TODO: support a correct buffer size
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate).image(dstImage).oldLayout(dstImageLayout).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+            imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate);
+            imageMemoryBarrier.get(I*2+0)
+                .image(dstImage).oldLayout(dstImageLayout).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).dstSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).dstSubresource().mipLevel())
                 .layerCount(regions.get(I).dstSubresource().layerCount())
                 .levelCount(1)
             );
-            imageMemoryBarrier.put(I*2+1, readMemoryBarrierTemplate).image(srcImage).oldLayout(srcImageLayout).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+            imageMemoryBarrier.put(I*2+1, readMemoryBarrierTemplate);
+            imageMemoryBarrier.get(I*2+1)
+                .image(srcImage).oldLayout(srcImageLayout).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).srcSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).srcSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).srcSubresource().mipLevel())
@@ -197,14 +201,17 @@ abstract public class CopyUtilObj {
 
         // TODO: support a correct buffer size
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I, readMemoryBarrierTemplate).image(srcImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+            imageMemoryBarrier.put(I, readMemoryBarrierTemplate);
+            imageMemoryBarrier.get(I)
+                .image(srcImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
                 .layerCount(regions.get(I).imageSubresource().layerCount())
                 .levelCount(1)
             );
-            bufferMemoryBarrier.put(I, writeMemoryBarrierTemplate).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(dstBuffer);
+            bufferMemoryBarrier.put(I, writeMemoryBarrierTemplate);
+            bufferMemoryBarrier.get(I).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(dstBuffer);
         });
 
         //
@@ -243,14 +250,18 @@ abstract public class CopyUtilObj {
 
         // TODO: support a correct buffer size
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I, writeMemoryBarrierTemplate).image(dstImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+            imageMemoryBarrier.put(I, writeMemoryBarrierTemplate);
+            imageMemoryBarrier.get(I)
+                .image(dstImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
                 .layerCount(regions.get(I).imageSubresource().layerCount())
                 .levelCount(1)
             );
-            bufferMemoryBarrier.put(I, readMemoryBarrierTemplate).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(srcBuffer);
+            bufferMemoryBarrier.put(I, readMemoryBarrierTemplate);
+            bufferMemoryBarrier.get(I)
+                .offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(srcBuffer);
         });
 
         //
@@ -286,8 +297,12 @@ abstract public class CopyUtilObj {
         //
         var memoryBarriers = VkBufferMemoryBarrier2.calloc(regions.remaining()*2);
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            memoryBarriers.put(I*2+0, readMemoryBarrierTemplate).offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
-            memoryBarriers.put(I*2+1, writeMemoryBarrierTemplate).offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
+            memoryBarriers.put(I*2+0, readMemoryBarrierTemplate);
+            memoryBarriers.get(I*2+0)
+                .offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
+            memoryBarriers.put(I*2+1, writeMemoryBarrierTemplate);
+            memoryBarriers.get(I*2+1)
+                .offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
         });
 
         //
