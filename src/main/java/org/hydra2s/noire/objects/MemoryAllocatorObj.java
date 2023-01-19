@@ -137,14 +137,39 @@ public class MemoryAllocatorObj extends BasicObj  {
             return memSlice(memByteBuffer(this.mappedPtr.get(0), (int) ((VkMemoryAllocateInfo)this.allocInfo).allocationSize()), (int)BO, (int)BM);
         }
 
+        public DeviceMemoryObj flushMapped(long size, long offset) {
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
+            vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+                .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
+                .offset(offset)
+                .memory(this.handle.get())
+                .size(size)
+            );
+            return this;
+        }
+
+        public DeviceMemoryObj invalidateMapped(long size, long offset) {
+            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
+            vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+                .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
+                .offset(offset)
+                .memory(this.handle.get())
+                .size(size)
+            );
+            return this;
+        }
+
         //
-        public void unmap() {
+        public DeviceMemoryObj unmap() {
             var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get());
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get());
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
             vkUnmapMemory(deviceObj.device, this.handle.get()); mapped = false;
+            return this;
         }
 
         @Override // TODO: multiple queue family support

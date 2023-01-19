@@ -132,8 +132,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         var modified = copies.stream().map((cp)-> cp
             .dstOffset(cp.dstOffset()+dst.offset())
             .srcOffset(cp.srcOffset()+src.offset())
-            .size(min(cp.size(), min(src.range(), dst.range())))).toList();
-        for (var I=0;I<copies.size();I++) { copies.get(I).set(modified.get(I)); } // modify copies
+            .size(min(src.range(), dst.range()))).toList();
+        for (var I=0;I<copies.remaining();I++) { copies.get(I).set(modified.get(I)); } // modify copies
         CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
     }
 

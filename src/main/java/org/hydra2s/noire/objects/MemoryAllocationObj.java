@@ -80,6 +80,20 @@ public class MemoryAllocationObj extends BasicObj {
         deviceMemoryObj.unmap();
     }
 
+    public MemoryAllocationObj flushMapped() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        deviceMemoryObj.flushMapped(this.memorySize, this.memoryOffset);
+        return this;
+    }
+
+    public MemoryAllocationObj invalidateMapped() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        deviceMemoryObj.invalidateMapped(this.memorySize, this.memoryOffset);
+        return this;
+    }
+
     public PointerBuffer getWin32Handle() {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());

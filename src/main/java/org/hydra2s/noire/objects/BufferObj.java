@@ -127,10 +127,33 @@ public class BufferObj extends BasicObj {
         return this.deviceAddress;
     }
 
+    //
+    public BufferObj flushMapped() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+
+        allocationObj.flushMapped();
+
+        return this;
+    }
+
+    //
+    public BufferObj invalidateMapped() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+
+        allocationObj.invalidateMapped();
+
+        return this;
+    }
+
     // for `map()` or copy operations
     // necessary after `unmap()` op
     // Resizable BAR!
     public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+
         CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
         return this;
     }
