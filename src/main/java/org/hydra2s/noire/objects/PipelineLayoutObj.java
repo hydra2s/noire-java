@@ -165,13 +165,13 @@ public class PipelineLayoutObj extends BasicObj  {
         deviceObj.handleMap.put(this.handle, this);
 
         //
-        this.offsets = memAllocLong(4);
-        this.sizes = memAllocLong(4);
+        this.offsets = memAllocLong(4).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
+        this.sizes = memAllocLong(4).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
 
         //
         for (int i = 0; i < 4; i++) {
-            vkGetDescriptorSetLayoutSizeEXT(deviceObj.device, this.descriptorLayout.get(i), sizes.slice(i, 1));
-            vkGetDescriptorSetLayoutBindingOffsetEXT(deviceObj.device, this.descriptorLayout.get(i), 0, offsets.slice(i, 1));
+            vkGetDescriptorSetLayoutSizeEXT(deviceObj.device, this.descriptorLayout.get(i), memSlice(sizes, i, 1));
+            vkGetDescriptorSetLayoutBindingOffsetEXT(deviceObj.device, this.descriptorLayout.get(i), 0, memSlice(offsets, i, 1));
         }
 
         //

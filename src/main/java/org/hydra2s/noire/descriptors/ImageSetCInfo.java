@@ -106,6 +106,14 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.dstAlphaFactor = dstAlpha;
         }
 
+        public BlendState(BlendState blendState) {
+            this.enabled = blendState.enabled;
+            this.srcRgbFactor = blendState.srcRgbFactor;
+            this.dstRgbFactor = blendState.dstRgbFactor;
+            this.srcAlphaFactor = blendState.srcAlphaFactor;
+            this.dstAlphaFactor = blendState.dstAlphaFactor;
+        }
+
         public void setBlendFunction(int srcRgb, int dstRgb, int srcAlpha, int dstAlpha) {
             this.srcRgbFactor = srcRgb;
             this.dstRgbFactor = dstRgb;
