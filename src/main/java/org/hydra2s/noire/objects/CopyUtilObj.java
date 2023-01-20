@@ -32,6 +32,8 @@ abstract public class CopyUtilObj {
             ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
                 .bufferOffset(srcBufferRange.offset)
+                .bufferRowLength(srcBufferRange.rowLength)
+                .bufferImageHeight(srcBufferRange.imageHeight)
                 .imageOffset(dstImageView.offset).imageExtent(extent)
                 .imageSubresource(dstImageViewObj.subresourceLayers(dstImageView.mipLevel))
         );
@@ -52,6 +54,8 @@ abstract public class CopyUtilObj {
             ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
                 .bufferOffset(dstBufferRange.offset)
+                .bufferRowLength(dstBufferRange.rowLength)
+                .bufferImageHeight(dstBufferRange.imageHeight)
                 .imageOffset(srcImageView.offset).imageExtent(extent)
                 .imageSubresource(srcImageViewObj.subresourceLayers(srcImageView.mipLevel))
         );

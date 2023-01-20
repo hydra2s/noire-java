@@ -64,6 +64,8 @@ public class PipelineObj extends BasicObj  {
         public VkMultiDrawInfoEXT.Buffer multiDraw = null;
         public ByteBuffer pushConstRaw = null;
         public int pushConstByteOffset = 0;
+        public boolean clearColor = true;
+        public boolean clearDepthStencil = true;
     }
 
     //
@@ -214,8 +216,10 @@ public class PipelineObj extends BasicObj  {
                 vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
             }
         } else {
-            vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
-            if (hasDepthStencil) {
+            if (cmdInfo.clearColor) {
+                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
+            }
+            if (hasDepthStencil && cmdInfo.clearDepthStencil) {
                 vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
                     .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
                     .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())

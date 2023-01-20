@@ -19,6 +19,10 @@ public class CopyInfoCInfo extends BasicCInfo {
         public long buffer;
         public long offset = 0L;
         public long range = VK_WHOLE_SIZE;
+
+        // specific
+        public int rowLength = 0;
+        public int imageHeight = 0;
     }
 
     public static class ImageCopyInfo {
