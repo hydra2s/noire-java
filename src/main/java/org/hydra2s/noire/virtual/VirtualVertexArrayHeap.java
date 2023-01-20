@@ -178,7 +178,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         // de-bloat a re-production of VAO
         public VirtualVertexArrayObj delete() {
-            this.bound.registry.remove(this.DSC_ID);
+            this.bound.registry.removeIndex(this.DSC_ID);
             return this;
         }
     }

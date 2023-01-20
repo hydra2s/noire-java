@@ -268,7 +268,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         @Override
         public VirtualMutableBufferObj delete() throws Exception {
             this.deallocate();
-            this.bound.registry.remove(this.DSC_ID);
+            this.bound.registry.removeIndex(this.DSC_ID);
             return this;
         }
     }
