@@ -138,7 +138,9 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     // Will be able to deallocate and re-allocate again
+    // TODO: support for TRIM and trimming...
     public static class VirtualMutableBufferObj extends VirtualGLObj {
+        protected VirtualMemoryHeap heap = null;
         protected PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
         protected LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);
         protected long bufferSize = 0L;
@@ -173,10 +175,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.blockSize = 0;
 
             // TODO: bound with memoryHeap
-            var virtualBufferHeap = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle));
+            var virtualBufferRegistry = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle));
 
             //
-            this.bound = virtualBufferHeap;
+            this.bound = virtualBufferRegistry;
+            this.heap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
 
             //
             this.DSC_ID = this.bound.registry.push(this);
@@ -190,11 +193,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
-            // TODO: bound with memoryHeap
-            var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
-            var heap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
-            var range = heap.getBufferRange();
-            return VkDescriptorBufferInfo.calloc().set(range.buffer(), this.bufferOffset.get(0), this.bufferSize);
+            return VkDescriptorBufferInfo.calloc().set(this.heap.getBufferRange().buffer(), this.bufferOffset.get(0), this.bufferSize);
         }
 
         //
@@ -205,17 +204,12 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public ByteBuffer map() {
-            // TODO: bound with memoryHeap
-            var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
             if (this.mapped != null) { return this.mapped; };
-            return (this.mapped = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId).bufferHeap.map(this.bufferSize, this.bufferOffset.get(0)));
+            return (this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0)));
         }
 
         //
         public void unmap(int target) {
-            // TODO: bound with memoryHeap
-            var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
-            ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId).bufferHeap.unmap();
             this.mapped = null;
         }
 
@@ -225,29 +219,27 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             final long MEM_BLOCK = 1024L * 3L;
             bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
             this.bufferSize = bufferSize;
-
-            var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
             if (this.blockSize < bufferSize)
             {
-                // TODO: bound with memoryHeap
-                var virtualBufferHeap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
-                var oldAlloc = this.allocId.get(0);
-
                 // TODO: copy from old segment
-                // Avoid some data corruption
+                var oldAlloc = this.allocId.get(0);
                 if (this.bound != null && oldAlloc != 0) {
-                    vmaVirtualFree(virtualBufferHeap.virtualBlock.get(0), oldAlloc);
+                    vmaVirtualFree(this.heap.virtualBlock.get(0), oldAlloc);
                 }
 
+                //
                 this.bufferOffset.put(0, 0L);
-                int res = vmaVirtualAllocate(virtualBufferHeap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset);
+                int res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset);
                 if (res != VK_SUCCESS) {
                     System.out.println("Allocation Failed: " + res);
                     throw new Exception("Allocation Failed: " + res);
                 }
 
                 // get device address from
-                this.address = virtualBufferHeap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
+                this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
+                if (this.mapped != null) {
+                    this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
+                }
             }
             return this;
         }
@@ -268,6 +260,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 this.address = 0L;
                 this.bufferOffset.put(0, 0L);
                 this.allocId.put(0, 0L);
+                this.mapped = null;
             }
             return this;
         }
