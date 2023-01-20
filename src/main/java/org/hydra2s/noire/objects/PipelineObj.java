@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
@@ -162,15 +163,11 @@ public class PipelineObj extends BasicObj  {
         //
         if (cmdInfo.pipeline != 0) {
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
-        }
 
-        //
-        if (cmdInfo.pipeline != 0) {
+            //
             vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
             vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
-
-            // TODO: add support cull mode from instance
-            //vkCmdSetCullMode(cmdBuf, );
+            vkCmdSetCullMode(cmdBuf, RendererObj.rendererObj.fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
 
             //
             for (var I = 0; I < fbLayout.blendStates.size(); I++) {
@@ -199,7 +196,7 @@ public class PipelineObj extends BasicObj  {
             vkCmdSetStencilTestEnable(cmdBuf, false);
 
             //
-            vkCmdSetDepthWriteEnable(cmdBuf, hasDepth && fbLayout.depthState.depthTest);
+            vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
             vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
             vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
 
@@ -335,10 +332,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             this.inputAssemblyStateInfo
-                .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-            //
-            this.inputAssemblyStateInfo
+                .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
                 .primitiveRestartEnable(false);
 
             //
@@ -352,8 +346,8 @@ public class PipelineObj extends BasicObj  {
                 .rasterizerDiscardEnable(false)
                 .polygonMode(VK_POLYGON_MODE_FILL)
                 .cullMode(VK_CULL_MODE_NONE)
-                .frontFace(VK_FRONT_FACE_CLOCKWISE)
-                .depthBiasEnable(false)
+                .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
+                .depthBiasEnable(true)
                 .depthBiasConstantFactor(0.0F)
                 .depthBiasClamp(0.0F)
                 .depthBiasSlopeFactor(0.0F)
