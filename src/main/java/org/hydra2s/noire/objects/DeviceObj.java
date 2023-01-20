@@ -240,9 +240,9 @@ public class DeviceObj extends BasicObj {
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             int status = vkGetFenceStatus(this.device, fence_.get(0));
             if (status != VK_NOT_READY) {
-                vkDestroyFence(this.device, fence_.get(0), null); fence_.put(0, 0);
                 this.whenDone.remove(ref.deallocProcess);
                 cmd.onDone.fulfill(status);
+                vkDestroyFence(this.device, fence_.get(0), null); fence_.put(0, 0);
                 return status;
             }
             return status;

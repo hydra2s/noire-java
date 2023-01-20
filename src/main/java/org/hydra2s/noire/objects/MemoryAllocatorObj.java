@@ -121,9 +121,12 @@ public class MemoryAllocatorObj extends BasicObj  {
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
+            //var cInfo = (MemoryAllocatorCInfo.DeviceMemoryCInfo)this.cInfo;
+            var cInfo = (MemoryAllocationCInfo)this.cInfo;
+
+            //
             long BO = byteOffset;
-            long BS = (byteLength != 0 || byteLength == VK_WHOLE_SIZE) ? byteLength : Math.min(((VkMemoryAllocateInfo)this.allocInfo).allocationSize(), byteLength);
-            long BM = BS == VK_WHOLE_SIZE || BS < 0 ? ((VkMemoryAllocateInfo)this.allocInfo).allocationSize() : BS;
+            long BS = Math.min(byteLength, this.allocInfo.allocationSize() - byteOffset);
 
             //
             //if (mapped) { this.unmap(); };
@@ -133,8 +136,9 @@ public class MemoryAllocatorObj extends BasicObj  {
                 mapped = true;
             }
 
-            //
-            return memSlice(memByteBuffer(this.mappedPtr.get(0), (int) ((VkMemoryAllocateInfo)this.allocInfo).allocationSize()), (int)BO, (int)BM);
+            // WARNING! Limited up to 2Gb, due negative integer
+            //return memSlice(memByteBuffer(this.mappedPtr.get(0), (int) ((VkMemoryAllocateInfo)this.allocInfo).allocationSize()), (int) BO, (int) Math.min(BS, 0x7FFFFFFFL));
+            return memByteBuffer(this.mappedPtr.get(0) + BO, (int) Math.min(BS, 0x7FFFFFFFL));
         }
 
         public DeviceMemoryObj flushMapped(long size, long offset) {

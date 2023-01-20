@@ -40,7 +40,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         //
         public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
             // TODO: add support for ResizableBAR! It's necessary!
-            this.bufferHeap = new CompatibleBufferObj(base, new BufferCInfo() {{
+            this.bufferHeap = new BufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
                 usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = $memoryAllocator;
