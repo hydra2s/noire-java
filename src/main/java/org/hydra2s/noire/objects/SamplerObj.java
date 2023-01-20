@@ -40,16 +40,17 @@ public class SamplerObj extends BasicObj  {
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
-    public SamplerObj delete() {
+    public SamplerObj delete() throws Exception {
+        super.delete();
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var cInfo = (ImageViewCInfo)this.cInfo;
+        var cInfo = (SamplerCInfo)this.cInfo;
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
         var self = this;
         deviceObj.submitOnce(deviceObj.getCommandPool((cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queue = deviceObj.getQueue((cInfo).queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)-> {
-                if (cInfo.pipelineLayout != 0) {
-                    var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
-                    descriptorsObj.samplers.removeIndex(self.DSC_ID);
+                if (pipelineLayoutObj != null) {
+                    pipelineLayoutObj.samplers.removeIndex(DSC_ID);
                     self.DSC_ID = -1;
                 }
 

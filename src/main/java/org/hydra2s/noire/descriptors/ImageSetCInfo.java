@@ -214,7 +214,11 @@ public class ImageSetCInfo extends BasicCInfo  {
         public int colorMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
         public ColorMask(boolean r, boolean g, boolean b, boolean a) {
-            this.colorMask = (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
+            this.colorMask =
+                (r ? VK_COLOR_COMPONENT_R_BIT : 0) |
+                (g ? VK_COLOR_COMPONENT_G_BIT : 0) |
+                (b ? VK_COLOR_COMPONENT_B_BIT : 0) |
+                (a ? VK_COLOR_COMPONENT_A_BIT : 0);
         }
 
         public ColorMask(int mask) {
@@ -222,7 +226,11 @@ public class ImageSetCInfo extends BasicCInfo  {
         }
 
         public static int getColorMask(boolean r, boolean g, boolean b, boolean a) {
-            return (r ? VK_COLOR_COMPONENT_R_BIT : 0) | (g ? VK_COLOR_COMPONENT_G_BIT : 0) | (b ? VK_COLOR_COMPONENT_B_BIT : 0) | (a ? VK_COLOR_COMPONENT_A_BIT : 0);
+            return
+                (r ? VK_COLOR_COMPONENT_R_BIT : 0) |
+                (g ? VK_COLOR_COMPONENT_G_BIT : 0) |
+                (b ? VK_COLOR_COMPONENT_B_BIT : 0) |
+                (a ? VK_COLOR_COMPONENT_A_BIT : 0);
         }
 
         @Override

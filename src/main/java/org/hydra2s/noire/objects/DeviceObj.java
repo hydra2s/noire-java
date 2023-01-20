@@ -181,6 +181,14 @@ public class DeviceObj extends BasicObj {
     public DeviceObj doPolling() {
         var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
         _list.stream().forEach((F)->F.apply(null));
+
+        // if queue list is overflow, do await before free less than 64
+        // i.e. do intermission for free resources, and avoid overflow
+        // TODO: manual queue intermission
+        while (whenDone.size() >= 64) {
+            _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
+            _list.stream().forEach((F)->F.apply(null));
+        }
         //for (var I=0;I<_list.size();I++) {var F =_list.get(I);}
         return this;
     }
