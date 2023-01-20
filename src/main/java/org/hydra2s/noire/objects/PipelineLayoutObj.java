@@ -22,7 +22,7 @@ import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
 
-//
+// TODO: fallback into traditional binding model!
 public class PipelineLayoutObj extends BasicObj  {
     protected LongBuffer pipelineLayout = memAllocLong(1);
     protected PointerBuffer descriptorLayout = memAllocPointer(3);
