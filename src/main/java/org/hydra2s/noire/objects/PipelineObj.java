@@ -346,7 +346,7 @@ public class PipelineObj extends BasicObj  {
                 .rasterizerDiscardEnable(false)
                 .polygonMode(VK_POLYGON_MODE_FILL)
                 .cullMode(VK_CULL_MODE_NONE)
-                .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
+                .frontFace(VK_FRONT_FACE_CLOCKWISE)
                 .depthBiasEnable(true)
                 .depthBiasConstantFactor(0.0F)
                 .depthBiasClamp(0.0F)
