@@ -15,7 +15,7 @@ import java.util.stream.IntStream;
 
 //
 import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.*;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -24,7 +24,8 @@ import static org.lwjgl.vulkan.VK10.*;
 // Bindings depends on shaders
 public class VirtualVertexArrayHeap extends VirtualGLRegistry {
     //
-    protected BufferObj bufferHeap = null;
+    public BufferObj bufferHeap = null;
+    public ByteBuffer hostPayload = null;
 
     //
     public VirtualVertexArrayHeap(Handle base, Handle handle) {
@@ -45,7 +46,8 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         deviceObj.handleMap.put(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
-        this.bufferHeap = new CompatibleBufferObj(this.base, new BufferCInfo() {{
+        this.hostPayload = memAlloc((int) (cInfo.maxVertexArrayCount * vertexArrayStride));
+        this.bufferHeap = new BufferObj(this.base, new BufferCInfo() {{
             size = cInfo.maxVertexArrayCount * vertexArrayStride;
             usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             memoryAllocator = cInfo.memoryAllocator;
@@ -75,11 +77,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         return this;
     }
 
-    //
-    public VirtualVertexArrayHeap cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
-        this.bufferHeap.cmdSynchronizeFromHost(cmdBuf);
-        return this;
-    }
+    // you need to do it manually!
+    //public VirtualVertexArrayHeap cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
+        //this.bufferHeap.cmdSynchronizeFromHost(cmdBuf);
+        //return this;
+    //}
 
     //
     public VirtualVertexArrayHeap cmdClear(VkCommandBuffer cmdBuf) {
@@ -122,7 +124,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
             //
             this.bindings = new HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>();
-            this.bindingsMapped = virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
+            this.bindingsMapped = memSlice(virtualVertexArrayHeap.hostPayload, (int) (this.bufferOffset = this.DSC_ID*vertexArrayStride), vertexArrayStride);//virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
             this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
         }
 
