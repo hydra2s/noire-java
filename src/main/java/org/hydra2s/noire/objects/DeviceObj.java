@@ -287,11 +287,22 @@ public class DeviceObj extends BasicObj {
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
 
         //
-        var lessBusyCount = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.stream().min(Math::min);
-        var lessBusy = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.indexOf(lessBusyCount.get());
+        var lessBusyCount = Collections.min(queueFamilies.get(cmd.queueFamilyIndex).queueBusy);
+        var lessBusy = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.indexOf(lessBusyCount);
 
         // increase loading index
         queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)+1);
+
+        //
+        /*
+        if (cmd.queueFamilyIndex == 2) {
+            System.out.println("Used transfer queue 2");
+            System.out.println("Loaded indices: ");
+            for (var I=0;I<queueFamilies.get(cmd.queueFamilyIndex).queueBusy.size();I++) {
+                System.out.println(queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(I));
+            }
+            System.out.println("Minimum loading index: " + lessBusy);
+        }*/
 
         // TODO: queue submit v2
         var queue = this.getQueue(cmd.queueFamilyIndex, lessBusy);
@@ -318,17 +329,20 @@ public class DeviceObj extends BasicObj {
             var fence = fence_.get(0);
             int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
             if (status != VK_NOT_READY) {
-                this.whenDone.remove(ref.deallocProcess);
-                cmd.onDone.fulfill(status);
                 if (fence != 0) {
+                    this.whenDone.remove(ref.deallocProcess);
+                    cmd.onDone.fulfill(status);
+
+                    //
+                    queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)-1);
+                    toRemoveSemaphores.forEach((semaphoreObj)->{
+                        semaphoreObj.delete();
+                    });
+
+                    //
                     vkDestroyFence(this.device, fence, null);
+                    fence_.put(0, 0);
                 }
-                toRemoveSemaphores.forEach((semaphoreObj)->{
-                    semaphoreObj.delete();
-                });
-                queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)-1);
-                fence_.put(0, 0);
-                return status;
             }
             return status;
         });
