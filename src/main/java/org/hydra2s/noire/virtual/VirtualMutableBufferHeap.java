@@ -228,7 +228,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
 
             //
-            if (this.blockSize != bufferSize)
+            if (this.blockSize < bufferSize)
             {
                 // TODO: copy from old segment
                 var oldAlloc = this.allocId.get(0);
