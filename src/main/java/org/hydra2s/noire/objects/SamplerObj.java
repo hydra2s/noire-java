@@ -46,8 +46,9 @@ public class SamplerObj extends BasicObj  {
         var cInfo = (SamplerCInfo)this.cInfo;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
         var self = this;
-        deviceObj.submitOnce(deviceObj.getCommandPool((cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-            queue = deviceObj.getQueue((cInfo).queueFamilyIndex, 0);
+        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)-> {
                 if (pipelineLayoutObj != null) {
                     pipelineLayoutObj.samplers.removeIndex(DSC_ID);

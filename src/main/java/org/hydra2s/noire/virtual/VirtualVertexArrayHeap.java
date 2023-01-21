@@ -183,6 +183,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         public VirtualVertexArrayObj delete() {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
             deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queueFamilyIndex = cInfo.queueFamilyIndex;
                 queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                 onDone = new Promise<>().thenApply((result)-> {
                     bound.registry.removeIndex(DSC_ID);

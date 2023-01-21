@@ -103,8 +103,9 @@ public class ImageObj extends BasicObj {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
 
-        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyImage(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.remove(handle);

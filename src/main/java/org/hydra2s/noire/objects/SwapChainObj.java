@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.*;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
@@ -253,13 +254,33 @@ public class SwapChainObj extends BasicObj  {
 
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-            queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+            onDone = new Promise<>().thenApply((result)-> {
+                vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
+                deviceObj.handleMap.remove(handle);
+                return null;
+            });
         }}, (cmdBuf)->{
-            vkDestroySwapchainKHR(deviceObj.device, this.handle.get(), null);
-            deviceObj.handleMap.remove(handle);
             return VK_SUCCESS;
         });
+
+        //
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support (and Promise.all)
+    public SwapChainObj deleteDirectly() {
+        for (var i=0;i<this.imageViews.size();i++) {
+            this.imageViews.get(i).delete();
+            this.imagesObj.get(i).delete();
+        }
+
+        //
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.remove(handle);
 
         //
         return this;

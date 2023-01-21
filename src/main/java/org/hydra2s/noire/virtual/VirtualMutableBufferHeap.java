@@ -105,18 +105,20 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, int queueFamilyIndex) {
+    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueFamilyIndex) {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
+            queueFamilyIndex = $queueFamilyIndex;
         }});
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, long size, int queueFamilyIndex) throws Exception {
+    public VirtualMutableBufferObj createBuffer(int heapId_, long size, int $queueFamilyIndex) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
+            queueFamilyIndex = $queueFamilyIndex;
         }}).allocate(size);
     }
 
@@ -247,25 +249,31 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 }
 
                 // pistol (copy from old, and remove such segment)
-                var dstBufferRange = this.getBufferRange(); // TODO: correctly using transfer queue!
-                deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-                    queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
-                    onDone = new Promise<>().thenApply((result)-> {
-                        if (bound != null && oldAlloc != 0) {
-                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                        }
-                        return null;
-                    });
-                }}, (cmdBuf)->{
-                    if (oldAlloc != 0) {
+                if (oldAlloc != 0) {
+                    var dstBufferRange = this.getBufferRange(); // TODO: correctly using transfer queue!
+                    deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd() {{
+                        // TODO: correctly handle main queue family
+                        whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
+                        whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+                        //
+                        queueFamilyIndex = cInfo.queueFamilyIndex;
+                        queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                        onDone = new Promise<>().thenApply((result) -> {
+                            if (bound != null && oldAlloc != 0) {
+                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                            }
+                            return null;
+                        });
+                    }}, (cmdBuf) -> {
                         VirtualMutableBufferHeap.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange, VkBufferCopy2.calloc(1)
                             .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
                             .dstOffset(0)
                             .srcOffset(0)
                             .size(min(srcBufferRange.range(), dstBufferRange.range())));
-                    }
-                    return VK_SUCCESS;
-                });
+                        return VK_SUCCESS;
+                    });
+                }
             }
             return this;
         }
@@ -295,6 +303,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public VirtualMutableBufferObj delete() throws Exception {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
             deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queueFamilyIndex = cInfo.queueFamilyIndex;
                 queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                 onDone = new Promise<>().thenApply((result)-> {
                     try {

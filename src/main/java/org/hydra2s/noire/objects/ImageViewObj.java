@@ -93,8 +93,9 @@ public class ImageViewObj extends BasicObj {
         var self = this;
 
         // just await last process in queue family
-        deviceObj.submitOnce(deviceObj.getCommandPool((cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-            queue = deviceObj.getQueue((cInfo).queueFamilyIndex, 0);
+        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)-> {
                 //
                 if (cInfo.pipelineLayout != 0) {

@@ -180,8 +180,9 @@ public class MemoryAllocatorObj extends BasicObj  {
         public DeviceMemoryObj delete() {
             var handle = this.handle;
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-                queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
+            deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queueFamilyIndex = cInfo.queueFamilyIndex;
+                queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                 onDone = new Promise<>().thenApply((result)->{
                     vkFreeMemory(deviceObj.device, handle.get(), null);
                     deviceObj.handleMap.remove(handle);
