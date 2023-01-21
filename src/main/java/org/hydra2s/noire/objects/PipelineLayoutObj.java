@@ -132,14 +132,14 @@ public class PipelineLayoutObj extends BasicObj  {
         this.mutableDescriptorInfo = VkMutableDescriptorTypeCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT).pMutableDescriptorTypeLists(this.mutableDescriptorLists);
 
         // TODO: make group by type
-        this.resourceDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_MUTABLE_EXT).descriptorCount(4096);
+        this.resourceDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_MUTABLE_EXT).descriptorCount(1024);
         this.resourceDescriptorSetBindingFlags = memAllocInt(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
         this.resourceDescriptorSetLayoutCreateInfoBindingFlags = VkDescriptorSetLayoutBindingFlagsCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO).pNext(this.mutableDescriptorInfo.address()).pBindingFlags(this.resourceDescriptorSetBindingFlags);
         this.resourceDescriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo.calloc().flags(VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO).pNext(this.resourceDescriptorSetLayoutCreateInfoBindingFlags.address()).pBindings(this.resourceDescriptorSetBindings);
         vkCreateDescriptorSetLayout(deviceObj.device, this.resourceDescriptorSetLayoutCreateInfo, null, memLongBuffer(memAddress(this.descriptorLayout, 0), 1));
 
         // TODO: make group by type
-        this.samplerDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_SAMPLER).descriptorCount(4096);
+        this.samplerDescriptorSetBindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(VK_DESCRIPTOR_TYPE_SAMPLER).descriptorCount(256);
         this.samplerDescriptorSetBindingFlags = memAllocInt(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
         this.samplerDescriptorSetLayoutCreateInfoBindingFlags = VkDescriptorSetLayoutBindingFlagsCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO).pBindingFlags(this.samplerDescriptorSetBindingFlags);
         this.samplerDescriptorSetLayoutCreateInfo = VkDescriptorSetLayoutCreateInfo.calloc().flags(VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO).pNext(this.samplerDescriptorSetLayoutCreateInfoBindingFlags.address()).pBindings(this.samplerDescriptorSetBindings);
@@ -226,7 +226,7 @@ public class PipelineLayoutObj extends BasicObj  {
         ByteBuffer RMAP = this.resourceDescriptorBuffer.map(sizes.get(0), 0);
 
         //
-        for (var I=0;I<Math.min(this.resources.size(), 4096);I++) {
+        for (var I=0;I<Math.min(this.resources.size(), 1024);I++) {
             if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
                 vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
@@ -236,7 +236,7 @@ public class PipelineLayoutObj extends BasicObj  {
         }
 
         //
-        for (var I=0;I<Math.min(this.samplers.size(), 4096);I++) {
+        for (var I=0;I<Math.min(this.samplers.size(), 256);I++) {
             if (this.samplers.get(I) != null && this.samplers.get(I).get(0) != 0) {
                 vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)

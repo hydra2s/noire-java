@@ -187,12 +187,10 @@ public class InstanceObj extends BasicObj {
                                 }
 
                             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                                if (messageTypes != VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
-                                    PrintMessageType(messageTypes);
-                                    System.out.println("Vulkan Debug Warning!");
-                                    System.out.println(debugCallbackData.pMessageIdNameString());
-                                    System.out.println(debugCallbackData.pMessageString());
-                                }
+                                PrintMessageType(messageTypes);
+                                System.out.println("Vulkan Debug Warning!");
+                                System.out.println(debugCallbackData.pMessageIdNameString());
+                                System.out.println(debugCallbackData.pMessageString());
                             break;
 
                             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
