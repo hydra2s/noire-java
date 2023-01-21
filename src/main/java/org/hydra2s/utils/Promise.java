@@ -2,6 +2,7 @@ package org.hydra2s.utils;
 
 //
 
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
@@ -10,15 +11,17 @@ import java.util.function.Function;
 
 //
 public class Promise<T> extends PromiseSupport<T> {
-    private Runnable fulfillmentAction;
+    private ArrayList<Runnable> fulfillmentAction = new ArrayList<>();
     private Consumer<? super Throwable> exceptionHandler;
     public UUID id = null;
 
     public Promise(UUID id) {
         this.id = id;
+        this.fulfillmentAction = new ArrayList<>();
     }
 
     public Promise() {
+        this.fulfillmentAction = new ArrayList<>();
     }
 
     @Override
@@ -42,10 +45,10 @@ public class Promise<T> extends PromiseSupport<T> {
     }
 
     private void postFulfillment() {
-        if (fulfillmentAction == null) {
-            return;
+        for (var I=0;I<fulfillmentAction.size();I++) {
+            fulfillmentAction.get(I).run();
         }
-        fulfillmentAction.run();
+        fulfillmentAction.clear();
     }
 
     public Promise<T> fulfillInAsync(final Callable<T> task, Executor executor) {
@@ -61,7 +64,7 @@ public class Promise<T> extends PromiseSupport<T> {
 
     public Promise<Void> thenAccept(Consumer<? super T> action) {
         var dest = new Promise<Void>();
-        fulfillmentAction = new ConsumeAction(this, dest, action);
+        fulfillmentAction.add(new ConsumeAction(this, dest, action));
         if (this.isDone()) { this.postFulfillment(); };
         return dest;
     }
@@ -73,7 +76,7 @@ public class Promise<T> extends PromiseSupport<T> {
 
     public <V> Promise<V> thenApply(Function<? super T, V> func) {
         Promise<V> dest = new Promise<>();
-        fulfillmentAction = new TransformAction<>(this, dest, func);
+        fulfillmentAction.add(new TransformAction<>(this, dest, func));
         if (this.isDone()) { this.postFulfillment(); };
         return dest;
     }

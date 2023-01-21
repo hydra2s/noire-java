@@ -1,9 +1,12 @@
 package org.hydra2s.noire.virtual;
 
 //
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.noire.objects.*;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
@@ -178,6 +181,21 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         // de-bloat a re-production of VAO
         public VirtualVertexArrayObj delete() {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                onDone = new Promise<>().thenApply((result)-> {
+                    bound.registry.removeIndex(DSC_ID);
+                    return null;
+                });
+            }}, (cmdBuf)->{
+                return VK_SUCCESS;
+            });
+            return this;
+        }
+
+        // de-bloat a re-production of VAO
+        public VirtualVertexArrayObj deleteDirectly() {
             this.bound.registry.removeIndex(this.DSC_ID);
             return this;
         }

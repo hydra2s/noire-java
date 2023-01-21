@@ -63,4 +63,23 @@ public class SamplerObj extends BasicObj  {
         });
         return this;
     }
+
+    @Override // TODO: multiple queue family support (and Promise.all)
+    public SamplerObj deleteDirectly() throws Exception {
+        super.delete();
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var cInfo = (SamplerCInfo)this.cInfo;
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+        var self = this;
+
+        if (pipelineLayoutObj != null) {
+            pipelineLayoutObj.samplers.removeIndex(DSC_ID);
+            self.DSC_ID = -1;
+        }
+
+        vkDestroySampler(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.remove(handle);
+
+        return this;
+    }
 }

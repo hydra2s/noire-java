@@ -182,10 +182,10 @@ public class DeviceObj extends BasicObj {
         var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
         _list.stream().forEach((F)->F.apply(null));
 
-        // if queue list is overflow, do await before free less than 64
+        // if queue list is overflow, do await before free less than 1024
         // i.e. do intermission for free resources, and avoid overflow
         // TODO: manual queue intermission
-        while (whenDone.size() >= 64) {
+        while (whenDone.size() >= 1024) {
             _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
             _list.stream().forEach((F)->F.apply(null));
         }
@@ -246,15 +246,22 @@ public class DeviceObj extends BasicObj {
 
         //
         this.whenDone.add(ref.deallocProcess = (_null_)->{
-            int status = vkGetFenceStatus(this.device, fence_.get(0));
+            var fence = fence_.get(0);
+            int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
             if (status != VK_NOT_READY) {
                 this.whenDone.remove(ref.deallocProcess);
                 cmd.onDone.fulfill(status);
-                vkDestroyFence(this.device, fence_.get(0), null); fence_.put(0, 0);
+                if (fence != 0) {
+                    vkDestroyFence(this.device, fence, null);
+                }
+                fence_.put(0, 0);
                 return status;
             }
             return status;
         });
+
+        //
+        this.doPolling();
 
         //
         return ref;

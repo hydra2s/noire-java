@@ -2,9 +2,12 @@ package org.hydra2s.noire.virtual;
 
 //
 import net.vulkanmod.next.RendererObj;
+import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.noire.objects.*;
+import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
@@ -24,6 +27,7 @@ import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // Will uses large buffer concept with virtual allocation (VMA)
 // When used draw collector system, recommended to use host-based memory
@@ -216,16 +220,17 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         // TODO: morton coding support
         // TODO: support for memory type when allocation, not when create
         public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
-            final long MEM_BLOCK = 1024L * 3L;
+            final long MEM_BLOCK = 512L;
             bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
             this.bufferSize = bufferSize;
-            if (this.blockSize < bufferSize)
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+
+            //
+            if (this.blockSize != bufferSize)
             {
                 // TODO: copy from old segment
                 var oldAlloc = this.allocId.get(0);
-                if (this.bound != null && oldAlloc != 0) {
-                    vmaVirtualFree(this.heap.virtualBlock.get(0), oldAlloc);
-                }
+                var srcBufferRange = this.getBufferRange();
 
                 //
                 this.bufferOffset.put(0, 0L);
@@ -240,6 +245,27 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 if (this.mapped != null) {
                     this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
                 }
+
+                // pistol (copy from old, and remove such segment)
+                var dstBufferRange = this.getBufferRange();
+                deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                    queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                    onDone = new Promise<>().thenApply((result)-> {
+                        if (bound != null && oldAlloc != 0) {
+                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                        }
+                        return null;
+                    });
+                }}, (cmdBuf)->{
+                    if (oldAlloc != 0) {
+                        VirtualMutableBufferHeap.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange, VkBufferCopy2.calloc(1)
+                            .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
+                            .dstOffset(0)
+                            .srcOffset(0)
+                            .size(min(srcBufferRange.range(), dstBufferRange.range())));
+                    }
+                    return VK_SUCCESS;
+                });
             }
             return this;
         }
@@ -267,8 +293,21 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         @Override
         public VirtualMutableBufferObj delete() throws Exception {
-            this.deallocate();
-            this.bound.registry.removeIndex(this.DSC_ID);
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                onDone = new Promise<>().thenApply((result)-> {
+                    try {
+                        deallocate();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    bound.registry.removeIndex(DSC_ID);
+                    return null;
+                });
+            }}, (cmdBuf)->{
+                return VK_SUCCESS;
+            });
             return this;
         }
 

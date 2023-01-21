@@ -112,4 +112,25 @@ public class ImageViewObj extends BasicObj {
         });
         return this;
     }
+
+    @Override // TODO: multiple queue family support (and Promise.all)
+    public ImageViewObj deleteDirectly() {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var handle = this.handle;
+        var cInfo = (ImageViewCInfo)this.cInfo;
+        var self = this;
+
+        //
+        if (cInfo.pipelineLayout != 0) {
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+            descriptorsObj.resources.removeIndex(self.DSC_ID);
+            self.DSC_ID = -1;
+        }
+
+        vkDestroyImageView(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.remove(handle);
+
+        return this;
+    }
+
 }
