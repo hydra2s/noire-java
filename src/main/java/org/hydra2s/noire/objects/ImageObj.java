@@ -40,25 +40,26 @@ public class ImageObj extends BasicObj {
 
         //
         this.createInfo = VkImageCreateInfo.calloc()
-                .pNext(VkExternalMemoryImageCreateInfo.calloc()
-                        .pNext(0L)
-                        .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO)
-                        .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT )
-                        .address())
-                .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
-                .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT |
-                        (((imageType == VK_IMAGE_TYPE_3D)) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0) |
-                        (((arrayLayers % 6) == 0 && extent.height() == extent.width()) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0))
-                .extent(cInfo.extent3D)
-                .imageType(imageType)
-                .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-                .mipLevels(cInfo.mipLevels)
-                .arrayLayers(cInfo.arrayLayers)
-                .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-                .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                .samples(cInfo.samples)
-                .format(cInfo.format)
-                .tiling(cInfo.tiling);
+            .pNext(VkExternalMemoryImageCreateInfo.calloc()
+                    .pNext(0L)
+                    .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO)
+                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT )
+                    .address())
+            .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
+            .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT |
+                    (((imageType == VK_IMAGE_TYPE_3D)) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0) |
+                    (((arrayLayers % 6) == 0 && extent.height() == extent.width()) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0))
+            .extent(cInfo.extent3D)
+            .imageType(imageType)
+            .usage(cInfo.usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+            .mipLevels(cInfo.mipLevels)
+            .arrayLayers(cInfo.arrayLayers)
+            .initialLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .sharingMode(VK_SHARING_MODE_CONCURRENT)
+            .samples(cInfo.samples)
+            .format(cInfo.format)
+            .tiling(cInfo.tiling)
+            .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : deviceObj.queueFamilyIndices);
 
         //
         int status = VK_NOT_READY;

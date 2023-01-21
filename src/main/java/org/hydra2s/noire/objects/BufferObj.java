@@ -47,17 +47,17 @@ public class BufferObj extends BasicObj {
 
         //
         this.createInfo = VkBufferCreateInfo.calloc()
-                .pNext(VkExternalMemoryBufferCreateInfo.calloc()
-                        .pNext(0L)
-                        .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO)
-                        .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address()
-                )
-                .flags(0)
-                .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
-                .size(Math.max(cInfo.size, 0L))
-                .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
-                .sharingMode(VK_SHARING_MODE_EXCLUSIVE)
-                .pQueueFamilyIndices(null);
+            .pNext(VkExternalMemoryBufferCreateInfo.calloc()
+                    .pNext(0L)
+                    .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO)
+                    .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address()
+            )
+            .flags(0)
+            .sType(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO)
+            .size(Math.max(cInfo.size, 0L))
+            .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
+            .sharingMode(VK_SHARING_MODE_CONCURRENT)
+            .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : deviceObj.queueFamilyIndices);
 
         //
         int status = VK_NOT_READY;
