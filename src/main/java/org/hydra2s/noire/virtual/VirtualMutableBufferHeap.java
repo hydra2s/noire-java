@@ -105,7 +105,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_) {
+    public VirtualMutableBufferObj createBuffer(int heapId_, int queueFamilyIndex) {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
@@ -113,7 +113,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, long size) throws Exception {
+    public VirtualMutableBufferObj createBuffer(int heapId_, long size, int queueFamilyIndex) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
@@ -247,7 +247,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 }
 
                 // pistol (copy from old, and remove such segment)
-                var dstBufferRange = this.getBufferRange();
+                var dstBufferRange = this.getBufferRange(); // TODO: correctly using transfer queue!
                 deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                     queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                     onDone = new Promise<>().thenApply((result)-> {

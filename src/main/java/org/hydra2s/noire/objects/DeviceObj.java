@@ -4,6 +4,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
+import org.hydra2s.noire.descriptors.SemaphoreCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
@@ -114,13 +115,31 @@ public class DeviceObj extends BasicObj {
         //
         for (int Q = 0; Q < cInfo.queueFamilies.size(); Q++) {
             this.queueFamiliesCInfo.get(Q).sType(VK10.VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
-            this.queueFamiliesCInfo.get(Q).pQueuePriorities(MemoryUtil.memAllocFloat(1).put(0, 1.0f));
+
+            //
+            var queuePriorities = memAllocFloat(cInfo.queueFamilies.get(Q).priorities.length);
+            for (var I=0;I<cInfo.queueFamilies.get(Q).priorities.length;I++) {
+                queuePriorities.put(I, cInfo.queueFamilies.get(Q).priorities[I]);
+            }
+
+            //
+            this.queueFamiliesCInfo.get(Q).pQueuePriorities(queuePriorities);
             this.queueFamiliesCInfo.get(Q).queueFamilyIndex(cInfo.queueFamilies.get(Q).index);
 
             //
             var qf = new QueueFamily();
+            qf.waitSemaphores = new ArrayList<>();
+            qf.waitStageMask = new ArrayList<>();
+            qf.queueBusy = new ArrayList<>();
             qf.index = cInfo.queueFamilies.get(Q).index;
             qf.cInfo = cInfo.queueFamilies.get(Q);
+
+            // not loaded...
+            for (int I=0;I<queuePriorities.remaining();I++) {
+                qf.queueBusy.add(0);
+            }
+
+            //
             this.queueFamilies.put(cInfo.queueFamilies.get(Q).index, qf);
             this.queueFamilyIndices.put(Q, qf.index);
         }
@@ -160,9 +179,12 @@ public class DeviceObj extends BasicObj {
 
     //
     public static class QueueFamily {
-        int index = 0;
-        LongBuffer cmdPool = memAllocLong(1).put(0, 0);
-        QueueFamilyCInfo cInfo = new QueueFamilyCInfo();
+        public int index = 0;
+        public LongBuffer cmdPool = memAllocLong(1).put(0, 0);
+        public QueueFamilyCInfo cInfo = new QueueFamilyCInfo();
+        public ArrayList<SemaphoreObj> waitSemaphores = null;
+        public ArrayList<Integer> waitStageMask = null;
+        public ArrayList<Integer> queueBusy = null;
     }
 
     // TODO: pre-compute queues in families
@@ -224,15 +246,62 @@ public class DeviceObj extends BasicObj {
 
     // TODO: support for submission v2
     public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
+        var signalOffset = (cmd.signalSemaphores != null ? cmd.signalSemaphores.remaining() : 0);
+        var waitOffset = (cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0);
+
+        //
+        var signalSemaphores = memAllocLong(signalOffset+(cmd.whatQueueFamilyWillWait >= 0 ? 1 : 0));
+        var waitSemaphores = memAllocLong(waitOffset+queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size());
+        var waitStageMask = memAllocInt(waitOffset+queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size());
+
+        //
+        if (cmd.signalSemaphores != null) { memCopy(cmd.signalSemaphores, signalSemaphores); };
+        if (cmd.waitSemaphores != null) { memCopy(cmd.waitSemaphores, waitSemaphores); };
+        if (cmd.dstStageMask != null) { memCopy(cmd.dstStageMask, waitStageMask); };
+
+        //
+        for (var I=0;I<queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size();I++) {
+            waitSemaphores.put(waitOffset + I, queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.get(I).getHandle().get());
+            waitStageMask.put(waitOffset + I, queueFamilies.get(cmd.queueFamilyIndex).waitStageMask.get(I));
+        }
+
+        //
+        if (cmd.whatQueueFamilyWillWait >= 0) {
+            var signalSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
+
+            }});
+            signalSemaphores.put(signalOffset, signalSemaphore.getHandle().get());
+
+            // add for waiting
+            queueFamilies.get(cmd.whatQueueFamilyWillWait).waitSemaphores.add(signalSemaphore);
+            queueFamilies.get(cmd.whatQueueFamilyWillWait).waitStageMask.add(cmd.whatQueueFamilyWillWait);
+        }
+
+        //
+        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.clone();
+        queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.clear();
+        queueFamilies.get(cmd.queueFamilyIndex).waitStageMask.clear();
+
+        //
         LongBuffer fence_ = memAllocLong(1);
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
-        vkQueueSubmit(cmd.queue, VkSubmitInfo.calloc(1)
+
+        //
+        var lessBusyCount = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.stream().min(Math::min);
+        var lessBusy = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.indexOf(lessBusyCount.get());
+
+        // increase loading index
+        queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)+1);
+
+        // TODO: queue submit v2
+        var queue = this.getQueue(cmd.queueFamilyIndex, lessBusy);
+        vkQueueSubmit(queue, VkSubmitInfo.calloc(1)
             .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
             .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
-            .pWaitDstStageMask(cmd.dstStageMask)
-            .pSignalSemaphores(cmd.signalSemaphores)
-            .pWaitSemaphores(cmd.waitSemaphores)
-            .waitSemaphoreCount(cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0), fence_.get(0));
+            .pWaitDstStageMask(waitStageMask)
+            .pSignalSemaphores(signalSemaphores)
+            .pWaitSemaphores(waitSemaphores)
+            .waitSemaphoreCount(waitSemaphores != null ? waitSemaphores.remaining() : 0), fence_.get(0));
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
@@ -254,6 +323,10 @@ public class DeviceObj extends BasicObj {
                 if (fence != 0) {
                     vkDestroyFence(this.device, fence, null);
                 }
+                toRemoveSemaphores.forEach((semaphoreObj)->{
+                    semaphoreObj.delete();
+                });
+                queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)-1);
                 fence_.put(0, 0);
                 return status;
             }

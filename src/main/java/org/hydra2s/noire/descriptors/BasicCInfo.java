@@ -664,6 +664,8 @@ public class BasicCInfo {
         public LongBuffer waitSemaphores = null;
         public LongBuffer signalSemaphores = null;
         public Promise<Integer> onDone = null;
+        public int whatQueueFamilyWillWait = -1;
+        public int whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
     };
 
     //
