@@ -633,12 +633,16 @@ public class BasicCInfo {
         put(VK_ACCESS_2_FRAGMENT_SHADING_RATE_ATTACHMENT_READ_BIT_KHR, VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
         put(VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT);
         put(VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT);
+
+        // WARNING! Unrecommended Pipeline Stage Automatically Selected...
+        //put(VK_ACCESS_2_SHADER_READ_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+        //put(VK_ACCESS_2_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
     }};
 
     //
-    static public int getCorrectPipelineStagesByAccessMask(long accessMask_) {
+    static public long getCorrectPipelineStagesByAccessMask(long accessMask_) {
         long accessMask = accessMask_;
-        int pipelineStageMask = 0;
+        long pipelineStageMask = 0;
 
         //
         for (var i = 0; i < 32; i++) {

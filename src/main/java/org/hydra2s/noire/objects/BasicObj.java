@@ -127,4 +127,9 @@ public class BasicObj {
         return this;
     }
 
+    public BasicObj deleteDirectly() throws Exception {
+
+        return this;
+    }
+
 }

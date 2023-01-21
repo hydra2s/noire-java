@@ -327,13 +327,21 @@ abstract public class CopyUtilObj {
         if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
         if (srcAccessMask == 0) { srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
 
+        //
+        var srcStageMask = BasicCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask);
+        var dstStageMask = BasicCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask);
+
+        //
+        if (srcStageMask == 0) { srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; };
+        if (dstStageMask == 0) { dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; };
+
         // barrier by image layout
         // TODO: support for queue families
         var memoryBarrier = VkImageMemoryBarrier2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(BasicCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask))
+            .srcStageMask(srcStageMask)
             .srcAccessMask(srcAccessMask)
-            .dstStageMask(BasicCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask))
+            .dstStageMask(dstStageMask)
             .dstAccessMask(dstAccessMask)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)

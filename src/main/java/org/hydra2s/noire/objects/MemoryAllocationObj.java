@@ -121,4 +121,15 @@ public class MemoryAllocationObj extends BasicObj {
         return this;
     }
 
+    @Override // TODO: multiple queue family support
+    public MemoryAllocationObj deleteDirectly() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+
+        // TODO: Use Shared PTR (alike C++)
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        deviceMemoryObj.deleteDirectly();
+        return this;
+    }
+
 }

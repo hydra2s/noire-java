@@ -192,6 +192,15 @@ public class MemoryAllocatorObj extends BasicObj  {
             });
             return this;
         }
+
+        @Override // TODO: multiple queue family support
+        public DeviceMemoryObj deleteDirectly() {
+            var handle = this.handle;
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            vkFreeMemory(deviceObj.device, handle.get(), null);
+            deviceObj.handleMap.remove(handle);
+            return null;
+        }
     }
 
     //

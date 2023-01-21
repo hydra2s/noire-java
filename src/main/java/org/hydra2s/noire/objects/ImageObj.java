@@ -101,20 +101,40 @@ public class ImageObj extends BasicObj {
     public ImageObj delete() {
         var handle = this.handle;
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+
         deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyImage(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.remove(handle);
+
+                // TODO: Use Shared PTR (alike C++)
+                allocationObj.deleteDirectly();
+
                 return null;
             });
         }}, (cmdBuf)->{
             return VK_SUCCESS;
         });
 
-        // TODO: Use Shared PTR (alike C++)
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support (and Promise.all)
+    public ImageObj deleteDirectly() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
-        allocationObj.delete();
+
+        //
+        vkDestroyImage(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.remove(handle);
+
+        // TODO: Use Shared PTR (alike C++)
+        allocationObj.deleteDirectly();
+
+        //
         return this;
     }
 }

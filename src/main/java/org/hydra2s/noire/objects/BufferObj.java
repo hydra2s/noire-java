@@ -99,6 +99,14 @@ public class BufferObj extends BasicObj {
 
 
     //
+    public ByteBuffer map() {
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+        return allocationObj.map(this.createInfo.size(), 0);
+    }
+
+    //
     public ByteBuffer map(long byteLength, long byteOffset) {
         var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
@@ -172,20 +180,40 @@ public class BufferObj extends BasicObj {
     public BufferObj delete() {
         var handle = this.handle;
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
         deviceObj.submitOnce(deviceObj.getCommandPool(((SwapChainCInfo)cInfo).queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queue = deviceObj.getQueue(((SwapChainCInfo)cInfo).queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyBuffer(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.remove(handle);
+
+                // TODO: Use Shared PTR (alike C++)
+                allocationObj.deleteDirectly();
+
+                //
                 return null;
             });
         }}, (cmdBuf)->{
             return VK_SUCCESS;
         });
 
-        // TODO: Use Shared PTR (alike C++)
+
+        return this;
+    }
+
+    @Override // TODO: multiple queue family support (and Promise.all)
+    public BufferObj deleteDirectly() {
+        var handle = this.handle;
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
         var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
-        allocationObj.delete();
+
+        //
+        vkDestroyBuffer(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.remove(handle);
+
+        // TODO: Use Shared PTR (alike C++)
+        allocationObj.deleteDirectly();
+
         return this;
     }
 
