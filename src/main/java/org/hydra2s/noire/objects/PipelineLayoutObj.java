@@ -16,6 +16,7 @@ import java.util.ArrayList;
 
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.*;
+import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
 import static org.lwjgl.vulkan.EXTMutableDescriptorType.VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
 import static org.lwjgl.vulkan.EXTMutableDescriptorType.VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT;
 import static org.lwjgl.vulkan.VK10.*;
@@ -161,7 +162,7 @@ public class PipelineLayoutObj extends BasicObj  {
 
         //
         this.pConstRange = VkPushConstantRange.calloc(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
-        vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(memLongBuffer(memAddress(this.descriptorLayout), 4)).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1));
+        vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(memLongBuffer(memAddress(this.descriptorLayout), 4)).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1));
         deviceObj.handleMap.put(this.handle, this);
 
         //

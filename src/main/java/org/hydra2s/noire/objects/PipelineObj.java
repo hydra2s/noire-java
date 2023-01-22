@@ -20,6 +20,7 @@ import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_DYNAMIC_STATE_LOGIC_OP_EXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
+import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.*;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTPipelineRobustness.*;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
@@ -308,6 +309,7 @@ public class PipelineObj extends BasicObj  {
         public VkPipelineDepthStencilStateCreateInfo depthStencilState = null;
         public VkGraphicsPipelineCreateInfo.Buffer createInfo = null;
         public VkPipelineRobustnessCreateInfoEXT robustness = null;
+        public VkGraphicsPipelineLibraryCreateInfoEXT library = null;
 
         //
         public GraphicsPipelineObj(Handle base, Handle handle) {
@@ -336,6 +338,7 @@ public class PipelineObj extends BasicObj  {
             });
 
             //
+            this.library = VkGraphicsPipelineLibraryCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT);
             this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
             this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
             this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
@@ -407,7 +410,16 @@ public class PipelineObj extends BasicObj  {
                     .put(3, 0.0F));
 
             //
+            this.library.flags(
+            VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
+            );
+
+            //
             this.robustness
+                .pNext(this.library.address())
                 .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
                 .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
                 .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
@@ -457,7 +469,7 @@ public class PipelineObj extends BasicObj  {
             //
             this.createInfo
                 .pNext(this.dynamicRenderingPipelineInfo)
-                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
+                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT)
                 .pStages(this.shaderStageInfo)
                 .pVertexInputState(this.vertexInputInfo)
                 .pColorBlendState(this.colorBlendInfo)

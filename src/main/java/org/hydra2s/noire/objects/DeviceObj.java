@@ -81,7 +81,9 @@ public class DeviceObj extends BasicObj {
             "VK_EXT_image_2d_view_of_3d",
             "VK_EXT_index_type_uint8",
             "VK_VALVE_mutable_descriptor_type",
-            "VK_EXT_device_address_binding_report",
+            "VK_KHR_pipeline_library",
+            "VK_EXT_graphics_pipeline_library",
+            //"VK_EXT_device_address_binding_report",
 
             "VK_KHR_external_semaphore",
             "VK_KHR_external_semaphore_win32",
