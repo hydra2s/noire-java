@@ -266,9 +266,9 @@ public class PipelineObj extends BasicObj  {
 
             //
             this.createInfo = VkComputePipelineCreateInfo.calloc(1)
-                .pNext(this.robustness)
+                .pNext(this.robustness.address())
                 .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
-                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
+                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
                 .stage(createShaderModuleInfo(deviceObj.createShaderModule(cInfo.computeCode), VK_SHADER_STAGE_COMPUTE_BIT, "main"))
                 .layout(cInfo.pipelineLayout);
 
@@ -410,16 +410,13 @@ public class PipelineObj extends BasicObj  {
                     .put(3, 0.0F));
 
             //
-            this.library.flags(
-            VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
-                VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
-            );
-
-            //
             this.robustness
-                .pNext(this.library.address())
+                .pNext(this.library.flags(
+                    VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
+                ).address())
                 .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
                 .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
                 .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
@@ -468,8 +465,8 @@ public class PipelineObj extends BasicObj  {
 
             //
             this.createInfo
-                .pNext(this.dynamicRenderingPipelineInfo)
-                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT)
+                .pNext(this.dynamicRenderingPipelineInfo.address())
+                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
                 .pStages(this.shaderStageInfo)
                 .pVertexInputState(this.vertexInputInfo)
                 .pColorBlendState(this.colorBlendInfo)
