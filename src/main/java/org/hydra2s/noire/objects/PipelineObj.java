@@ -1,7 +1,6 @@
 package org.hydra2s.noire.objects;
 
 //
-import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
@@ -9,6 +8,7 @@ import org.lwjgl.vulkan.*;
 //
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 //
@@ -21,6 +21,7 @@ import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_DYNAMIC_STATE_LOGIC_O
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
+import static org.lwjgl.vulkan.EXTPipelineRobustness.*;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.*;
@@ -29,6 +30,8 @@ import static org.lwjgl.vulkan.VK13.vkCmdSetDepthWriteEnable;
 
 //
 public class PipelineObj extends BasicObj  {
+    public LongBuffer pipelineCache;
+
     public PipelineObj(Handle base, Handle handle) {
         super(base, handle);
     }
@@ -169,7 +172,7 @@ public class PipelineObj extends BasicObj  {
             //
             vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
             vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
-            vkCmdSetCullMode(cmdBuf, RendererObj.rendererObj.fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
+            vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
 
             //
             for (var I = 0; I < fbLayout.blendStates.size(); I++) {
@@ -238,11 +241,13 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static class ComputePipelineObj extends PipelineObj {
+        public VkPipelineRobustnessCreateInfoEXT robustness;
         public VkComputePipelineCreateInfo.Buffer createInfo = null;
         public ComputePipelineObj(Handle base, Handle handle) {
             super(base, handle);
         }
 
+        //
         public ComputePipelineObj(Handle base, PipelineCInfo.ComputePipelineCInfo cInfo) {
             super(base, cInfo);
 
@@ -251,11 +256,20 @@ public class PipelineObj extends BasicObj  {
             var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
 
             //
+            this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
+            this.robustness
+                .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .images(VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT);
+
+            //
             this.createInfo = VkComputePipelineCreateInfo.calloc(1)
-                    .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
-                    .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
-                    .stage(createShaderModuleInfo(deviceObj.createShaderModule(cInfo.computeCode), VK_SHADER_STAGE_COMPUTE_BIT, "main"))
-                    .layout(cInfo.pipelineLayout);
+                .pNext(this.robustness)
+                .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
+                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)
+                .stage(createShaderModuleInfo(deviceObj.createShaderModule(cInfo.computeCode), VK_SHADER_STAGE_COMPUTE_BIT, "main"))
+                .layout(cInfo.pipelineLayout);
 
             //
             vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
@@ -293,6 +307,7 @@ public class PipelineObj extends BasicObj  {
         public VkPipelineDynamicStateCreateInfo dynamicStateInfo = null;
         public VkPipelineDepthStencilStateCreateInfo depthStencilState = null;
         public VkGraphicsPipelineCreateInfo.Buffer createInfo = null;
+        public VkPipelineRobustnessCreateInfoEXT robustness = null;
 
         //
         public GraphicsPipelineObj(Handle base, Handle handle) {
@@ -321,6 +336,7 @@ public class PipelineObj extends BasicObj  {
             });
 
             //
+            this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
             this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
             this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
             this.viewportStateInfo = VkPipelineViewportStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
@@ -350,7 +366,7 @@ public class PipelineObj extends BasicObj  {
                 .rasterizerDiscardEnable(false)
                 .polygonMode(VK_POLYGON_MODE_FILL)
                 .cullMode(VK_CULL_MODE_NONE)
-                .frontFace(VK_FRONT_FACE_CLOCKWISE)
+                .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
                 .depthBiasEnable(true)
                 .depthBiasConstantFactor(0.0F)
                 .depthBiasClamp(0.0F)
@@ -389,11 +405,20 @@ public class PipelineObj extends BasicObj  {
                     .put(1, 0.0F)
                     .put(2, 0.0F)
                     .put(3, 0.0F));
+
+            //
+            this.robustness
+                .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                .images(VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT);
+
             //
             //this.attachmentFormats.put();
             // TODO: depth only or stencil only support
             // TODO: dynamic depth and stencil state
             this.dynamicRenderingPipelineInfo
+                .pNext(this.robustness.address())
                 .pColorAttachmentFormats(fbLayout.formats)
                 .depthAttachmentFormat(fbLayout.depthStencilFormat)
                 .stencilAttachmentFormat(fbLayout.depthStencilFormat);
@@ -444,8 +469,9 @@ public class PipelineObj extends BasicObj  {
                 .pDynamicState(this.dynamicStateInfo)
                 .layout(cInfo.pipelineLayout);
 
-            //
-            vkCreateGraphicsPipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
+            // TODO: initial pipeline cache
+            vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1));
+            vkCreateGraphicsPipelines(deviceObj.device, this.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
             deviceObj.handleMap.put(this.handle, this);
 
             //
