@@ -9,6 +9,7 @@ import org.lwjgl.vulkan.VkImageSubresourceRange;
 
 //
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -176,7 +177,7 @@ public class ImageSetObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            int layerCount = cInfo.layerCounts.stream().min(Integer::compare).get();
+            int layerCount = Collections.min(cInfo.layerCounts);
 
             //
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {

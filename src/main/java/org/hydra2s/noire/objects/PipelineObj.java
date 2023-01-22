@@ -9,6 +9,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 //
@@ -129,7 +130,7 @@ public class PipelineObj extends BasicObj  {
         }
 
         //
-        int layerCount = fbLayout.layerCounts.stream().min(Integer::compare).get();
+        int layerCount = Collections.min(fbLayout.layerCounts);//fbLayout.layerCounts.stream().min(Integer::compare).get();
 
         //
         boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;

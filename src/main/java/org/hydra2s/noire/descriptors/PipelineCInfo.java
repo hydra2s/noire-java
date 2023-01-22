@@ -3,7 +3,6 @@ package org.hydra2s.noire.descriptors;
 //
 import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 //
 public class PipelineCInfo extends BasicCInfo  {
@@ -17,7 +16,7 @@ public class PipelineCInfo extends BasicCInfo  {
     }
 
     static public class GraphicsPipelineCInfo extends PipelineCInfo  {
-        public ConcurrentHashMap<Integer, ByteBuffer> sourceMap = new ConcurrentHashMap<Integer, ByteBuffer>();
+        public HashMap<Integer, ByteBuffer> sourceMap = new HashMap<Integer, ByteBuffer>();
         public ImageSetCInfo.FBLayout fbLayout = new ImageSetCInfo.FBLayout();
     }
 

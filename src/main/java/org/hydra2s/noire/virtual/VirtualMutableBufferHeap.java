@@ -243,6 +243,54 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     //}
                 };
 
+                // initiate free procedure
+                if (oldAlloc != 0) {
+                    deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd() {{
+                        // TODO: correctly handle main queue family
+                        whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
+                        whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+                        //
+                        queueFamilyIndex = cInfo.queueFamilyIndex;
+                        queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                        onDone = new Promise<>().thenApply((result) -> {
+                            if (bound != null && oldAlloc != 0) {
+                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                            }
+                            return null;
+                        });
+                    }}, (cmdBuf) -> {
+                        /*
+                        if (res != VK_NOT_READY) {
+                            var dstBufferRange = this.getBufferRange(); // TODO: correctly using transfer queue!
+                            VirtualMutableBufferHeap.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange, VkBufferCopy2.calloc(1)
+                                .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
+                                .dstOffset(0)
+                                .srcOffset(0)
+                                .size(min(srcBufferRange.range(), dstBufferRange.range())));
+                        }*/
+
+                        // polyfill buffer
+                        /*vkCmdFillBuffer(cmdBuf, srcBufferRange.buffer(), srcBufferRange.offset(), srcBufferRange.range(), 0);
+                        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
+                            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                            .buffer(srcBufferRange.buffer())
+                            .offset(srcBufferRange.offset())
+                            .size(min(srcBufferRange.range(), dstBufferRange.range()))
+                        ));*/
+
+                        return VK_SUCCESS;
+                    });
+                }
+
+
+
                 // wait when virtual memory will free...
                 // WARNING! Your game may LAG! But it's needs for await memory chunk to free.
                 // i.e. it's manual, artificial stutter (also, known as micro-freeze).
@@ -267,48 +315,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
                 }
 
-                // pistol (copy from old, and remove such segment)
-                if (oldAlloc != 0) {
-                    var dstBufferRange = this.getBufferRange(); // TODO: correctly using transfer queue!
-                    deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd() {{
-                        // TODO: correctly handle main queue family
-                        whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
-                        whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
-                        //
-                        queueFamilyIndex = cInfo.queueFamilyIndex;
-                        queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
-                        onDone = new Promise<>().thenApply((result) -> {
-                            if (bound != null && oldAlloc != 0) {
-                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                            }
-                            return null;
-                        });
-                    }}, (cmdBuf) -> {
-                        VirtualMutableBufferHeap.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange, VkBufferCopy2.calloc(1)
-                            .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
-                            .dstOffset(0)
-                            .srcOffset(0)
-                            .size(min(srcBufferRange.range(), dstBufferRange.range())));
-
-                        // polyfill buffer
-                        /*vkCmdFillBuffer(cmdBuf, srcBufferRange.buffer(), srcBufferRange.offset(), srcBufferRange.range(), 0);
-                        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
-                            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-                            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                            .buffer(srcBufferRange.buffer())
-                            .offset(srcBufferRange.offset())
-                            .size(min(srcBufferRange.range(), dstBufferRange.range()))
-                        ));*/
-
-                        return VK_SUCCESS;
-                    });
-                }
             }
             return this;
         }

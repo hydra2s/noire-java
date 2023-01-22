@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 //
@@ -48,7 +47,7 @@ public class DeviceObj extends BasicObj {
     protected IntBuffer extensionAmount = memAllocInt(1).put(0, 0);
 
     //
-    public ConcurrentHashMap<Integer, QueueFamily> queueFamilies = new ConcurrentHashMap<Integer, QueueFamily>();
+    public HashMap<Integer, QueueFamily> queueFamilies = new HashMap<Integer, QueueFamily>(16);
 
 
     //
