@@ -204,7 +204,7 @@ public class DeviceObj extends BasicObj {
     }
 
     // use it when a polling
-    public DeviceObj doPolling() {
+    public boolean doPolling() {
         var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
         _list.stream().forEach((F)->F.apply(null));
 
@@ -216,7 +216,7 @@ public class DeviceObj extends BasicObj {
             _list.stream().forEach((F)->F.apply(null));
         }*/
         //for (var I=0;I<_list.size();I++) {var F =_list.get(I);}
-        return this;
+        return this.whenDone.isEmpty();
     }
 
     public VkCommandBuffer writeCommand(VkCommandBuffer cmdBuf, Function<VkCommandBuffer, Integer> fn) {

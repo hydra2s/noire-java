@@ -220,12 +220,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         // TODO: support for memory type when allocation, not when create
         public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
             final long MEM_BLOCK = 512L;
-            bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
-            this.bufferSize = bufferSize;
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
             //
-            if (this.blockSize < bufferSize)
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            if (this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
                 // TODO: copy from old segment
                 var oldAlloc = this.allocId.get(0);
@@ -234,10 +233,23 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 //
                 this.bufferOffset.put(0, 0L);
                 int res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset);
+
+                // wait when virtual memory will free...
+                // WARNING! Your game may LAG! But it's needs for await memory chunk to free.
+                // i.e. it's manual, artificial stutter (also, known as micro-freeze).
+                do {
+                    if (res == VK_SUCCESS) { break; };
+                    if (res != VK_SUCCESS && res != -2) {
+                        System.out.println("Allocation Failed: " + res);
+                        throw new Exception("Allocation Failed: " + res);
+                    };
+                } while ((res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset)) == -2 && !deviceObj.doPolling());
+
+                // if anyways, isn't allocated...
                 if (res != VK_SUCCESS) {
-                    System.out.println("Allocation Failed: " + res);
-                    throw new Exception("Allocation Failed: " + res);
-                }
+                    System.out.println("Allocation Failed, there is not free memory: " + res);
+                    throw new Exception("Allocation Failed, there is not free memory: " + res);
+                };
 
                 // get device address from
                 this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
