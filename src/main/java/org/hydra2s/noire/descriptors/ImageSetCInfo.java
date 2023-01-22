@@ -1,7 +1,6 @@
 package org.hydra2s.noire.descriptors;
 
 //
-import com.mojang.blaze3d.platform.GlStateManager;
 import org.lwjgl.vulkan.*;
 
 //

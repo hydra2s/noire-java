@@ -1,7 +1,6 @@
 package org.hydra2s.noire.virtual;
 
 //
-import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
