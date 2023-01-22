@@ -71,22 +71,26 @@ public class BasicObj {
     public static class Handle {
         protected PointerBuffer handle = null;
         protected String type = "unknown";
+        private int cached = 0;
 
         public Handle(String type) {
             this.handle = PointerBuffer.allocateDirect(1);
             this.handle.put(0, 0);
             this.type = type;
+            this.cached = 0;
         }
 
         public Handle(String type, PointerBuffer handle2) {
             this.handle = handle2;
             this.type = type;
+            this.cached = 0;
         }
 
         public Handle(String type, long handle) {
             this.handle = PointerBuffer.allocateDirect(1);
             this.handle.put(0, handle);
             this.type = type;
+            this.cached = 0;
         }
 
         public String getType() {
@@ -107,16 +111,19 @@ public class BasicObj {
 
         @Override
         public boolean equals(Object o) {
-            return this.handle.get(0) == ((Handle)o).get() && this.type.equals(((Handle)o).getType());
+            return (this.hashCode() == o.hashCode());
+            //return this.handle.get(0) == ((Handle)o).get() && this.type.equals(((Handle)o).getType());
         }
 
         @Override
         public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + this.type.hashCode();
-            result = prime * result + Long.hashCode(this.get());
-            return result;
+            if (cached == 0) {
+                final int prime = 31;
+                cached = 1;
+                cached = prime * cached + this.type.hashCode();
+                cached = prime * cached + Long.hashCode(this.get());
+            }
+            return cached;
         }
     }
 
