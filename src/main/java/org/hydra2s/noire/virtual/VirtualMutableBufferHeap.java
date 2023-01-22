@@ -11,9 +11,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
-import org.lwjgl.vulkan.VkBufferCopy2;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkDescriptorBufferInfo;
+import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -26,7 +24,7 @@ import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
+import static org.lwjgl.vulkan.VK13.*;
 
 // Will uses large buffer concept with virtual allocation (VMA)
 // When used draw collector system, recommended to use host-based memory
@@ -270,6 +268,22 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                             .dstOffset(0)
                             .srcOffset(0)
                             .size(min(srcBufferRange.range(), dstBufferRange.range())));
+
+                        // polyfill buffer
+                        /*vkCmdFillBuffer(cmdBuf, srcBufferRange.buffer(), srcBufferRange.offset(), srcBufferRange.range(), 0);
+                        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
+                            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                            .buffer(srcBufferRange.buffer())
+                            .offset(srcBufferRange.offset())
+                            .size(min(srcBufferRange.range(), dstBufferRange.range()))
+                        ));*/
+
                         return VK_SUCCESS;
                     });
                 }
@@ -277,51 +291,70 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             return this;
         }
 
-        //
-        public VirtualMutableBufferObj deallocate() throws Exception {
-            if (this.allocId.get(0) != 0) {
-                var oldAlloc = this.allocId.get(0);
-                if (this.bound != null && oldAlloc != 0) {
-                    // TODO: bound with memoryHeap
-                    var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
-                    vmaVirtualFree(((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId).virtualBlock.get(0), oldAlloc);
-                }
-
-                //
-                this.bufferSize = 0L;
-                this.blockSize = 0L;
-                this.address = 0L;
-                this.bufferOffset.put(0, 0L);
-                this.allocId.put(0, 0L);
-                this.mapped = null;
-            }
-            return this;
-        }
-
         @Override
         public VirtualMutableBufferObj delete() throws Exception {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-            deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
-                queueFamilyIndex = cInfo.queueFamilyIndex;
-                queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
-                onDone = new Promise<>().thenApply((result)-> {
-                    try {
-                        deallocate();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    bound.registry.removeIndex(DSC_ID);
-                    return null;
+            var oldAlloc = this.allocId.get(0);
+            if (oldAlloc != 0) {
+                var srcBufferRange = this.getBufferRange();
+                var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+                deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                    // TODO: correctly handle main queue family
+                    whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
+                    whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+                    //
+                    queueFamilyIndex = cInfo.queueFamilyIndex;
+                    queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
+                    onDone = new Promise<>().thenApply((result)-> {
+                        if (bound != null && oldAlloc != 0) {
+                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                        }
+                        bound.registry.removeIndex(DSC_ID);
+                        return null;
+                    });
+                }}, (cmdBuf)->{
+                    /*
+                    vkCmdFillBuffer(cmdBuf, srcBufferRange.buffer(), srcBufferRange.offset(), srcBufferRange.range(), 0);
+                    vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
+                        .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                        .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                        .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                        .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                        .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                        .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                        .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                        .buffer(srcBufferRange.buffer())
+                        .offset(srcBufferRange.offset())
+                        .size(srcBufferRange.range())
+                    ));*/
+                    return VK_SUCCESS;
                 });
-            }}, (cmdBuf)->{
-                return VK_SUCCESS;
-            });
+            } else {
+                bound.registry.removeIndex(DSC_ID);
+            }
+
+            //
+            this.bufferSize = 0L;
+            this.blockSize = 0L;
+            this.address = 0L;
+            this.bufferOffset.put(0, 0L);
+            this.allocId.put(0, 0L);
+            this.mapped = null;
             return this;
         }
 
         @Override
         public VirtualMutableBufferObj deleteDirectly() throws Exception {
-            this.deallocate();
+            var oldAlloc = this.allocId.get(0);
+            if (bound != null && oldAlloc != 0) {
+                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+            }
+            this.bufferSize = 0L;
+            this.blockSize = 0L;
+            this.address = 0L;
+            this.bufferOffset.put(0, 0L);
+            this.allocId.put(0, 0L);
+            this.mapped = null;
             this.bound.registry.removeIndex(this.DSC_ID);
             return this;
         }
