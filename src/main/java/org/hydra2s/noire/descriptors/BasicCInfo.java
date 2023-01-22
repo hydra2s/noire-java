@@ -10,6 +10,7 @@ import java.nio.LongBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 //
 import static org.hydra2s.noire.descriptors.BasicCInfo.VkFormatCompatibilityClass.*;
@@ -154,7 +155,7 @@ public class BasicCInfo {
     };
 
     //
-    public static HashMap<Integer, VULKAN_FORMAT_INFO> vk_format_table = new HashMap<Integer, VULKAN_FORMAT_INFO>();
+    public static ConcurrentHashMap<Integer, VULKAN_FORMAT_INFO> vk_format_table = new ConcurrentHashMap<Integer, VULKAN_FORMAT_INFO>();
     {
         vk_format_table.put(VK_FORMAT_UNDEFINED, new VULKAN_FORMAT_INFO(0, 0, VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT));
         vk_format_table.put(VK_FORMAT_R4G4_UNORM_PACK8, new VULKAN_FORMAT_INFO(1, 2, VK_FORMAT_COMPATIBILITY_CLASS_8_BIT));
@@ -606,7 +607,7 @@ public class BasicCInfo {
     };
 
     //
-    public static HashMap<Long, Long> pipelineStagesByAccessMask = new HashMap<Long, Long>(){{
+    public static ConcurrentHashMap<Long, Long> pipelineStagesByAccessMask = new ConcurrentHashMap<Long, Long>(){{
         put(VK_ACCESS_2_MEMORY_READ_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
         put(VK_ACCESS_2_MEMORY_WRITE_BIT, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
         put(VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT);

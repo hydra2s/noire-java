@@ -8,6 +8,7 @@ import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
@@ -35,14 +36,14 @@ public class BasicObj {
     public BasicCInfo cInfo = null;
 
     //
-    public static HashMap<Long, BasicObj> globalHandleMap = new HashMap<Long, BasicObj>();
+    public static ConcurrentHashMap<Long, BasicObj> globalHandleMap = new ConcurrentHashMap<Long, BasicObj>();
 
     // TODO: make correct hashmap
-    public HashMap<Handle, BasicObj> handleMap = new HashMap<Handle, BasicObj>();
+    public ConcurrentHashMap <Handle, BasicObj> handleMap = new ConcurrentHashMap<Handle, BasicObj>();
 
     // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
     public IntervalTree<Long> addressMap = new IntervalTree<>();
-    public HashMap<Long, Long> rootMap = new HashMap<Long, Long>();
+    public ConcurrentHashMap<Long, Long> rootMap = new ConcurrentHashMap<Long, Long>();
 
     // WARNING! May fail up to null
     public long getHandleByAddress(long deviceAddress) {

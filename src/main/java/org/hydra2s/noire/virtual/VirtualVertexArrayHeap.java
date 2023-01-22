@@ -14,6 +14,7 @@ import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 //
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 //
@@ -97,7 +98,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         // Will be used in draw collection
         //public long BLASHandle = 0L;
         //public long BLASAddress = 0L;
-        public HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding> bindings = null;
+        public ConcurrentHashMap<Integer, VertexBinding> bindings = null;
         public ByteBuffer bindingsMapped = null;
 
         //
@@ -126,7 +127,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             this.virtualGL = this.DSC_ID+1;
 
             //
-            this.bindings = new HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>();
+            this.bindings = new ConcurrentHashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>();
             this.bindingsMapped = memSlice(virtualVertexArrayHeap.hostPayload, (int) (this.bufferOffset = this.DSC_ID*vertexArrayStride), vertexArrayStride);//virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
             this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
         }
