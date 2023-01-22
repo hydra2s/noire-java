@@ -214,7 +214,7 @@ public class DeviceObj extends BasicObj {
     }
 
     // use it when a polling
-    synchronized public boolean doPolling() {
+    public boolean doPolling() {
         var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
         _list.stream().forEach((F)-> {if(F!=null) F.apply(null);});
 
@@ -259,7 +259,7 @@ public class DeviceObj extends BasicObj {
     }
 
     // TODO: support for submission v2
-    /*synchronized*/ public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
+    public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
         var signalOffset = (cmd.signalSemaphores != null ? cmd.signalSemaphores.remaining() : 0);
         var waitOffset = (cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0);
 
@@ -342,16 +342,24 @@ public class DeviceObj extends BasicObj {
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             var fence = fence_.get(0);
             int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
-            if (status != VK_NOT_READY) {
-                if (fence != 0) {
-                    this.whenDone.remove(ref.deallocProcess);
-                    cmd.onDone.fulfill(status);
+            if (status != VK_NOT_READY && fence != 0) {
+
+
+                //
+                synchronized (this) {
+                    //
+                    toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
+                        try {
+                            semaphoreObj.deleteDirectly();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
 
                     //
+                    this.whenDone.remove(ref.deallocProcess);
                     queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy) - 1);
-                    toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
-                        semaphoreObj.delete();
-                    });
+                    cmd.onDone.fulfill(status);
 
                     //
                     vkDestroyFence(this.device, fence, null);

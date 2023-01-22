@@ -238,9 +238,9 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 //
                 long finalBufferSize = bufferSize;
                 Callable<Integer> memAlloc = ()->{
-                    synchronized(this) {
+                    //synchronized(this) {
                         return vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = finalBufferSize), this.allocId.put(0, 0L), this.bufferOffset);
-                    }
+                    //}
                 };
 
                 // wait when virtual memory will free...
@@ -280,9 +280,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                         queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                         onDone = new Promise<>().thenApply((result) -> {
                             if (bound != null && oldAlloc != 0) {
-                                synchronized(this) {
-                                    vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                                }
+                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
                             }
                             return null;
                         });
@@ -316,7 +314,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         @Override
-        synchronized public VirtualMutableBufferObj delete() throws Exception {
+        public VirtualMutableBufferObj delete() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
@@ -331,9 +329,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                     onDone = new Promise<>().thenApply((result)-> {
                         if (bound != null && oldAlloc != 0) {
-                            synchronized(this) {
-                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                            }
+                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
                         }
                         bound.registry.removeIndex(DSC_ID);
                         return null;
@@ -370,12 +366,12 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         @Override
-        synchronized public VirtualMutableBufferObj deleteDirectly() throws Exception {
+        public VirtualMutableBufferObj deleteDirectly() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (bound != null && oldAlloc != 0) {
-                synchronized(this) {
+                //synchronized(this) {
                     vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                }
+                //}
             }
             this.bufferSize = 0L;
             this.blockSize = 0L;
