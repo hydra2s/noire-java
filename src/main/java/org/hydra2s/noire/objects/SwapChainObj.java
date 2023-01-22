@@ -83,7 +83,7 @@ public class SwapChainObj extends BasicObj  {
             this.createInfo = VkSwapchainCreateInfoKHR.calloc()
                     .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                     .surface(cInfo.surface)
-                    .minImageCount(surfaceInfo.capabilities2.surfaceCapabilities().maxImageCount())
+                    .minImageCount(surfaceInfo.capabilities2.surfaceCapabilities().minImageCount())
                     .imageFormat(format)
                     .imageColorSpace(colorSpace)
                     .imageExtent(cInfo.extent)
