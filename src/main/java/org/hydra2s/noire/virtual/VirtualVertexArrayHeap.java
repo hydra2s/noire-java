@@ -74,7 +74,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
     //
     public VirtualVertexArrayHeap writeVertexArrays() {
-        this.registry.forEach((obj)->{
+        this.registry.stream().forEach((obj)->{
             var VAO = (VirtualVertexArrayObj)obj;
             if (VAO != null) { VAO.writeData(); };
         });

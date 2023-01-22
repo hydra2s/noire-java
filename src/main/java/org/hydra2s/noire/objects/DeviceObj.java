@@ -20,6 +20,8 @@ import java.util.function.Function;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.vulkan.EXTGlobalPriority.*;
+import static org.lwjgl.vulkan.KHRGlobalPriority.VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -86,6 +88,7 @@ public class DeviceObj extends BasicObj {
             "VK_EXT_graphics_pipeline_library",
             "VK_EXT_pageable_device_local_memory",
             "VK_EXT_memory_priority",
+            "VK_KHR_global_priority",
             //"VK_EXT_device_address_binding_report",
 
             "VK_KHR_external_semaphore",
@@ -130,6 +133,12 @@ public class DeviceObj extends BasicObj {
             //
             this.queueFamiliesCInfo.get(Q).pQueuePriorities(queuePriorities);
             this.queueFamiliesCInfo.get(Q).queueFamilyIndex(cInfo.queueFamilies.get(Q).index);
+
+            /*
+            this.queueFamiliesCInfo.get(Q).pNext(VkDeviceQueueGlobalPriorityCreateInfoKHR.calloc()
+                .sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR)
+                .globalPriority(VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR)
+            );*/
 
             //
             var qf = new QueueFamily();
@@ -205,9 +214,9 @@ public class DeviceObj extends BasicObj {
     }
 
     // use it when a polling
-    public boolean doPolling() {
+    synchronized public boolean doPolling() {
         var _list = (ArrayList<Function<LongBuffer, Integer>>)this.whenDone.clone();
-        _list.stream().forEach((F)->F.apply(null));
+        _list.stream().forEach((F)-> {if(F!=null) F.apply(null);});
 
         // if queue list is overflow, do await before free less than 1024
         // i.e. do intermission for free resources, and avoid overflow
@@ -250,7 +259,7 @@ public class DeviceObj extends BasicObj {
     }
 
     // TODO: support for submission v2
-    public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
+    /*synchronized*/ public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
         var signalOffset = (cmd.signalSemaphores != null ? cmd.signalSemaphores.remaining() : 0);
         var waitOffset = (cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0);
 
@@ -339,8 +348,8 @@ public class DeviceObj extends BasicObj {
                     cmd.onDone.fulfill(status);
 
                     //
-                    queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)-1);
-                    toRemoveSemaphores.forEach((semaphoreObj)->{
+                    queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy) - 1);
+                    toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
                         semaphoreObj.delete();
                     });
 
@@ -350,6 +359,7 @@ public class DeviceObj extends BasicObj {
                 }
             }
             return status;
+            //return VK_SUCCESS;
         });
 
         //

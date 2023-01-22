@@ -32,6 +32,7 @@ import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_STRUCTURE_TYPE_PHYS
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRFragmentShaderBarycentric.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.*;
+import static org.lwjgl.vulkan.KHRGlobalPriority.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRRayQuery.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRRayTracingMaintenance1.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
@@ -45,6 +46,7 @@ import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3
 public class PhysicalDeviceObj extends BasicObj {
 
     //
+    public VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR deviceGlobalPriorityFeatures = null;
     public VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT devicePageableMemoryFeatures = null;
     public VkPhysicalDeviceMemoryPriorityFeaturesEXT deviceMemoryPriorityFeatures = null;
     public VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT deviceGraphicsPipelineLibraryFeatures = null;
@@ -99,7 +101,8 @@ public class PhysicalDeviceObj extends BasicObj {
         BasicObj.globalHandleMap.put(handle.get(), this);
 
         // TODO: unify into one object
-        this.devicePageableMemoryFeatures = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT);
+        this.deviceGlobalPriorityFeatures = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR);
+        this.devicePageableMemoryFeatures = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT).pNext(this.deviceGlobalPriorityFeatures.address());
         this.deviceMemoryPriorityFeatures = VkPhysicalDeviceMemoryPriorityFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT).pNext(this.devicePageableMemoryFeatures.address());
         this.deviceGraphicsPipelineLibraryFeatures = VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT).pNext(this.deviceMemoryPriorityFeatures.address());
         this.deviceDynamicState2Features = VkPhysicalDeviceExtendedDynamicState2FeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT).pNext(this.deviceGraphicsPipelineLibraryFeatures.address());

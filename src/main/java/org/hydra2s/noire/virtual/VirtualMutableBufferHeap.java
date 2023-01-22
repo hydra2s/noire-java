@@ -16,6 +16,8 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -232,18 +234,26 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 //
                 this.bufferOffset.put(0, 0L);
-                int res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset);
+
+                //
+                long finalBufferSize = bufferSize;
+                Callable<Integer> memAlloc = ()->{
+                    synchronized(this) {
+                        return vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = finalBufferSize), this.allocId.put(0, 0L), this.bufferOffset);
+                    }
+                };
 
                 // wait when virtual memory will free...
                 // WARNING! Your game may LAG! But it's needs for await memory chunk to free.
                 // i.e. it's manual, artificial stutter (also, known as micro-freeze).
+                var res = memAlloc.call();
                 do {
                     if (res == VK_SUCCESS) { break; };
                     if (res != VK_SUCCESS && res != -2) {
                         System.out.println("Allocation Failed: " + res);
                         throw new Exception("Allocation Failed: " + res);
                     };
-                } while ((res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId.put(0, 0L), this.bufferOffset)) == -2 && !deviceObj.doPolling());
+                } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling());
 
                 // if anyways, isn't allocated...
                 if (res != VK_SUCCESS) {
@@ -270,7 +280,9 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                         queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                         onDone = new Promise<>().thenApply((result) -> {
                             if (bound != null && oldAlloc != 0) {
-                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                                synchronized(this) {
+                                    vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                                }
                             }
                             return null;
                         });
@@ -304,7 +316,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         @Override
-        public VirtualMutableBufferObj delete() throws Exception {
+        synchronized public VirtualMutableBufferObj delete() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
@@ -319,7 +331,9 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                     onDone = new Promise<>().thenApply((result)-> {
                         if (bound != null && oldAlloc != 0) {
-                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                            synchronized(this) {
+                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                            }
                         }
                         bound.registry.removeIndex(DSC_ID);
                         return null;
@@ -356,10 +370,12 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         @Override
-        public VirtualMutableBufferObj deleteDirectly() throws Exception {
+        synchronized public VirtualMutableBufferObj deleteDirectly() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (bound != null && oldAlloc != 0) {
-                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                synchronized(this) {
+                    vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+                }
             }
             this.bufferSize = 0L;
             this.blockSize = 0L;

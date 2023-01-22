@@ -143,7 +143,7 @@ public class InstanceObj extends BasicObj {
                         //
                         var cmdLabels = debugCallbackData.pCmdBufLabels();
                         if (cmdLabels != null) {
-                            cmdLabels.forEach((labelEXT) -> {
+                            cmdLabels.stream().forEach((labelEXT) -> {
                                 System.out.println("Command Label: ");
                                 System.out.println(labelEXT.pLabelNameString());
                             });
@@ -152,7 +152,7 @@ public class InstanceObj extends BasicObj {
                         //
                         var queueLabels = debugCallbackData.pQueueLabels();
                         if (queueLabels != null) {
-                            queueLabels.forEach((labelEXT) -> {
+                            queueLabels.stream().forEach((labelEXT) -> {
                                 System.out.println("Queue Label: ");
                                 System.out.println(labelEXT.pLabelNameString());
                             });
@@ -161,7 +161,7 @@ public class InstanceObj extends BasicObj {
                         //
                         var objects = debugCallbackData.pObjects();
                         if (objects != null) {
-                            objects.forEach((objectNameInfoEXT) -> {
+                            objects.stream().forEach((objectNameInfoEXT) -> {
                                 var objectName = objectNameInfoEXT.pObjectNameString();
                                 if (objectName != null) {
                                     System.out.println("Object Name: ");
