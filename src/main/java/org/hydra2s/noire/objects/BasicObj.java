@@ -7,7 +7,7 @@ import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
@@ -35,14 +35,14 @@ public class BasicObj {
     public BasicCInfo cInfo = null;
 
     //
-    public static HashMap<Long, BasicObj> globalHandleMap = new HashMap<Long, BasicObj>(128);
+    public static LinkedHashMap<Long, BasicObj> globalHandleMap = new LinkedHashMap<Long, BasicObj>(128);
 
     // TODO: make correct hashmap
-    public HashMap <Handle, BasicObj> handleMap = new HashMap<Handle, BasicObj>(1024);
+    public LinkedHashMap <Handle, BasicObj> handleMap = new LinkedHashMap<Handle, BasicObj>(1024);
 
     // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
     public IntervalTree<Long> addressMap = new IntervalTree<>();
-    public HashMap<Long, Long> rootMap = new HashMap<Long, Long>(1024);
+    public LinkedHashMap<Long, Long> rootMap = new LinkedHashMap<Long, Long>(1024);
 
     // WARNING! May fail up to null
     public long getHandleByAddress(long deviceAddress) {

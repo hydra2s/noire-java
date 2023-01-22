@@ -47,7 +47,7 @@ public class DeviceObj extends BasicObj {
     protected IntBuffer extensionAmount = memAllocInt(1).put(0, 0);
 
     //
-    public HashMap<Integer, QueueFamily> queueFamilies = new HashMap<Integer, QueueFamily>(16);
+    public LinkedHashMap<Integer, QueueFamily> queueFamilies = new LinkedHashMap<Integer, QueueFamily>(16);
 
 
     //
