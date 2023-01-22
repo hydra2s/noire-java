@@ -83,6 +83,8 @@ public class DeviceObj extends BasicObj {
             "VK_VALVE_mutable_descriptor_type",
             "VK_KHR_pipeline_library",
             "VK_EXT_graphics_pipeline_library",
+            "VK_EXT_pageable_device_local_memory",
+            "VK_EXT_memory_priority",
             //"VK_EXT_device_address_binding_report",
 
             "VK_KHR_external_semaphore",
