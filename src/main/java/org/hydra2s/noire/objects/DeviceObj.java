@@ -47,7 +47,7 @@ public class DeviceObj extends BasicObj {
     protected IntBuffer extensionAmount = memAllocInt(1).put(0, 0);
 
     //
-    public LinkedHashMap<Integer, QueueFamily> queueFamilies = new LinkedHashMap<Integer, QueueFamily>(16);
+    public CombinedMap<Integer, QueueFamily> queueFamilies = new CombinedMap<Integer, QueueFamily>(16);
 
 
     //
@@ -153,7 +153,7 @@ public class DeviceObj extends BasicObj {
             }
 
             //
-            this.queueFamilies.put(cInfo.queueFamilies.get(Q).index, qf);
+            this.queueFamilies.put$(cInfo.queueFamilies.get(Q).index, qf);
             this.queueFamilyIndices.put(Q, qf.index);
         }
 
@@ -173,7 +173,7 @@ public class DeviceObj extends BasicObj {
         //
         for (int Q = 0; Q < cInfo.queueFamilies.size(); Q++) {
             var qfi = this.queueFamilyIndices.get(Q);
-            VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).cmdPool);
+            VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).orElse(null).cmdPool);
         }
     }
 
@@ -209,7 +209,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public long getCommandPool(int queueFamilyIndex) {
-        return this.queueFamilies.get(queueFamilyIndex).cmdPool.get(0);
+        return this.queueFamilies.get(queueFamilyIndex).orElse(null).cmdPool.get(0);
     }
 
     // use it when a polling
@@ -263,9 +263,10 @@ public class DeviceObj extends BasicObj {
         var waitOffset = (cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0);
 
         //
+        var queueFamily = queueFamilies.get(cmd.queueFamilyIndex).orElse(null);
         var signalSemaphores = memAllocLong(signalOffset+(cmd.whatQueueFamilyWillWait >= 0 ? 1 : 0));
-        var waitSemaphores = memAllocLong(waitOffset+queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size());
-        var waitStageMask = memAllocInt(waitOffset+queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size());
+        var waitSemaphores = memAllocLong(waitOffset+queueFamily.waitSemaphores.size());
+        var waitStageMask = memAllocInt(waitOffset+queueFamily.waitSemaphores.size());
 
         //
         if (cmd.signalSemaphores != null) { memCopy(cmd.signalSemaphores, signalSemaphores); };
@@ -273,9 +274,9 @@ public class DeviceObj extends BasicObj {
         if (cmd.dstStageMask != null) { memCopy(cmd.dstStageMask, waitStageMask); };
 
         //
-        for (var I=0;I<queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.size();I++) {
-            waitSemaphores.put(waitOffset + I, queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.get(I).getHandle().get());
-            waitStageMask.put(waitOffset + I, queueFamilies.get(cmd.queueFamilyIndex).waitStageMask.get(I));
+        for (var I=0;I<queueFamily.waitSemaphores.size();I++) {
+            waitSemaphores.put(waitOffset + I, queueFamily.waitSemaphores.get(I).getHandle().get());
+            waitStageMask.put(waitOffset + I, queueFamily.waitStageMask.get(I));
         }
 
         //
@@ -286,25 +287,26 @@ public class DeviceObj extends BasicObj {
             signalSemaphores.put(signalOffset, signalSemaphore.getHandle().get());
 
             // add for waiting
-            queueFamilies.get(cmd.whatQueueFamilyWillWait).waitSemaphores.add(signalSemaphore);
-            queueFamilies.get(cmd.whatQueueFamilyWillWait).waitStageMask.add(cmd.whatQueueFamilyWillWait);
+            var forWhat = queueFamilies.get(cmd.whatQueueFamilyWillWait).orElse(null);
+            forWhat.waitSemaphores.add(signalSemaphore);
+            forWhat.waitStageMask.add(cmd.whatQueueFamilyWillWait);
         }
 
         //
-        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.clone();
-        queueFamilies.get(cmd.queueFamilyIndex).waitSemaphores.clear();
-        queueFamilies.get(cmd.queueFamilyIndex).waitStageMask.clear();
+        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueFamily.waitSemaphores.clone();
+        queueFamily.waitSemaphores.clear();
+        queueFamily.waitStageMask.clear();
 
         //
         LongBuffer fence_ = memAllocLong(1);
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
 
         //
-        var lessBusyCount = Collections.min(queueFamilies.get(cmd.queueFamilyIndex).queueBusy);
-        var lessBusy = queueFamilies.get(cmd.queueFamilyIndex).queueBusy.indexOf(lessBusyCount);
+        var lessBusyCount = Collections.min(queueFamily.queueBusy);
+        var lessBusy = queueFamily.queueBusy.indexOf(lessBusyCount);
 
         // increase loading index
-        queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy)+1);
+        queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy)+1);
 
         //
         /*
@@ -357,7 +359,7 @@ public class DeviceObj extends BasicObj {
 
                     //
                     this.whenDone.remove(ref.deallocProcess);
-                    queueFamilies.get(cmd.queueFamilyIndex).queueBusy.set(lessBusy, queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(lessBusy) - 1);
+                    queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy) - 1);
                     cmd.onDone.fulfill(status);
 
                     //

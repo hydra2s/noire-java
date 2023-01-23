@@ -126,8 +126,8 @@ public class BufferObj extends BasicObj {
 
     //
     public long getDeviceAddress() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         if (this.deviceAddress == 0) {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.calloc().pNext(0L).sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.createInfo.size(), Interval.Bounded.CLOSED));
             deviceObj.rootMap.put$(this.deviceAddress, this.handle.get());

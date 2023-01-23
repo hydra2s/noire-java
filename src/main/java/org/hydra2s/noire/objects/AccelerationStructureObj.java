@@ -188,8 +188,8 @@ public class AccelerationStructureObj extends BasicObj {
 
     //
     public long getDeviceAddress() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         if (this.deviceAddress == 0) {
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.calloc().pNext(0L).sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.buildSizeInfo.accelerationStructureSize(), Interval.Bounded.CLOSED));
             deviceObj.rootMap.put$(this.deviceAddress, this.handle.get());

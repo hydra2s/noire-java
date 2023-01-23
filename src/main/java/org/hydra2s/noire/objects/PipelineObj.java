@@ -89,7 +89,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (pipelineLayoutObj != null) {
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
         }
 
         //
@@ -164,7 +164,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (pipelineLayoutObj != null && pipelineObj != null) {
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj != null && pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getHandle().get() : 0L);
+            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj != null && pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
         }
 
         //

@@ -255,24 +255,20 @@ public class PipelineLayoutObj extends BasicObj  {
     }
 
     //
-    public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, long uniformBufferHandle) {
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-        var uniformBuffer = uniformBufferHandle != 0 ? (BufferObj)deviceObj.handleMap.get(new Handle("Buffer", uniformBufferHandle)).orElse(null) : null;
-
+    public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, long uniformBufferAddress) {
         // TODO: better binding system
-        var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBuffer != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
+        var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBufferAddress != 0 ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
         bufferBindings.get(0).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.resourceDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
         bufferBindings.get(1).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.samplerDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT);
         bufferBindings.get(2).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.uniformDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
 
         //
-        if (uniformBuffer != null) {
-            bufferBindings.get(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(uniformBuffer != null ? uniformBuffer.getDeviceAddress() : 0L).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
+        if (uniformBufferAddress != 0) {
+            bufferBindings.get(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(uniformBufferAddress).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
         }
 
         //
-        IntBuffer bufferIndices = memAllocInt(4).put(0, 0).put(1,1).put(2,2).put(3, uniformBuffer != null ? 3 : 2);
+        IntBuffer bufferIndices = memAllocInt(4).put(0, 0).put(1,1).put(2,2).put(3, uniformBufferAddress != 0 ? 3 : 2);
         LongBuffer offsets = memAllocLong(4).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
 
         //
