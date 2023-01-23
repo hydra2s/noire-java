@@ -50,7 +50,7 @@ public class ImageSetObj extends BasicObj  {
             var fI = I;
             var imageCInfo = new ImageCInfo(){{
                 memoryAllocator = cInfo.memoryAllocator;
-                arrayLayers = cInfo.layerCounts.get(fI)*3;
+                arrayLayers = cInfo.layerCounts.get(fI);//*3;
                 format = cInfo.formats.get(fI);
                 mipLevels = 1;
                 extent3D = cInfo.extents.get(fI);
@@ -68,16 +68,17 @@ public class ImageSetObj extends BasicObj  {
             this.images.add(new ImageObj(this.base, imageCInfo));
 
             //
-            this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
-                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            this.currentImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
+                imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
-                type = "storage";
+                type = "sampled";
                 subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*0).layerCount(cInfo.layerCounts.get(fI));
             } }));
 
             //
-            this.currentImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
+            /*
+            this.previousImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
                 imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
@@ -85,14 +86,14 @@ public class ImageSetObj extends BasicObj  {
                 subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*1).layerCount(cInfo.layerCounts.get(fI));
             } }));
 
-            //
-            this.previousImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
-                imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
+                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
-                type = "sampled";
+                type = "storage";
                 subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*2).layerCount(cInfo.layerCounts.get(fI));
             } }));
+            */
         }
 
         //
@@ -188,7 +189,7 @@ public class ImageSetObj extends BasicObj  {
                 //
                 var imageCInfo = new ImageCInfo() {{
                     memoryAllocator = cInfo.memoryAllocator;
-                    arrayLayers = layerCount * 2;
+                    arrayLayers = layerCount; //* 2;
                     format = cInfo.depthStencilFormat;
                     mipLevels = 1;
                     extent3D = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
@@ -220,7 +221,7 @@ public class ImageSetObj extends BasicObj  {
                 });
 
                 //
-                this.previousDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
+                /*this.previousDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
                     {
                         imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
                         pipelineLayout = cInfo.pipelineLayout;
@@ -228,7 +229,7 @@ public class ImageSetObj extends BasicObj  {
                         type = "sampled";
                         subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(layerCount * 1).layerCount(layerCount);
                     }
-                });
+                });*/
             }
         }
 

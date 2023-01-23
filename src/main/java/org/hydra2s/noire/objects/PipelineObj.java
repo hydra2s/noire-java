@@ -103,34 +103,20 @@ public class PipelineObj extends BasicObj  {
     }
 
     //
-    public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
+    public static void preInitializeFb(long device, long imageSet, ImageSetCInfo.FBLayout fbLayout) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(device).orElse(null);;
         var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", imageSet)).orElse(null);;
 
         //
-        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
-        var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout)).orElse(null);;
-        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
-
-        //
-        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)pipelineObj.cInfo).fbLayout;
-        var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
         fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
         for (var I=0;I<fbLayout.formats.remaining();I++) {
             fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
-            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
+            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.currentImageViews.get(I).getImageLayout());
+            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.currentImageViews.get(I).handle.get());
             fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
             fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
-
-            fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-            fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
-            fbClearC.get(I).colorAttachment(I);
         }
-
-        //
-        int layerCount = Collections.min(fbLayout.layerCounts);//fbLayout.layerCounts.stream().min(Integer::compare).get();
 
         //
         boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
@@ -145,6 +131,27 @@ public class PipelineObj extends BasicObj  {
             fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
             fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         };
+    }
+
+    //
+    public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+
+        //
+        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
+        var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout)).orElse(null);;
+        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
+
+        //
+        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)pipelineObj.cInfo).fbLayout;
+        int layerCount = Collections.min(fbLayout.layerCounts);
+
+        //
+        boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+        boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+        boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
 
         //
         vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.calloc()
@@ -221,6 +228,13 @@ public class PipelineObj extends BasicObj  {
                 vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
             }
         } else {
+            var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
+            for (var I=0;I<fbLayout.formats.remaining();I++) {
+                fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
+                fbClearC.get(I).aspectMask(framebufferObj.currentImageViews.get(I).subresourceLayers(0).aspectMask());
+                fbClearC.get(I).colorAttachment(I);
+            }
+
             if (cmdInfo.clearColor) {
                 vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
             }
