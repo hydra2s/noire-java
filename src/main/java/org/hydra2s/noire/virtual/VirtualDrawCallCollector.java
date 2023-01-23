@@ -155,6 +155,17 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             0.0F, 1.0F, 0.0F, 0.0F,
             0.0F, 0.0F, 1.0F, 0.0F
         })));
+
+        //
+        this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
+            memoryAllocator = memoryAllocatorObj.getHandle().get();
+            instances = new DataCInfo.InstanceGeometryCInfo(){{
+                instanceBinding = new DataCInfo.InstanceBindingCInfo(){{
+                    address = instanceBuffer.getDeviceAddress();
+                    vertexCount = 1;
+                }};
+            }};
+        }});
     }
 
     // TODO: reusing same memory support
@@ -207,36 +218,25 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var drawCall = (VirtualDrawCallObj)this.sorted.get(I);
             var drawCallCInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)drawCall.cInfo;
 
-            var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", drawCallCInfo.vertexArrayHeapHandle)).orElse(null);
-            var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
+            //var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", drawCallCInfo.vertexArrayHeapHandle)).orElse(null);
+            var vertexArrayObj = drawCallCInfo.vertexArray;//(VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
             var vertexBinding0 = vertexArrayObj.bindings.get(0);
 
             //
-            this.multiDraw.get(I).set(0, (int) drawCallCInfo.vertexCount);
-            this.ranges.get(I).set((int) (drawCallCInfo.vertexCount/3), 0, 0, 0);
+            this.multiDraw.get(I).set(0, drawCallCInfo.vertexCount);
+            this.ranges.get(I).set(drawCallCInfo.vertexCount/3, 0, 0, 0);
             this.geometries.add(new DataCInfo.TriangleGeometryCInfo() {{
-                transformAddress = drawCall.uniformBuffer.address + vertexArrayStride;
+                //transformAddress = drawCall.uniformBuffer.address + vertexArrayStride;
                 indexBinding = new DataCInfo.IndexBindingCInfo(){{
-                    address = drawCallCInfo.indexData.address;
-                    type = drawCallCInfo.indexData.address != 0 ? drawCallCInfo.indexData.type : VK_INDEX_TYPE_NONE_KHR;
+                    address = drawCallCInfo.indexBuffer.getBufferAddress();
+                    type = drawCallCInfo.indexBuffer.getBufferAddress() != 0 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_NONE_KHR;
                     vertexCount = (int) drawCallCInfo.vertexCount;
                 }};
                 vertexBinding = new DataCInfo.VertexBindingCInfo() {{
                     address = vertexBinding0.bufferAddress;
                     stride = vertexBinding0.stride;
-                    vertexCount = (int) drawCallCInfo.vertexCount;
+                    vertexCount = drawCallCInfo.vertexCount;
                     format = vertexBinding0.format;
-                }};
-            }});
-
-            //
-            this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
-                memoryAllocator = memoryAllocatorObj.getHandle().get();
-                instances = new DataCInfo.InstanceGeometryCInfo(){{
-                    instanceBinding = new DataCInfo.InstanceBindingCInfo(){{
-                        address = instanceBuffer.getDeviceAddress();
-                        vertexCount = 1;
-                    }};
                 }};
             }});
         }
@@ -261,9 +261,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
             var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
             var virtualDrawCallCollector = (VirtualDrawCallCollector)deviceObj.handleMap.get(new Handle("VirtualDrawCallCollector", cInfo.registryHandle)).orElse(null);
-            var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.vertexArrayHeapHandle)).orElse(null);
-            var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(cInfo.vertexArrayObjectId);
-            var vertexBinding = vertexArrayObj.bindings.get(0);
+            var vertexArrayObj = cInfo.vertexArray;//(VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
+            var vertexBinding0 = vertexArrayObj.bindings.get(0);
 
             //
             this.bound = virtualDrawCallCollector;
@@ -273,60 +272,96 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.virtualGL = this.DSC_ID+1;
 
             // TODO: use virtual allocation and morton code (i.e. reusing data)
-            this.vertexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
-                offset = virtualDrawCallCollector.vertexDataBudget.offset;
-                stride = vertexBinding.stride;
-                range = vertexBinding.bufferSize;
-                address = virtualDrawCallCollector.vertexDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.vertexDataBudget.offset;
-                handle = virtualDrawCallCollector.vertexDataBudget.bufferObj.getHandle().get();
-            }};
+            if (cInfo.vertexMode == 0) { //
+                this.vertexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
+                    offset = virtualDrawCallCollector.vertexDataBudget.offset;
+                    stride = vertexBinding0.stride;
+                    range = vertexBinding0.bufferSize;
+                    address = virtualDrawCallCollector.vertexDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.vertexDataBudget.offset;
+                    handle = virtualDrawCallCollector.vertexDataBudget.bufferObj.getHandle().get();
+                }};
+                virtualDrawCallCollector.vertexDataBudget.offset += this.vertexBuffer.range;
+            } else {
+                this.vertexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
+                    offset = cInfo.vertexBuffer.bufferOffset.get(0);
+                    stride = vertexBinding0.stride;
+                    range = min(vertexBinding0.bufferSize, cInfo.vertexBuffer.bufferSize);
+                    address = cInfo.vertexBuffer.getBufferAddress();
+                    handle = cInfo.vertexBuffer.getBufferRange().buffer();
+                }};
+            }
 
-            // TODO: use virtual allocation and morton code (i.e. reusing data)
-            this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
-                offset = virtualDrawCallCollector.indexDataBudget.offset;
-                stride = (cInfo.indexData.type == VK_INDEX_TYPE_UINT32 ? 4 : (cInfo.indexData.type == VK_INDEX_TYPE_UINT16 ? 2 : (cInfo.indexData.type == VK_INDEX_TYPE_UINT8_EXT ? 1 : 0)));
-                range = cInfo.vertexCount * stride;
-                address = virtualDrawCallCollector.indexDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.indexDataBudget.offset;
-                handle = virtualDrawCallCollector.indexDataBudget.bufferObj.getHandle().get();
-            }};
+            if (cInfo.indexMode == 0) {
+                this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
+                    offset = virtualDrawCallCollector.indexDataBudget.offset;
+                    stride = VK_INDEX_TYPE_UINT16;
+                    range = cInfo.vertexCount * stride;
+                    address = virtualDrawCallCollector.indexDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.indexDataBudget.offset;
+                    handle = virtualDrawCallCollector.indexDataBudget.bufferObj.getHandle().get();
+                }};
+                virtualDrawCallCollector.indexDataBudget.offset += this.indexBuffer.range;
+            } else {
+                // TODO: use virtual allocation and morton code (i.e. reusing data)
+                this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
+                    offset = cInfo.indexBuffer.bufferOffset.get(0);
+                    stride = VK_INDEX_TYPE_UINT16;
+                    range = cInfo.indexBuffer.bufferSize;
+                    address = cInfo.indexBuffer.getBufferAddress();
+                    handle = cInfo.indexBuffer.getBufferRange().buffer();
+                }};
+            }
 
-            // TODO: use virtual allocation and morton code (i.e. reusing data)
-            this.uniformBuffer = new VirtualDrawCallCollectorCInfo.BufferRange(){{
-                offset = virtualDrawCallCollector.uniformDataBudget.offset;
-                stride = drawCallUniformStride;
-                range = drawCallUniformStride;
-                address = virtualDrawCallCollector.uniformDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.uniformDataBudget.offset;
-                handle = virtualDrawCallCollector.uniformDataBudget.bufferObj.getHandle().get();
-            }};
-
-            //
-            virtualDrawCallCollector.vertexDataBudget.offset += this.vertexBuffer.range;
-            virtualDrawCallCollector.indexDataBudget.offset += this.indexBuffer.range;
-            virtualDrawCallCollector.uniformDataBudget.offset += this.uniformBuffer.range;
+            {   // TODO: use virtual allocation and morton code (i.e. reusing data)
+                this.uniformBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
+                    offset = virtualDrawCallCollector.uniformDataBudget.offset;
+                    stride = drawCallUniformStride;
+                    range = drawCallUniformStride;
+                    address = virtualDrawCallCollector.uniformDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.uniformDataBudget.offset;
+                    handle = virtualDrawCallCollector.uniformDataBudget.bufferObj.getHandle().get();
+                }};
+                virtualDrawCallCollector.uniformDataBudget.offset += this.uniformBuffer.range;
+            }
         }
 
-        // TODO: add additional meta information about draw call
+        //
         public VirtualDrawCallObj cmdCopyFromSource(VkCommandBuffer cmdBuf) {
             var cInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)this.cInfo;
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
-            var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.vertexArrayHeapHandle)).orElse(null);
-            var vertexArrayObj = (VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(cInfo.vertexArrayObjectId);
+            var vertexArrayObj = cInfo.vertexArray;
 
             //
-            var vRange = vertexArrayHeap.getBufferRange();
             var vaoRange = vertexArrayObj.getBufferRange();
-            var uniRange = cInfo.uniformRange;
-            var indexRange = cInfo.indexData;
+            var indexRange = cInfo.indexBuffer.getBufferRange();
+            var vertexRange = cInfo.vertexBuffer != null ? cInfo.vertexBuffer.getBufferRange() : null;
 
-            // copy draw data
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vRange.offset()).dstOffset(vertexBuffer.offset).size(min(vRange.range(), vertexBuffer.range)));
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.handle, indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset).dstOffset(indexBuffer.offset).size(min(indexRange.range, indexBuffer.range)));
+            //
+            var tempVboBuffer = vertexArrayObj.bindings.get(0).bufferAddress;
+            var tempVboSize = vertexArrayObj.bindings.get(0).bufferAddress;
 
-            // firstly, going VAO data (256 bytes), then uniform (384 bytes)
-            // for uniform, firstly should to be going transform matrix
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vaoRange.buffer(), uniformBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vaoRange.offset()).dstOffset(uniformBuffer.offset).size(max(min(vaoRange.range(), uniformBuffer.range), 0L)));
-            CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, uniRange.buffer(), uniformBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(uniRange.offset()).dstOffset(uniformBuffer.offset + vaoRange.range()).size(max(min(uniRange.range(), uniformBuffer.range-vaoRange.range()), 0L)));
+            //
+            if (cInfo.vertexBuffer != null) {
+                vertexArrayObj.vertexBufferForAll(cInfo.vertexBuffer.getBufferAddress(), cInfo.vertexBuffer.getBufferSize()).writeData();
+            }
+
+            // copy draw data (if required)
+            if (cInfo.vertexMode == 0 && vertexRange != null) {
+                CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vertexRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vertexRange.offset()).dstOffset(vertexBuffer.offset).size(min(vertexRange.range(), vertexBuffer.range)));
+            }
+            if (cInfo.indexMode == 0) {
+                CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.buffer(), indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset()).dstOffset(indexBuffer.offset).size(min(indexRange.range(), indexBuffer.range)));
+            }
+
+            // copy uniform based information from memories
+            vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, vertexArrayObj.bindingsMapped);
+
+            //
+            if (cInfo.uniformData != null) {
+                vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset + vaoRange.range(), cInfo.uniformData);
+            }
+
+            // bring back VAO data
+            if (cInfo.vertexBuffer != null) {
+                vertexArrayObj.vertexBufferForAll(tempVboBuffer, tempVboSize).writeData();
+            }
 
             //
             return this;

@@ -2,6 +2,8 @@ package org.hydra2s.noire.virtual;
 
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
+import java.nio.ByteBuffer;
+
 import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.vertexArrayStride;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_INDEX_TYPE_NONE_KHR;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
@@ -28,33 +30,19 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
         public long stride = 0L;
     }
 
-    // TODO: use host memory too (directly, zero-copy)
-    static public class IndexRange {
-        public long handle = 0L;
-        public long offset = 0L;
-        public long range = VK_WHOLE_SIZE;
-        public long address = 0L;
-        public int type = VK_INDEX_TYPE_NONE_KHR;
-    }
-
     //
     static public class VirtualDrawCallCInfo extends VirtualGLObjCInfo {
-        // use direct buffer access instead of copying (for device mode, for host recommended a copying)
-        public boolean vertexDirectBufferMode = false;
-        public boolean indexDirectBufferMode = false;
+        // use vkCmdUpdateBuffer
+        public ByteBuffer uniformData;
 
-        //
-        public long vertexArrayHeapHandle = 0L;
+        // 0 = temporary, 1 = direct
+        // in temp mode => copy, in direct mode just use it
+        public int vertexMode = 0; public VirtualMutableBufferHeap.VirtualMutableBufferObj vertexBuffer;
+        public int indexMode = 1; public VirtualMutableBufferHeap.VirtualMutableBufferObj indexBuffer;
 
-        // use DSC_ID for access to vertexArrayObj
-        public int vertexArrayObjectId = -1;
+        // just copy their into registry
+        public int vertexCount = 0; public VirtualVertexArrayHeap.VirtualVertexArrayObj vertexArray;
 
-        //
-        public IndexRange indexData = null;
-        public long vertexCount = 0;
-
-        //
-        public VkDescriptorBufferInfo uniformRange = null;
     }
 
 
