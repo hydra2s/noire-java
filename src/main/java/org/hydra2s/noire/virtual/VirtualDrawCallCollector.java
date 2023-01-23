@@ -67,8 +67,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
         var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
         //
@@ -226,7 +226,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.multiDraw.get(I).set(0, drawCallCInfo.vertexCount);
             this.ranges.get(I).set(drawCallCInfo.vertexCount/3, 0, 0, 0);
             this.geometries.add(new DataCInfo.TriangleGeometryCInfo() {{
-                //transformAddress = drawCall.uniformBuffer.address + vertexArrayStride;
+                transformAddress = drawCall.uniformBuffer.address; //+ vertexArrayStride;
                 indexBinding = new DataCInfo.IndexBindingCInfo(){{
                     address = drawCallCInfo.indexBuffer.getBufferAddress();
                     type = drawCallCInfo.indexBuffer.getBufferAddress() != 0 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_NONE_KHR;
@@ -329,7 +329,6 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             var vertexArrayObj = cInfo.vertexArray;
 
             //
-            var vaoRange = vertexArrayObj.getBufferRange();
             var indexRange = cInfo.indexBuffer.getBufferRange();
             var vertexRange = cInfo.vertexBuffer != null ? cInfo.vertexBuffer.getBufferRange() : null;
 
@@ -351,11 +350,12 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             }
 
             // copy uniform based information from memories
-            vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, vertexArrayObj.bindingsMapped);
+            vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset + 512, vertexArrayObj.bindingsMapped);
 
-            //
+            // TODO: write index type
             if (cInfo.uniformData != null) {
-                vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset + vaoRange.range(), cInfo.uniformData);
+                memSlice(cInfo.uniformData, 400, 8).putLong(indexBuffer.address);
+                vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, cInfo.uniformData);
             }
 
             // bring back VAO data
