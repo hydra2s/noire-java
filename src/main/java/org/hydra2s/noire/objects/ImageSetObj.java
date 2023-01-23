@@ -69,7 +69,7 @@ public class ImageSetObj extends BasicObj  {
 
             //
             this.currentImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
-                imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                 pipelineLayout = cInfo.pipelineLayout;
                 image = images.get(fI).handle.get();
                 type = "sampled";

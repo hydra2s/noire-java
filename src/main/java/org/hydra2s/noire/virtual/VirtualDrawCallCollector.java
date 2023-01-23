@@ -52,9 +52,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     //public ArrayList<VirtualDrawCallObj> drawCalls = null;
 
     // recommended to store in device memory
-    protected BufferBudget vertexDataBudget = null;
-    protected BufferBudget indexDataBudget = null;
-    protected BufferBudget uniformDataBudget = null;
+    public BufferBudget vertexDataBudget = null;
+    public BufferBudget indexDataBudget = null;
+    public BufferBudget uniformDataBudget = null;
 
     //
     public AccelerationStructureObj.BottomAccelerationStructureObj bottomLvl = null;
@@ -78,7 +78,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         //
         this.vertexDataBudget = new BufferBudget(){{
             bufferObj = new BufferObj(base, new BufferCInfo() {{
-                size = cInfo.maxDrawCalls * vertexAverageStride * vertexAverageCount;
+                size = cInfo.maxDrawCalls * VirtualDrawCallCollectorCInfo.vertexAverageStride * VirtualDrawCallCollectorCInfo.vertexAverageCount;
                 usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = cInfo.memoryAllocator;
                 memoryAllocationInfo = new MemoryAllocationCInfo(){{
@@ -91,7 +91,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         //
         this.indexDataBudget = new BufferBudget(){{
             bufferObj = new BufferObj(base, new BufferCInfo() {{
-                size = cInfo.maxDrawCalls * vertexAverageCount * 4;
+                size = cInfo.maxDrawCalls * VirtualDrawCallCollectorCInfo.vertexAverageCount * 4;
                 usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = cInfo.memoryAllocator;
                 memoryAllocationInfo = new MemoryAllocationCInfo() {{
@@ -104,7 +104,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         //
         this.uniformDataBudget = new BufferBudget(){{
             bufferObj = new BufferObj(base, new BufferCInfo() {{
-                size = cInfo.maxDrawCalls * drawCallUniformStride;
+                size = cInfo.maxDrawCalls * VirtualDrawCallCollectorCInfo.drawCallUniformStride;
                 usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = cInfo.memoryAllocator;
                 memoryAllocationInfo = new MemoryAllocationCInfo() {{
@@ -181,6 +181,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     //
     public VirtualDrawCallObj collectDrawCall(VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo drawCallInfo) {
+        drawCallInfo.registryHandle = this.handle.get();
         return new VirtualDrawCallObj(this.base, drawCallInfo);
     }
 
@@ -209,13 +210,11 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         this.multiDraw = VkMultiDrawInfoEXT.calloc(this.registry.size());
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
 
         // use sorted data for draw (and possible, culling)
-        for (var I=0;I<this.sorted.size();I++) {
-            var drawCall = (VirtualDrawCallObj)this.sorted.get(I);
+        for (var I=0;I<this.registry.size();I++) {
+            var drawCall = (VirtualDrawCallObj)this.registry.get(I);
             var drawCallCInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)drawCall.cInfo;
 
             //var vertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", drawCallCInfo.vertexArrayHeapHandle)).orElse(null);
@@ -257,9 +256,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             var virtualDrawCallCollector = (VirtualDrawCallCollector)deviceObj.handleMap.get(new Handle("VirtualDrawCallCollector", cInfo.registryHandle)).orElse(null);
             var vertexArrayObj = cInfo.vertexArray;//(VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
             var vertexBinding0 = vertexArrayObj.bindings.get(0);
@@ -294,7 +291,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             if (cInfo.indexMode == 0) {
                 this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
                     offset = virtualDrawCallCollector.indexDataBudget.offset;
-                    stride = VK_INDEX_TYPE_UINT16;
+                    stride = 2;//VK_INDEX_TYPE_UINT16;
                     range = cInfo.vertexCount * stride;
                     address = virtualDrawCallCollector.indexDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.indexDataBudget.offset;
                     handle = virtualDrawCallCollector.indexDataBudget.bufferObj.getHandle().get();
@@ -304,7 +301,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                 // TODO: use virtual allocation and morton code (i.e. reusing data)
                 this.indexBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
                     offset = cInfo.indexBuffer.bufferOffset.get(0);
-                    stride = VK_INDEX_TYPE_UINT16;
+                    stride = 2;//VK_INDEX_TYPE_UINT16;
                     range = cInfo.indexBuffer.bufferSize;
                     address = cInfo.indexBuffer.getBufferAddress();
                     handle = cInfo.indexBuffer.getBufferRange().buffer();
@@ -334,11 +331,11 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             //
             var tempVboBuffer = vertexArrayObj.bindings.get(0).bufferAddress;
-            var tempVboSize = vertexArrayObj.bindings.get(0).bufferAddress;
+            var tempVboSize = vertexArrayObj.bindings.get(0).bufferSize;
 
             //
             if (cInfo.vertexBuffer != null) {
-                vertexArrayObj.vertexBufferForAll(cInfo.vertexBuffer.getBufferAddress(), cInfo.vertexBuffer.getBufferSize()).writeData();
+                vertexArrayObj.vertexBufferForAll(vertexBuffer.address, min(vertexRange.range(), vertexBuffer.range)).writeData();
             }
 
             // copy draw data (if required)
@@ -354,7 +351,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             // TODO: write index type
             if (cInfo.uniformData != null) {
-                memSlice(cInfo.uniformData, 400, 8).putLong(indexBuffer.address);
+                memSlice(cInfo.uniformData, 400, 8).putLong(0, indexBuffer.address);
                 vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, cInfo.uniformData);
             }
 

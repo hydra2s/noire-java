@@ -225,7 +225,7 @@ public class PipelineObj extends BasicObj  {
             if (cmdInfo.multiDraw.remaining() <= 1) {
                 vkCmdDraw(cmdBuf, cmdInfo.multiDraw.vertexCount(), 1, cmdInfo.multiDraw.firstVertex(), 0);
             } else {
-                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, 8);
+                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
             }
         } else {
             var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());

@@ -20,6 +20,7 @@ public class VirtualGLRegistry extends BasicObj {
         super(base, handle);
 
         this.registry = new PipelineLayoutObj.OutstandingArray<>();
+        this.sorted = new TreeMap<Long, VirtualGLObj>();
     }
 
     //
@@ -27,6 +28,7 @@ public class VirtualGLRegistry extends BasicObj {
         super(base, cInfo);
 
         this.registry = new PipelineLayoutObj.OutstandingArray<>();
+        this.sorted = new TreeMap<Long, VirtualGLObj>();
     }
 
     // return by `dscId` + 1
