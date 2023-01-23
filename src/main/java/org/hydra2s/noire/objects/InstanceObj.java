@@ -121,8 +121,9 @@ public class InstanceObj extends BasicObj {
         this.instanceInfo = VkInstanceCreateInfo.calloc(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
                 .pApplicationInfo(this.appInfo.get(0))
-                .ppEnabledExtensionNames(this.extensions).get();
-                //.ppEnabledLayerNames(this.layers).get();
+                .ppEnabledExtensionNames(this.extensions)
+                //.ppEnabledLayerNames(this.layers)
+                .get();
         VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr());
 
         //
