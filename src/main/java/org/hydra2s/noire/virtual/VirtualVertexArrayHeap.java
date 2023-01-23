@@ -40,13 +40,13 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
         //
         this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(memAllocLong(1)));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
         this.hostPayload = memAlloc((int) (cInfo.maxVertexArrayCount * vertexArrayStride));
@@ -112,11 +112,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get()).orElse(null);
+            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
             //
-            var virtualVertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.registryHandle));
+            var virtualVertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.registryHandle)).orElse(null);
 
             //
             this.bound = virtualVertexArrayHeap;
@@ -181,7 +181,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         // de-bloat a re-production of VAO
         public VirtualVertexArrayObj delete() {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 queueFamilyIndex = cInfo.queueFamilyIndex;
                 queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);

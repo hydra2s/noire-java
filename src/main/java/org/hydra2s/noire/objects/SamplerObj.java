@@ -24,8 +24,8 @@ public class SamplerObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
         //
         this.createInfo = cInfo.createInfo;
@@ -33,7 +33,7 @@ public class SamplerObj extends BasicObj  {
 
         //
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.samplers.push(memAllocLong(1).put(0, this.handle.get()));
             descriptorsObj.writeDescriptors();
         }
@@ -42,9 +42,9 @@ public class SamplerObj extends BasicObj  {
     @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj delete() throws Exception {
         super.delete();
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         var cInfo = (SamplerCInfo)this.cInfo;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
@@ -68,9 +68,9 @@ public class SamplerObj extends BasicObj  {
     @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj deleteDirectly() throws Exception {
         super.delete();
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         var cInfo = (SamplerCInfo)this.cInfo;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;
 
         if (pipelineLayoutObj != null) {

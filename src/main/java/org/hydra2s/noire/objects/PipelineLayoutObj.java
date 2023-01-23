@@ -119,8 +119,8 @@ public class PipelineLayoutObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
         //
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
@@ -163,7 +163,7 @@ public class PipelineLayoutObj extends BasicObj  {
         //
         this.pConstRange = VkPushConstantRange.calloc(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
         vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(memLongBuffer(memAddress(this.descriptorLayout), 4)).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         //
         this.offsets = memAllocLong(4).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
@@ -215,8 +215,8 @@ public class PipelineLayoutObj extends BasicObj  {
     //
     public PipelineLayoutObj writeDescriptors () {
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
         //
         var RSIZE = (int) Math.max(physicalDeviceObj.deviceDescriptorBufferProperties.storageImageDescriptorSize(), physicalDeviceObj.deviceDescriptorBufferProperties.sampledImageDescriptorSize());
@@ -231,7 +231,7 @@ public class PipelineLayoutObj extends BasicObj  {
             if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
                 vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.calloc()
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                    .type(((ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                    .type(((ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                     .data(VkDescriptorDataEXT.calloc().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets.get(0) + RSIZE * I), RSIZE));
             }
         }
@@ -256,9 +256,9 @@ public class PipelineLayoutObj extends BasicObj  {
 
     //
     public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, long uniformBufferHandle) {
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var uniformBuffer = uniformBufferHandle != 0 ? (BufferObj)deviceObj.handleMap.get(new Handle("Buffer", uniformBufferHandle)) : null;
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var uniformBuffer = uniformBufferHandle != 0 ? (BufferObj)deviceObj.handleMap.get(new Handle("Buffer", uniformBufferHandle)).orElse(null) : null;
 
         // TODO: better binding system
         var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBuffer != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);

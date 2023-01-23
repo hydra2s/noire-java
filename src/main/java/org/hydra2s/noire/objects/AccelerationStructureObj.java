@@ -44,8 +44,8 @@ public class AccelerationStructureObj extends BasicObj {
         this.ASLevel = cInfo.instances != null ? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
         //
         this.geometryBuildInfo = VkAccelerationStructureBuildGeometryInfoKHR.calloc(1)
@@ -112,7 +112,7 @@ public class AccelerationStructureObj extends BasicObj {
 
         //
         vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(this.buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, memLongBuffer(memAddress((this.handle = new Handle("AccelerationStructure")).ptr(), 0), 1));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         //
         this.deviceAddress = this.getDeviceAddress();
@@ -188,11 +188,11 @@ public class AccelerationStructureObj extends BasicObj {
 
     //
     public long getDeviceAddress() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         if (this.deviceAddress == 0) {
             this.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(deviceObj.device, VkAccelerationStructureDeviceAddressInfoKHR.calloc().pNext(0L).sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR).accelerationStructure(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.buildSizeInfo.accelerationStructureSize(), Interval.Bounded.CLOSED));
-            deviceObj.rootMap.put(this.deviceAddress, this.handle.get());
+            deviceObj.rootMap.put$(this.deviceAddress, this.handle.get());
         }
         return this.deviceAddress;
     }

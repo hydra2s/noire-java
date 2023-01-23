@@ -80,12 +80,12 @@ public class PipelineObj extends BasicObj  {
         }
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
 
         //
-        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline));
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout));
+        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout)).orElse(null);;
 
         //
         if (pipelineLayoutObj != null) {
@@ -104,14 +104,14 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
 
         //
-        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline));
+        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
         var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout));
-        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet));
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout)).orElse(null);;
+        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
 
         //
         var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)pipelineObj.cInfo).fbLayout;
@@ -254,8 +254,8 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);;
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
 
             //
             this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
@@ -275,7 +275,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
-            deviceObj.handleMap.put(this.handle, this);
+            deviceObj.handleMap.put$(this.handle, this);
 
             //
             if (cInfo.memoryAllocator != 0) {
@@ -322,9 +322,9 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout));
+            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);;
+            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
@@ -482,7 +482,7 @@ public class PipelineObj extends BasicObj  {
             // TODO: initial pipeline cache
             vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1));
             vkCreateGraphicsPipelines(deviceObj.device, this.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
-            deviceObj.handleMap.put(this.handle, this);
+            deviceObj.handleMap.put$(this.handle, this);
 
             //
             if (cInfo.memoryAllocator != 0) {
@@ -502,13 +502,13 @@ public class PipelineObj extends BasicObj  {
     @Override // TODO: multiple queue family support
     public PipelineObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);;
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyPipeline(deviceObj.device, handle.get(), null);
-                deviceObj.handleMap.remove(handle);
+                deviceObj.handleMap.put$(handle, null);
                 return null;
             });
         }}, (cmdBuf)->{

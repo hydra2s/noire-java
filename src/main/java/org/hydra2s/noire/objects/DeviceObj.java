@@ -55,7 +55,7 @@ public class DeviceObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(base.get());
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
         List<String> extbuf = Arrays.asList(
             "VK_KHR_swapchain",
             "VK_KHR_deferred_host_operations",
@@ -165,7 +165,7 @@ public class DeviceObj extends BasicObj {
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers)
                 , null, (this.handle = new Handle("Device")).ptr());
-        BasicObj.globalHandleMap.put(this.handle.get(), this);
+        BasicObj.globalHandleMap.put$(this.handle.get(), this);
 
         //
         this.device = new VkDevice(this.handle.get(), physicalDeviceObj.physicalDevice, this.deviceInfo);

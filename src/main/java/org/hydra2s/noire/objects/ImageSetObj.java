@@ -36,8 +36,8 @@ public class ImageSetObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
         //
         this.images = new ArrayList<ImageObj>();
@@ -97,7 +97,7 @@ public class ImageSetObj extends BasicObj  {
 
         //
         this.handle = new Handle("ImageSet", MemoryUtil.memAddress(memAllocLong(1)));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
     }
 
     //
@@ -181,9 +181,9 @@ public class ImageSetObj extends BasicObj  {
 
             //
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
-                var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get());
-                var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
-                var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+                var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
+                var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+                var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
 
                 //
                 var imageCInfo = new ImageCInfo() {{

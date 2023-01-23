@@ -37,13 +37,13 @@ public class MemoryAllocationObj extends BasicObj {
         super(base, handle);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
         this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(memAllocLong(1)));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
     }
 
     //
@@ -51,21 +51,21 @@ public class MemoryAllocationObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
         this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(memAllocLong(1)));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
     }
 
     //
     public ByteBuffer map(long byteLength, long byteOffset) {
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         // TODO: add support for synchronize to host
         return deviceMemoryObj.map(byteLength, this.memoryOffset + byteOffset);
@@ -73,38 +73,38 @@ public class MemoryAllocationObj extends BasicObj {
 
     public void unmap() {
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         deviceMemoryObj.unmap();
     }
 
     public MemoryAllocationObj flushMapped() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         deviceMemoryObj.flushMapped(this.memorySize, this.memoryOffset);
         return this;
     }
 
     public MemoryAllocationObj invalidateMapped() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         deviceMemoryObj.invalidateMapped(this.memorySize, this.memoryOffset);
         return this;
     }
 
     public PointerBuffer getWin32Handle() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         return deviceMemoryObj.Win32Handle;
     }
 
     public IntBuffer getFdHandle() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         return deviceMemoryObj.FdHandle;
     }
 
@@ -113,10 +113,10 @@ public class MemoryAllocationObj extends BasicObj {
     @Override // TODO: multiple queue family support
     public MemoryAllocationObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
 
         // TODO: Use Shared PTR (alike C++)
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         deviceMemoryObj.delete();
         return this;
     }
@@ -124,10 +124,10 @@ public class MemoryAllocationObj extends BasicObj {
     @Override // TODO: multiple queue family support
     public MemoryAllocationObj deleteDirectly() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
 
         // TODO: Use Shared PTR (alike C++)
-        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory));
+        var deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
         deviceMemoryObj.deleteDirectly();
         return this;
     }

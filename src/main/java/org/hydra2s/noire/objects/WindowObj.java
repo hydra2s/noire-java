@@ -27,18 +27,18 @@ public class WindowObj extends BasicObj  {
     public WindowObj(Handle base, long window) {
         super(base, new Handle("Window", window));
 
-        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
+        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
         glfwCreateWindowSurface(instanceObj.instance, this.handle.get(), null, this.surface = memAllocLong(1));
     }
 
     public WindowObj(Handle base, WindowCInfo cInfo) {
         super(base, cInfo);
 
-        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
+        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         glfwCreateWindowSurface(instanceObj.instance, (this.handle = new Handle("Window", glfwCreateWindow(cInfo.size.width(), cInfo.size.height(), "NoireWindow", 0L, 0L))).get(), null, this.surface = memAllocLong(1));
-        BasicObj.globalHandleMap.put(handle.get(), this);
+        BasicObj.globalHandleMap.put$(handle.get(), this);
     }
 
     public FloatBuffer getDPI() {

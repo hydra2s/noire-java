@@ -24,8 +24,8 @@ abstract public class CopyUtilObj {
         CopyInfoCInfo.ImageViewCopyInfo dstImageView,
         VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device);
-        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device).orElse(null);
+        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView)).orElse(null);
 
         //
         CopyUtilObj.cmdCopyBufferToImage(cmdBuf, srcBufferRange.buffer, ((ImageViewCInfo)dstImageViewObj.cInfo).image,
@@ -46,8 +46,8 @@ abstract public class CopyUtilObj {
         CopyInfoCInfo.BufferRangeCopyInfo dstBufferRange,
         VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
 
         //
         CopyUtilObj.cmdCopyImageToBuffer(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstBufferRange.buffer,
@@ -68,8 +68,8 @@ abstract public class CopyUtilObj {
         CopyInfoCInfo.ImageViewCopyInfo dstImageView,
         VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
 
         //
         CopyUtilObj.cmdCopyImageToImageView(cmdBuf, new CopyInfoCInfo.ImageCopyInfo(){{
@@ -87,8 +87,8 @@ abstract public class CopyUtilObj {
         CopyInfoCInfo.ImageViewCopyInfo srcImageView,
         VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
+        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
 
         //
         CopyUtilObj.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstImage.image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, dstImage.imageLayout,
@@ -108,8 +108,8 @@ abstract public class CopyUtilObj {
         CopyInfoCInfo.ImageViewCopyInfo dstImageView,
         VkExtent3D extent
     ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device);
-        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device).orElse(null);
+        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView)).orElse(null);
 
         //
         CopyUtilObj.cmdCopyImageToImage(cmdBuf, srcImage.image, ((ImageViewCInfo)dstImageViewObj.cInfo).image, srcImage.imageLayout, ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout,

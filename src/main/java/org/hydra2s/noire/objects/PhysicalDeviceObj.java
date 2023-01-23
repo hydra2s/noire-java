@@ -96,9 +96,9 @@ public class PhysicalDeviceObj extends BasicObj {
         super(base, handle);
 
         //
-        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get());
+        var instanceObj = (InstanceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
         this.physicalDevice = new VkPhysicalDevice(handle.get(), instanceObj.instance);
-        BasicObj.globalHandleMap.put(handle.get(), this);
+        BasicObj.globalHandleMap.put$(handle.get(), this);
 
         // TODO: unify into one object
         this.deviceGlobalPriorityFeatures = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR);

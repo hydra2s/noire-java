@@ -47,9 +47,9 @@ public class SwapChainObj extends BasicObj  {
     }
 
     public SwapChainObj generateImages(SwapChainCInfo cInfo) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
 
         //
         if (cInfo.surface != 0) {
@@ -130,7 +130,7 @@ public class SwapChainObj extends BasicObj  {
             }
         } else {
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+            var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
 
             this.imageViews = new ArrayList<>();
             this.imagesObj = new ArrayList<>();
@@ -170,7 +170,7 @@ public class SwapChainObj extends BasicObj  {
 
     //
     public SwapChainObj generateSemaphores() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
 
         // useless for pure Vulkan, for test only
         this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo());
@@ -206,7 +206,7 @@ public class SwapChainObj extends BasicObj  {
 
     // TODO: more than one semaphore support
     public int acquireImageIndex(long semaphore) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.getHandle().get(), 0L, this.imageIndex);
         return this.imageIndex.get(0);
     }
@@ -226,7 +226,7 @@ public class SwapChainObj extends BasicObj  {
         // Here, probably, should to be image barrier operation
         @Override
         public int acquireImageIndex(long semaphore) {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             var index = this.imageIndex.get(0);
             this.imageIndex.put(0, (index+1)%this.amountOfImagesInSwapchain.get(0));
             return this.imageIndex.get(0);
@@ -235,7 +235,7 @@ public class SwapChainObj extends BasicObj  {
         // Here, probably, should to be image barrier operation
         @Override
         public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             return this;
         }
 
@@ -253,13 +253,13 @@ public class SwapChainObj extends BasicObj  {
         }
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)-> {
                 vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
-                deviceObj.handleMap.remove(handle);
+                deviceObj.handleMap.put$(handle, null);
                 return null;
             });
         }}, (cmdBuf)->{
@@ -278,9 +278,9 @@ public class SwapChainObj extends BasicObj  {
         }
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
-        deviceObj.handleMap.remove(handle);
+        deviceObj.handleMap.put$(handle, null);
 
         //
         return this;

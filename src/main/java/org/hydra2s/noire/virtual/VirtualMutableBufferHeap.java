@@ -87,13 +87,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
         //
         this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(memAllocLong(1)));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple heaps, one registry
         // TODO: morton coding support
@@ -169,8 +169,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get());
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get()).orElse(null);
+            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
             //
             this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
@@ -180,7 +180,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.blockSize = 0;
 
             // TODO: bound with memoryHeap
-            var virtualBufferRegistry = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle));
+            var virtualBufferRegistry = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle)).orElse(null);
 
             //
             this.bound = virtualBufferRegistry;
@@ -225,7 +225,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             if (this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
                 // TODO: copy from old segment
@@ -325,7 +325,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
-                var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+                var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
                 deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                     // TODO: correctly handle main queue family
                     whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;

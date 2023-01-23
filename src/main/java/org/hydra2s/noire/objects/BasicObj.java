@@ -3,11 +3,12 @@ package org.hydra2s.noire.objects;
 //
 
 import com.lodborg.intervaltree.IntervalTree;
+import com.perapoch.cache.lru.NativeLRUCache;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
@@ -19,6 +20,55 @@ import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
 public class BasicObj {
+
+    public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
+        public NativeLRUCache<K, V> cache = null;
+
+        public CombinedMap(int capacity) {
+            super(1024);
+            this.cache = new NativeLRUCache<K, V>(capacity);
+        }
+
+        //
+        public void put$(K key, V value) {
+            cache.put(key, value);
+            super.put(key, Optional.ofNullable(value));
+        }
+
+        /*@Override
+        public Optional<V> get(Object key) {
+            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+        }*/
+
+        @Override
+        public Optional<V> get(Object key) {
+            return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+        }
+
+        @Override
+        public Optional<V> put(K key, Optional<V> value) {
+            cache.put(key, value.orElse(null));
+            super.put(key, value);
+            return value;
+        }
+
+        @Override
+        public Optional<V> remove(Object key) {
+            var a = cache.remove((K) key);
+            var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
+            return Optional.ofNullable(a.orElse(b.orElse(null)));
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return (cache.containsKey((K) key) || super.containsKey(key));
+        }
+
+        @Override
+        public int size() {
+            return super.size();
+        }
+    }
 
     //
     public Handle getHandle() {
@@ -35,17 +85,17 @@ public class BasicObj {
     public BasicCInfo cInfo = null;
 
     //
-    public static LinkedHashMap<Long, BasicObj> globalHandleMap = new LinkedHashMap<Long, BasicObj>(128);
+    public static CombinedMap<Long, BasicObj> globalHandleMap = new CombinedMap<Long, BasicObj>(16);
 
     // TODO: make correct hashmap
-    public LinkedHashMap <Handle, BasicObj> handleMap = new LinkedHashMap<Handle, BasicObj>(1024);
+    public CombinedMap<Handle, BasicObj> handleMap = new CombinedMap<Handle, BasicObj>(16);
 
     // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
     public IntervalTree<Long> addressMap = new IntervalTree<>();
-    public LinkedHashMap<Long, Long> rootMap = new LinkedHashMap<Long, Long>(1024);
+    public CombinedMap<Long, Long> rootMap = new CombinedMap<Long, Long>(16);
 
     // WARNING! May fail up to null
-    public long getHandleByAddress(long deviceAddress) {
+    public Optional<Long> getHandleByAddress(long deviceAddress) {
         var interval = addressMap.query(deviceAddress);
         var handle = rootMap.get(interval.stream().findFirst().orElse(null).getStart());
         return handle;

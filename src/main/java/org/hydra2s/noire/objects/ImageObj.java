@@ -32,8 +32,8 @@ public class ImageObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get());
+        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
         var extent = cInfo.extent3D;
         var imageType = cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D);
         var arrayLayers = Math.max(cInfo.arrayLayers, 1);
@@ -68,7 +68,7 @@ public class ImageObj extends BasicObj {
         } else {
             this.handle = new Handle("Image", cInfo.image.get(0));
         }
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         //
         vkGetImageMemoryRequirements2(
@@ -89,7 +89,7 @@ public class ImageObj extends BasicObj {
             cInfo.memoryAllocationInfo.image = this.handle.ptr();
 
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator);
+            var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
             var memoryAllocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
             memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, memoryAllocationObj);
 
@@ -101,15 +101,15 @@ public class ImageObj extends BasicObj {
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
 
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyImage(deviceObj.device, handle.get(), null);
-                deviceObj.handleMap.remove(handle);
+                deviceObj.handleMap.put$(handle, null);
 
                 // TODO: Use Shared PTR (alike C++)
                 allocationObj.deleteDirectly();
@@ -126,12 +126,12 @@ public class ImageObj extends BasicObj {
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj deleteDirectly() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
 
         //
         vkDestroyImage(deviceObj.device, handle.get(), null);
-        deviceObj.handleMap.remove(handle);
+        deviceObj.handleMap.put$(handle, null);
 
         // TODO: Use Shared PTR (alike C++)
         allocationObj.deleteDirectly();

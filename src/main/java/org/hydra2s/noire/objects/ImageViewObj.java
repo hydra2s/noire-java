@@ -27,9 +27,9 @@ public class ImageViewObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get());
-        var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image));
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image)).orElse(null);
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
 
@@ -41,11 +41,11 @@ public class ImageViewObj extends BasicObj {
 
         //
         vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, memLongBuffer(memAddress((this.handle = new Handle("ImageView")).ptr(), 0), 1));
-        deviceObj.handleMap.put(this.handle, this);
+        deviceObj.handleMap.put$(this.handle, this);
 
         //
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.calloc().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
             descriptorsObj.writeDescriptors();
         }
@@ -87,7 +87,7 @@ public class ImageViewObj extends BasicObj {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj delete() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         var handle = this.handle;
         var cInfo = (ImageViewCInfo)this.cInfo;
         var self = this;
@@ -99,7 +99,7 @@ public class ImageViewObj extends BasicObj {
             onDone = new Promise<>().thenApply((result)-> {
                 //
                 if (cInfo.pipelineLayout != 0) {
-                    var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+                    var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
                     descriptorsObj.resources.removeIndex(self.DSC_ID);
                     self.DSC_ID = -1;
                 }
@@ -116,14 +116,14 @@ public class ImageViewObj extends BasicObj {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj deleteDirectly() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get());
+        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
         var handle = this.handle;
         var cInfo = (ImageViewCInfo)this.cInfo;
         var self = this;
 
         //
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout));
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             descriptorsObj.resources.removeIndex(self.DSC_ID);
             self.DSC_ID = -1;
         }
