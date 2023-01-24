@@ -11,8 +11,8 @@ import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
 
     //
-    public final static int vertexAverageStride = 64;
-    public final static int vertexAverageCount = 768;
+    public final static int vertexAverageStride = 36;
+    public final static int vertexAverageCount = 515;
 
     // uniform data + VAO bindings + inbound payload
     public final static int drawCallUniformStride = 512 + VirtualVertexArrayHeapCInfo.vertexArrayStride;

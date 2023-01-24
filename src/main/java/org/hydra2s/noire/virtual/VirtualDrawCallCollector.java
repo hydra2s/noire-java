@@ -256,7 +256,6 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             var virtualDrawCallCollector = (VirtualDrawCallCollector)deviceObj.handleMap.get(new Handle("VirtualDrawCallCollector", cInfo.registryHandle)).orElse(null);
             var vertexArrayObj = cInfo.vertexArray;//(VirtualVertexArrayHeap.VirtualVertexArrayObj)vertexArrayHeap.registry.get(drawCallCInfo.vertexArrayObjectId);
             var vertexBinding0 = vertexArrayObj.bindings.get(0);
