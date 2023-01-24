@@ -38,11 +38,6 @@ public class MemoryAllocatorObj extends BasicObj  {
             super(base, handle);
 
             //
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-
-            //
             this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
             this.allocations = new ArrayList<MemoryAllocationObj>();
 
@@ -53,11 +48,6 @@ public class MemoryAllocatorObj extends BasicObj  {
         //
         public DeviceMemoryObj(Handle base, MemoryAllocationCInfo cInfo) {
             super(base, cInfo);
-
-            //
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
 
             //
             var isBAR = (cInfo.isHost && cInfo.isDevice);
@@ -121,11 +111,6 @@ public class MemoryAllocatorObj extends BasicObj  {
 
         //
         public ByteBuffer map(long byteLength, long byteOffset) {
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-
-            //
             //var cInfo = (MemoryAllocatorCInfo.DeviceMemoryCInfo)this.cInfo;
             var cInfo = (MemoryAllocationCInfo)this.cInfo;
 
@@ -147,8 +132,6 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public DeviceMemoryObj flushMapped(long size, long offset) {
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
             vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
@@ -159,8 +142,6 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public DeviceMemoryObj invalidateMapped(long size, long offset) {
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
             vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
@@ -172,11 +153,6 @@ public class MemoryAllocatorObj extends BasicObj  {
 
         //
         public DeviceMemoryObj unmap() {
-            var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-
-            //
             vkUnmapMemory(deviceObj.device, this.handle.get()); mapped = false;
             return this;
         }
@@ -184,7 +160,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         @Override // TODO: multiple queue family support
         public DeviceMemoryObj delete() {
             var handle = this.handle;
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+            
             deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                 queueFamilyIndex = cInfo.queueFamilyIndex;
                 queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
@@ -202,7 +178,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         @Override // TODO: multiple queue family support
         public DeviceMemoryObj deleteDirectly() {
             var handle = this.handle;
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+            
             vkFreeMemory(deviceObj.device, handle.get(), null);
             deviceObj.handleMap.remove(handle);
             return null;
@@ -224,14 +200,15 @@ public class MemoryAllocatorObj extends BasicObj  {
 
     //
     public MemoryAllocationObj allocateMemory(MemoryAllocationCInfo cInfo, MemoryAllocationObj memoryAllocationObj) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        
+        
 
         //
         var deviceMemory = new DeviceMemoryObj(this.handle, cInfo);
         memoryAllocationObj.memoryOffset = 0L;
         memoryAllocationObj.deviceMemory = deviceMemory.handle.ptr();
         memoryAllocationObj.memorySize = cInfo.memoryRequirements.size();
+        memoryAllocationObj.deviceMemoryObj = deviceMemory;
 
         // register allocation
         // TODO: shared pointer support (alike C++)

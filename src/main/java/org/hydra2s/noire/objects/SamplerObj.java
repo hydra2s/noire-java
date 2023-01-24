@@ -24,8 +24,8 @@ public class SamplerObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        
+        
 
         //
         this.createInfo = cInfo.createInfo;
@@ -42,7 +42,7 @@ public class SamplerObj extends BasicObj  {
     @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj delete() throws Exception {
         super.delete();
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         var cInfo = (SamplerCInfo)this.cInfo;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;
@@ -68,7 +68,7 @@ public class SamplerObj extends BasicObj  {
     @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj deleteDirectly() throws Exception {
         super.delete();
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         var cInfo = (SamplerCInfo)this.cInfo;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;

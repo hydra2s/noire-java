@@ -6,6 +6,7 @@ import com.lodborg.intervaltree.IntervalTree;
 import com.perapoch.cache.lru.NativeLRUCache;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;
 import java.util.*;
@@ -20,6 +21,10 @@ import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
 public class BasicObj {
+    public InstanceObj instanceObj;
+    public DeviceObj deviceObj;
+    public PhysicalDeviceObj physicalDeviceObj;
+    public MemoryAllocatorObj memoryAllocatorObj;
 
     public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
         public NativeLRUCache<K, V> cache = null;
@@ -105,12 +110,69 @@ public class BasicObj {
     public BasicObj(Handle base, Handle handle) {
         this.base = base;
         this.handle = handle;
+
+        if (base != null) {
+            if (base.getType() == "Device") {
+                this.deviceObj = (DeviceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "PhysicalDevice") {
+                this.physicalDeviceObj = (PhysicalDeviceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "Instance") {
+                this.instanceObj = (InstanceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "MemoryAllocator") {
+                this.memoryAllocatorObj = (MemoryAllocatorObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+        }
+
+        if (this.memoryAllocatorObj != null) {
+            this.deviceObj = this.memoryAllocatorObj.deviceObj;
+        }
+        if (this.deviceObj != null) {
+            this.physicalDeviceObj = this.deviceObj.physicalDeviceObj;
+        }
+        if (this.physicalDeviceObj != null) {
+            this.instanceObj = this.physicalDeviceObj.instanceObj;
+        }
     }
 
     //
     public BasicObj(Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
+
+        if (base != null) {
+            if (base.getType() == "Device") {
+                this.deviceObj = (DeviceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "PhysicalDevice") {
+                this.physicalDeviceObj = (PhysicalDeviceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "Instance") {
+                this.instanceObj = (InstanceObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+            if (base.getType() == "MemoryAllocator") {
+                this.memoryAllocatorObj = (MemoryAllocatorObj) globalHandleMap.get(base.get()).orElse(null);
+            }
+
+        }
+
+        if (this.memoryAllocatorObj != null) {
+            this.deviceObj = this.memoryAllocatorObj.deviceObj;
+        }
+        if (this.deviceObj != null) {
+            this.physicalDeviceObj = this.deviceObj.physicalDeviceObj;
+        }
+        if (this.physicalDeviceObj != null) {
+            this.instanceObj = this.physicalDeviceObj.instanceObj;
+        }
     }
 
     //

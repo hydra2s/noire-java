@@ -26,14 +26,12 @@ public class ImageObj extends BasicObj {
 
     //
     public VkMemoryRequirements2 memoryRequirements2 = null;
+    public MemoryAllocationObj allocationObj = null;
 
     // TODO: create buffer by allocator (such as VMA)
     public ImageObj(Handle base, ImageCInfo cInfo) {
         super(base, cInfo);
 
-        //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
         var extent = cInfo.extent3D;
         var imageType = cInfo.extent3D.depth() > 1 ? VK_IMAGE_TYPE_3D : (cInfo.extent3D.height() > 1 ? VK_IMAGE_TYPE_2D : VK_IMAGE_TYPE_1D);
         var arrayLayers = Math.max(cInfo.arrayLayers, 1);
@@ -90,19 +88,17 @@ public class ImageObj extends BasicObj {
 
             //
             var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
-            var memoryAllocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
-            memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, memoryAllocationObj);
+            allocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
+            memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, allocationObj);
 
             //
-            this.allocationHandle = memoryAllocationObj.getHandle().get();
+            this.allocationHandle = allocationObj.getHandle().get();
         }
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
 
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
@@ -126,8 +122,6 @@ public class ImageObj extends BasicObj {
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj deleteDirectly() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
 
         //
         vkDestroyImage(deviceObj.device, handle.get(), null);

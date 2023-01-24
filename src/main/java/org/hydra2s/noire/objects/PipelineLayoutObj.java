@@ -119,8 +119,8 @@ public class PipelineLayoutObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        
+        
 
         //
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
@@ -215,8 +215,8 @@ public class PipelineLayoutObj extends BasicObj  {
     //
     public PipelineLayoutObj writeDescriptors () {
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        
+        
 
         //
         var RSIZE = (int) Math.max(physicalDeviceObj.deviceDescriptorBufferProperties.storageImageDescriptorSize(), physicalDeviceObj.deviceDescriptorBufferProperties.sampledImageDescriptorSize());

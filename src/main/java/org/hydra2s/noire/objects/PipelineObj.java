@@ -81,7 +81,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+        ;
 
         //
         var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
@@ -105,7 +105,7 @@ public class PipelineObj extends BasicObj  {
     //
     public static void preInitializeFb(long device, long imageSet, ImageSetCInfo.FBLayout fbLayout) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(device).orElse(null);;
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+        ;
         var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", imageSet)).orElse(null);;
 
         //
@@ -136,7 +136,6 @@ public class PipelineObj extends BasicObj  {
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
 
         //
         var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
@@ -268,8 +267,8 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);;
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+            ;
+            ;
 
             //
             this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
@@ -336,8 +335,8 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);;
-            var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);;
+            ;
+            ;
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
 
             //
@@ -516,7 +515,7 @@ public class PipelineObj extends BasicObj  {
     @Override // TODO: multiple queue family support
     public PipelineObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);;
+        ;
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);

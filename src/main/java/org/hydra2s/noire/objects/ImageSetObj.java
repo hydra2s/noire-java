@@ -36,10 +36,6 @@ public class ImageSetObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-
-        //
         this.images = new ArrayList<ImageObj>();
         this.currentImageViews = new ArrayList<ImageViewObj>();
         this.previousImageViews = new ArrayList<ImageViewObj>();
@@ -182,8 +178,7 @@ public class ImageSetObj extends BasicObj  {
 
             //
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
-                var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
-                var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+                
                 var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
 
                 //

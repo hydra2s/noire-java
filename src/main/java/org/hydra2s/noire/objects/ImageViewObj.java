@@ -27,8 +27,8 @@ public class ImageViewObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
+        
+        
         var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image)).orElse(null);
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
@@ -87,7 +87,7 @@ public class ImageViewObj extends BasicObj {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj delete() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         var handle = this.handle;
         var cInfo = (ImageViewCInfo)this.cInfo;
         var self = this;
@@ -116,7 +116,7 @@ public class ImageViewObj extends BasicObj {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj deleteDirectly() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         var handle = this.handle;
         var cInfo = (ImageViewCInfo)this.cInfo;
         var self = this;

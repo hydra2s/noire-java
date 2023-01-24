@@ -22,7 +22,7 @@ public class SemaphoreObj extends BasicObj {
 
     public SemaphoreObj(Handle base, SemaphoreCInfo cInfo) {
         super(base, cInfo);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         vkCreateSemaphore(deviceObj.device, VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, memLongBuffer(memAddress((this.handle = new Handle("Semaphore")).ptr(), 0), 1));
         vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = memAllocPointer(1));
         deviceObj.handleMap.put$(this.handle, this);
@@ -31,7 +31,7 @@ public class SemaphoreObj extends BasicObj {
     @Override // TODO: multiple queue family support
     public SemaphoreObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+        
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);

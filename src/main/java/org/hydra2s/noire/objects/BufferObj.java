@@ -31,6 +31,7 @@ public class BufferObj extends BasicObj {
 
     //
     public VkMemoryRequirements2 memoryRequirements2 = null;
+    public MemoryAllocationObj allocationObj = null;
 
     //
     public BufferObj(Handle base, Handle handle) {
@@ -41,10 +42,7 @@ public class BufferObj extends BasicObj {
     public BufferObj(Handle base, BufferCInfo cInfo) {
         super(base, cInfo);
 
-        //
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-
+        
         //
         this.createInfo = VkBufferCreateInfo.calloc()
             .pNext(VkExternalMemoryBufferCreateInfo.calloc()
@@ -88,11 +86,11 @@ public class BufferObj extends BasicObj {
 
             //
             var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
-            var memoryAllocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
-            memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, memoryAllocationObj);
+            allocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
+            memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, allocationObj);
 
             //
-            this.allocationHandle = memoryAllocationObj.getHandle().get();
+            this.allocationHandle = allocationObj.getHandle().get();
         }
     }
 
@@ -100,25 +98,16 @@ public class BufferObj extends BasicObj {
 
     //
     public ByteBuffer map() {
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
         return allocationObj.map(this.createInfo.size(), 0);
     }
 
     //
     public ByteBuffer map(long byteLength, long byteOffset) {
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
         return allocationObj.map(byteLength, byteOffset);
     }
 
     //
     public void unmap() {
-        var deviceObj = (DeviceObj) BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(deviceObj.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
         allocationObj.unmap();
     }
 
@@ -127,7 +116,7 @@ public class BufferObj extends BasicObj {
     //
     public long getDeviceAddress() {
         if (this.deviceAddress == 0) {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
+            
             this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.calloc().pNext(0L).sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.createInfo.size(), Interval.Bounded.CLOSED));
             deviceObj.rootMap.put$(this.deviceAddress, this.handle.get());
@@ -137,9 +126,6 @@ public class BufferObj extends BasicObj {
 
     //
     public BufferObj flushMapped() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
-
         allocationObj.flushMapped();
 
         return this;
@@ -147,11 +133,7 @@ public class BufferObj extends BasicObj {
 
     //
     public BufferObj invalidateMapped() {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
-
         allocationObj.invalidateMapped();
-
         return this;
     }
 
@@ -159,9 +141,6 @@ public class BufferObj extends BasicObj {
     // necessary after `unmap()` op
     // Resizable BAR!
     public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
-
         CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
         return this;
     }
@@ -179,8 +158,7 @@ public class BufferObj extends BasicObj {
     @Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj delete() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
+
         deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
             queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
@@ -205,8 +183,6 @@ public class BufferObj extends BasicObj {
     @Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj deleteDirectly() {
         var handle = this.handle;
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-        var allocationObj = (MemoryAllocationObj) deviceObj.handleMap.get(new Handle("MemoryAllocation", this.allocationHandle)).orElse(null);
 
         //
         vkDestroyBuffer(deviceObj.device, handle.get(), null);

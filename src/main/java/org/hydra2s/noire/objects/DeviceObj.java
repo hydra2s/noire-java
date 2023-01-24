@@ -55,7 +55,6 @@ public class DeviceObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var physicalDeviceObj = (PhysicalDeviceObj) BasicObj.globalHandleMap.get(base.get()).orElse(null);
         List<String> extbuf = Arrays.asList(
             "VK_KHR_swapchain",
             "VK_KHR_deferred_host_operations",
