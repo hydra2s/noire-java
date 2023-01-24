@@ -112,8 +112,8 @@ public class PipelineObj extends BasicObj  {
         fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
         for (var I=0;I<fbLayout.formats.remaining();I++) {
             fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.currentImageViews.get(I).getImageLayout());
-            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.currentImageViews.get(I).handle.get());
+            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
+            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
             fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
             fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         }
@@ -126,8 +126,8 @@ public class PipelineObj extends BasicObj  {
         //
         if (hasDepthStencil) {
             fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.currentDepthStencilImageView.getHandle().get());
-            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.currentDepthStencilImageView.getImageLayout());
+            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.writingDepthStencilImageView.getHandle().get());
+            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.writingDepthStencilImageView.getImageLayout());
             fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
             fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         };
@@ -230,7 +230,7 @@ public class PipelineObj extends BasicObj  {
             var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
             for (var I=0;I<fbLayout.formats.remaining();I++) {
                 fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-                fbClearC.get(I).aspectMask(framebufferObj.currentImageViews.get(I).subresourceLayers(0).aspectMask());
+                fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
                 fbClearC.get(I).colorAttachment(I);
             }
 
@@ -240,7 +240,7 @@ public class PipelineObj extends BasicObj  {
             if (hasDepthStencil && cmdInfo.clearDepthStencil) {
                 vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
                     .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                    .aspectMask(framebufferObj.currentDepthStencilImageView.subresourceLayers(0).aspectMask())
+                    .aspectMask(framebufferObj.writingDepthStencilImageView.subresourceLayers(0).aspectMask())
                     .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
             }
         }

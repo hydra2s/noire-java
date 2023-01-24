@@ -46,7 +46,7 @@ public class ImageSetObj extends BasicObj  {
             var fI = I;
             var imageCInfo = new ImageCInfo(){{
                 memoryAllocator = cInfo.memoryAllocator;
-                arrayLayers = cInfo.layerCounts.get(fI);//*3;
+                arrayLayers = cInfo.layerCounts.get(fI)*2;//*3;
                 format = cInfo.formats.get(fI);
                 mipLevels = 1;
                 extent3D = cInfo.extents.get(fI);
@@ -73,6 +73,15 @@ public class ImageSetObj extends BasicObj  {
             } }));
 
             //
+            this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
+                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                pipelineLayout = cInfo.pipelineLayout;
+                image = images.get(fI).handle.get();
+                type = "storage";
+                subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*1).layerCount(cInfo.layerCounts.get(fI));
+            } }));
+
+            //
             /*
             this.previousImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
                 imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -82,13 +91,7 @@ public class ImageSetObj extends BasicObj  {
                 subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*1).layerCount(cInfo.layerCounts.get(fI));
             } }));
 
-            this.writingImageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){ {
-                imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                pipelineLayout = cInfo.pipelineLayout;
-                image = images.get(fI).handle.get();
-                type = "storage";
-                subresourceRange = VkImageSubresourceRange.calloc().aspectMask(VK_IMAGE_ASPECT_COLOR_BIT).baseMipLevel(0).levelCount(1).baseArrayLayer(cInfo.layerCounts.get(fI)*2).layerCount(cInfo.layerCounts.get(fI));
-            } }));
+
             */
         }
 
@@ -164,6 +167,7 @@ public class ImageSetObj extends BasicObj  {
     public static class FramebufferObj extends ImageSetObj  {
         public ImageObj depthStencilImage = null;
         public ImageViewObj currentDepthStencilImageView = null;
+        public ImageViewObj writingDepthStencilImageView = null;
         public ImageViewObj previousDepthStencilImageView = null;
 
         //
@@ -184,7 +188,7 @@ public class ImageSetObj extends BasicObj  {
                 //
                 var imageCInfo = new ImageCInfo() {{
                     memoryAllocator = cInfo.memoryAllocator;
-                    arrayLayers = layerCount; //* 2;
+                    arrayLayers = layerCount * 2;
                     format = cInfo.depthStencilFormat;
                     mipLevels = 1;
                     extent3D = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
@@ -211,6 +215,21 @@ public class ImageSetObj extends BasicObj  {
                             .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
                             .levelCount(1)
                             .baseArrayLayer(layerCount * 0)
+                            .layerCount(layerCount);
+                    }
+                });
+
+                //
+                this.writingDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
+                    {
+                        imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        pipelineLayout = cInfo.pipelineLayout;
+                        image = depthStencilImage.handle.get();
+                        type = "sampled";
+                        subresourceRange = VkImageSubresourceRange.calloc()
+                            .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
+                            .levelCount(1)
+                            .baseArrayLayer(layerCount * 1)
                             .layerCount(layerCount);
                     }
                 });
