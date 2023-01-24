@@ -132,7 +132,9 @@ abstract public class CopyUtilObj {
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(srcImageLayout);
 
         // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
@@ -142,7 +144,9 @@ abstract public class CopyUtilObj {
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(dstImageLayout);
 
         //
         var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(regions.remaining()*2);
@@ -151,7 +155,7 @@ abstract public class CopyUtilObj {
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate);
             imageMemoryBarrier.get(I*2+0)
-                .image(dstImage).oldLayout(dstImageLayout).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+                .image(dstImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).dstSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).dstSubresource().mipLevel())
@@ -160,7 +164,7 @@ abstract public class CopyUtilObj {
             );
             imageMemoryBarrier.put(I*2+1, readMemoryBarrierTemplate);
             imageMemoryBarrier.get(I*2+1)
-                .image(srcImage).oldLayout(srcImageLayout).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+                .image(srcImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).srcSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).srcSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).srcSubresource().mipLevel())
@@ -169,8 +173,8 @@ abstract public class CopyUtilObj {
             );
         });
 
-        //
-        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage).dstImageLayout(dstImageLayout).srcImage(srcImage).srcImageLayout(srcImageLayout).pRegions(regions));
+        // TODO: correct image layout, and dual side image barrier
+        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage).dstImageLayout(dstImageLayout).srcImageLayout(srcImageLayout).srcImage(srcImage).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
@@ -187,7 +191,9 @@ abstract public class CopyUtilObj {
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(imageLayout);
 
         // TODO: reuse same barrier info (i.e. template)
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
@@ -207,7 +213,7 @@ abstract public class CopyUtilObj {
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I, readMemoryBarrierTemplate);
             imageMemoryBarrier.get(I)
-                .image(srcImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+                .image(srcImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
@@ -218,8 +224,8 @@ abstract public class CopyUtilObj {
             bufferMemoryBarrier.get(I).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(dstBuffer);
         });
 
-        //
-        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImage(srcImage).srcImageLayout(imageLayout).dstBuffer(dstBuffer).pRegions(regions));
+        // TODO: correct image layout, and dual side image barrier
+        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(imageLayout).srcImage(srcImage).dstBuffer(dstBuffer).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
@@ -246,7 +252,9 @@ abstract public class CopyUtilObj {
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(imageLayout);
 
         //
         var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(regions.remaining());
@@ -256,7 +264,7 @@ abstract public class CopyUtilObj {
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             imageMemoryBarrier.put(I, writeMemoryBarrierTemplate);
             imageMemoryBarrier.get(I)
-                .image(dstImage).oldLayout(imageLayout).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
+                .image(dstImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
                 .aspectMask(regions.get(I).imageSubresource().aspectMask())
                 .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
                 .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
@@ -264,12 +272,11 @@ abstract public class CopyUtilObj {
                 .levelCount(1)
             );
             bufferMemoryBarrier.put(I, readMemoryBarrierTemplate);
-            bufferMemoryBarrier.get(I)
-                .offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(srcBuffer);
+            bufferMemoryBarrier.get(I).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(srcBuffer);
         });
 
-        //
-        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).srcBuffer(srcBuffer).dstImage(dstImage).dstImageLayout(imageLayout).pRegions(regions));
+        // TODO: correct image layout, and dual side image barrier
+        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(imageLayout).srcBuffer(srcBuffer).dstImage(dstImage).pRegions(regions));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
 
         //
@@ -302,11 +309,9 @@ abstract public class CopyUtilObj {
         var memoryBarriers = VkBufferMemoryBarrier2.calloc(regions.remaining()*2);
         IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
             memoryBarriers.put(I*2+0, readMemoryBarrierTemplate);
-            memoryBarriers.get(I*2+0)
-                .offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
+            memoryBarriers.get(I*2+0).offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
             memoryBarriers.put(I*2+1, writeMemoryBarrierTemplate);
-            memoryBarriers.get(I*2+1)
-                .offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
+            memoryBarriers.get(I*2+1).offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
         });
 
         //
@@ -345,7 +350,7 @@ abstract public class CopyUtilObj {
             .dstAccessMask(dstAccessMask)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(oldLayout)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
             .newLayout(newLayout)
             .subresourceRange(subresourceRange)
             .image(image);
