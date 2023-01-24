@@ -24,14 +24,10 @@ public class SamplerObj extends BasicObj  {
         super(base, cInfo);
 
         //
-        
-        
-
-        //
         this.createInfo = cInfo.createInfo;
         vkCreateSampler(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Sampler")).ptr(), 0), 1));
 
-        //
+        // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.samplers.push(memAllocLong(1).put(0, this.handle.get()));

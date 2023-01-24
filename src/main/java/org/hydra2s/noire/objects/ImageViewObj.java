@@ -27,8 +27,6 @@ public class ImageViewObj extends BasicObj {
         super(base, cInfo);
 
         //
-        
-        
         var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image)).orElse(null);
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
@@ -43,12 +41,24 @@ public class ImageViewObj extends BasicObj {
         vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, memLongBuffer(memAddress((this.handle = new Handle("ImageView")).ptr(), 0), 1));
         deviceObj.handleMap.put$(this.handle, this);
 
-        //
+        // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.calloc().imageView(this.handle.get()).imageLayout(cInfo.imageLayout));
             descriptorsObj.writeDescriptors();
         }
+    }
+
+    // TODO: will critically needed in future usage!
+    public ImageViewCInfo.CriticalDump getCriticalDump() {
+        var $DSC_ID = DSC_ID;
+        return new ImageViewCInfo.CriticalDump() {{
+            DSC_ID = $DSC_ID;
+            image = createInfo.image();
+            subresource = subresourceRange();
+            imageLayout = getImageLayout();
+            imageView = handle.get();
+        }};
     }
 
     //

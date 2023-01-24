@@ -34,7 +34,7 @@ import static org.lwjgl.vulkan.VK13.*;
 public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
     // TODO: make as an OBJ
-    public static class VirtualMemoryHeap {
+    public static class VirtualMemoryHeap extends VirtualGLObj {
         public VirtualMutableBufferHeap bound = null;
         public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
         public VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
@@ -42,6 +42,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
+            super(base, cInfo);
+
             // TODO: add support for ResizableBAR! It's necessary!
             this.bufferHeap = new BufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
@@ -85,11 +87,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     // But before needs to create such system
     public VirtualMutableBufferHeap(Handle base, VirtualMutableBufferHeapCInfo cInfo) {
         super(base, cInfo);
-
-        //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
         //
         this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(memAllocLong(1)));
@@ -169,10 +166,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
-
-            //
             this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
             this.allocId = memAllocPointer(1).put(0, 0L);
             this.bufferOffset = memAllocLong(1).put(0, 0L);
@@ -225,7 +218,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
             //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             if (this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
                 // TODO: copy from old segment
@@ -325,7 +317,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
-                var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
                 deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
                     // TODO: correctly handle main queue family
                     whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
