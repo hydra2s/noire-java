@@ -40,11 +40,6 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        var memoryAllocatorObj = (MemoryAllocatorObj)BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(memoryAllocatorObj.getBase().get()).orElse(null);
-        var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
-
-        //
         this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(memAllocLong(1)));
         deviceObj.handleMap.put$(this.handle, this);
 
@@ -110,10 +105,6 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }
         public VirtualVertexArrayObj(Handle base, VirtualVertexArrayHeapCInfo.VirtualVertexArrayCInfo cInfo) {
             super(base, cInfo);
-
-            //
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(base.get()).orElse(null);
-            var physicalDeviceObj = (PhysicalDeviceObj)BasicObj.globalHandleMap.get(deviceObj.getBase().get()).orElse(null);
 
             //
             var virtualVertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.registryHandle)).orElse(null);
