@@ -122,6 +122,7 @@ public class InstanceObj extends BasicObj {
                 .sType(VK10.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
                 .pApplicationInfo(this.appInfo.get(0))
                 .ppEnabledExtensionNames(this.extensions)
+                // validator is BROKEN!
                 //.ppEnabledLayerNames(this.layers)
                 .get();
         VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr());

@@ -207,7 +207,7 @@ public class ImageSetObj extends BasicObj  {
                 //
                 this.currentDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
                     {
-                        imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                         pipelineLayout = cInfo.pipelineLayout;
                         image = depthStencilImage.handle.get();
                         type = "sampled";
@@ -222,10 +222,10 @@ public class ImageSetObj extends BasicObj  {
                 //
                 this.writingDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
                     {
-                        imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                         pipelineLayout = cInfo.pipelineLayout;
                         image = depthStencilImage.handle.get();
-                        type = "sampled";
+                        type = "storage";
                         subresourceRange = VkImageSubresourceRange.calloc()
                             .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
                             .levelCount(1)
