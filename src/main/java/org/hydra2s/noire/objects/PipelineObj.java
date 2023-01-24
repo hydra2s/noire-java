@@ -137,8 +137,8 @@ public class PipelineObj extends BasicObj  {
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
 
-        //
-        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
+        // TODO: unboard uniform buffer
+        var pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
         var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout)).orElse(null);;
         var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
