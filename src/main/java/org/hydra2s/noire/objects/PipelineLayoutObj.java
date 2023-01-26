@@ -30,6 +30,7 @@ public class PipelineLayoutObj extends BasicObj  {
     protected VkPushConstantRange.Buffer pConstRange = null;
 
     // TODO: make group by type
+
     protected VkDescriptorSetLayoutBindingFlagsCreateInfoEXT resourceDescriptorSetLayoutCreateInfoBindingFlags = null;
     protected VkDescriptorSetLayoutBindingFlagsCreateInfoEXT samplerDescriptorSetLayoutCreateInfoBindingFlags = null;
     protected VkDescriptorSetLayoutBindingFlagsCreateInfoEXT uniformDescriptorSetLayoutCreateInfoBindingFlags = null;

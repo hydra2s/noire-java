@@ -13,6 +13,7 @@ import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DE
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+import static org.lwjgl.vulkan.EXTFragmentShaderInterlock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_2D_VIEW_OF_3D_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INDEX_TYPE_UINT8_FEATURES_EXT;
@@ -46,6 +47,7 @@ import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3
 public class PhysicalDeviceObj extends BasicObj {
 
     //
+    public VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT deviceFragmentInterlockingFeatures = null;
     public VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR deviceGlobalPriorityFeatures = null;
     public VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT devicePageableMemoryFeatures = null;
     public VkPhysicalDeviceMemoryPriorityFeaturesEXT deviceMemoryPriorityFeatures = null;
@@ -96,12 +98,12 @@ public class PhysicalDeviceObj extends BasicObj {
         super(base, handle);
 
         //
-        
         this.physicalDevice = new VkPhysicalDevice(handle.get(), instanceObj.instance);
         BasicObj.globalHandleMap.put$(handle.get(), this);
 
         // TODO: unify into one object
-        this.deviceGlobalPriorityFeatures = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR);
+        this.deviceFragmentInterlockingFeatures = VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT);
+        this.deviceGlobalPriorityFeatures = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR).pNext(this.deviceFragmentInterlockingFeatures.address());
         this.devicePageableMemoryFeatures = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT).pNext(this.deviceGlobalPriorityFeatures.address());
         this.deviceMemoryPriorityFeatures = VkPhysicalDeviceMemoryPriorityFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT).pNext(this.devicePageableMemoryFeatures.address());
         this.deviceGraphicsPipelineLibraryFeatures = VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT).pNext(this.deviceMemoryPriorityFeatures.address());

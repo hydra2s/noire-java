@@ -186,7 +186,7 @@ public class ImageSetObj extends BasicObj  {
                 var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
 
                 //
-                var imageCInfo = new ImageCInfo() {{
+                this.depthStencilImage = new ImageObj(this.base, new ImageCInfo() {{
                     memoryAllocator = cInfo.memoryAllocator;
                     arrayLayers = layerCount * 2;
                     format = cInfo.depthStencilFormat;
@@ -199,10 +199,7 @@ public class ImageSetObj extends BasicObj  {
                         isHost = false;
                         isDevice = true;
                     }};
-                }};
-
-                //
-                this.depthStencilImage = new ImageObj(this.base, imageCInfo);
+                }});
 
                 //
                 this.currentDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
@@ -277,6 +274,24 @@ public class ImageSetObj extends BasicObj  {
         @Override
         public ImageSetObj cmdSwapstage(VkCommandBuffer cmdBuf) {
             super.cmdSwapstage(cmdBuf);
+
+            //
+            var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
+            if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
+                var extent = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
+                CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
+                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                        device = base.get();
+                        imageView = writingDepthStencilImageView.handle.get();
+                    }},
+                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                        device = base.get();
+                        imageView = currentDepthStencilImageView.handle.get();
+                    }},
+                    extent
+                );
+            }
+
             return this;
         }
 
