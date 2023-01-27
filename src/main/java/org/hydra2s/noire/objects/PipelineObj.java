@@ -50,6 +50,15 @@ public class PipelineObj extends BasicObj  {
     public BufferObj uniformDescriptorBuffer = null;
 
     //
+    public static class DirectAccessInfo {
+        public DeviceObj deviceObj;
+        public PipelineObj pipelineObj;
+        public PipelineLayoutObj pipelineLayoutObj;
+        public ImageSetObj.FramebufferObj framebufferObj;
+        public long pipelineLayout = 0L;
+    };
+
+    //
     public static class ComputeDispatchInfo {
         public long device = 0L;
         public long pipelineLayout = 0L;
@@ -75,37 +84,43 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static void cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo) {
+        var $deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
+        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
+        var $pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)$pipelineObj.cInfo).pipelineLayout;
+        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
+
+        cmdDispatch(cmdBuf, cmdInfo, new DirectAccessInfo(){{
+            deviceObj = $deviceObj;
+            pipelineObj = $pipelineObj;
+            pipelineLayoutObj = $pipelineLayoutObj;
+            pipelineLayout = $pipelineLayout;
+        }});
+    };
+
+    //
+    public static void cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo, DirectAccessInfo directInfo) {
         if (cmdInfo.pushConstRaw != null) {
             vkCmdPushConstants(cmdBuf, cmdInfo.pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
         }
 
         //
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);
-        ;
-
-        //
-        var pipelineObj = (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null);;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout)).orElse(null);;
-
-        //
-        if (pipelineLayoutObj != null) {
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
+        if (directInfo.pipelineLayoutObj != null) {
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, directInfo.pipelineObj.uniformDescriptorBuffer != null ? directInfo.pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
         }
 
         //
         vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, cmdInfo.pipeline);
         vkCmdDispatch(cmdBuf, cmdInfo.dispatch.width(), cmdInfo.dispatch.height(), cmdInfo.dispatch.depth());
-        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
             .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));*/
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
     }
 
     //
     public static void preInitializeFb(long device, long imageSet, ImageSetCInfo.FBLayout fbLayout) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(device).orElse(null);;
-        ;
         var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", imageSet)).orElse(null);;
 
         //
@@ -135,16 +150,25 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
-
-        // TODO: unboard uniform buffer
-        var pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
-        var pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)pipelineObj.cInfo).pipelineLayout;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", pipelineLayout)).orElse(null);;
-        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
+        var $deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
+        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
+        var $pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)$pipelineObj.cInfo).pipelineLayout;
+        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
+        var $framebufferObj = (ImageSetObj.FramebufferObj)$deviceObj.handleMap.get(new Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
 
         //
-        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)pipelineObj.cInfo).fbLayout;
+        cmdDraw(cmdBuf, cmdInfo, new DirectAccessInfo(){{
+            deviceObj = $deviceObj;
+            pipelineObj = $pipelineObj;
+            pipelineLayoutObj = $pipelineLayoutObj;
+            framebufferObj = $framebufferObj;
+            pipelineLayout = $pipelineLayout;
+        }});
+    }
+
+    //
+    public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo, DirectAccessInfo directInfo) {
+        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)directInfo.pipelineObj.cInfo).fbLayout;
         int layerCount = Collections.min(fbLayout.layerCounts);
 
         //
@@ -164,13 +188,13 @@ public class PipelineObj extends BasicObj  {
         );
 
         //
-        if (cmdInfo.pushConstRaw != null && pipelineLayout != 0) {
-            vkCmdPushConstants(cmdBuf, pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
+        if (cmdInfo.pushConstRaw != null && directInfo.pipelineLayout != 0) {
+            vkCmdPushConstants(cmdBuf, directInfo.pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
         }
 
         //
-        if (pipelineLayoutObj != null && pipelineObj != null) {
-            pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineObj != null && pipelineObj.uniformDescriptorBuffer != null ? pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
+        if (directInfo.pipelineLayoutObj != null && directInfo.pipelineObj != null) {
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorBuffer != null ? directInfo.pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
         }
 
         //
@@ -230,7 +254,7 @@ public class PipelineObj extends BasicObj  {
             var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
             for (var I=0;I<fbLayout.formats.remaining();I++) {
                 fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-                fbClearC.get(I).aspectMask(framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
+                fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
                 fbClearC.get(I).colorAttachment(I);
             }
 
@@ -240,18 +264,18 @@ public class PipelineObj extends BasicObj  {
             if (hasDepthStencil && cmdInfo.clearDepthStencil) {
                 vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
                     .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                    .aspectMask(framebufferObj.writingDepthStencilImageView.subresourceLayers(0).aspectMask())
+                    .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).aspectMask())
                     .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
             }
         }
-        vkCmdEndRendering(cmdBuf);
 
-        // after draw needs to barrier
-        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+        //
+        vkCmdEndRendering(cmdBuf);
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1).sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT)
             .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));*/
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
     }
 
     //
@@ -265,10 +289,6 @@ public class PipelineObj extends BasicObj  {
         //
         public ComputePipelineObj(Handle base, PipelineCInfo.ComputePipelineCInfo cInfo) {
             super(base, cInfo);
-
-            //
-            ;
-            ;
 
             //
             this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
