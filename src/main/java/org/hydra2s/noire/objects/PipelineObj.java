@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 //
@@ -168,6 +169,10 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo, DirectAccessInfo directInfo) {
+        // corrupted
+        if (cmdInfo.multiDraw != null && cmdInfo.multiDraw.remaining() <= 0) { return; };
+
+        //
         var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)directInfo.pipelineObj.cInfo).fbLayout;
         int layerCount = Collections.min(fbLayout.layerCounts);
 

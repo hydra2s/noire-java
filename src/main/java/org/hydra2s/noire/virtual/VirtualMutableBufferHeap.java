@@ -218,21 +218,25 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
             //
-            if (this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
+            if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
                 // TODO: copy from old segment
                 var oldAlloc = this.allocId.get(0);
                 var srcBufferRange = this.getBufferRange();
 
                 //
+                boolean earlyMapped = this.mapped != null;
+                this.mapped = null;
                 this.bufferOffset.put(0, 0L);
+                this.allocId.put(0, 0L);
 
                 //
                 long finalBufferSize = bufferSize;
                 Callable<Integer> memAlloc = ()->{
-                    //synchronized(this) {
-                        return vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = finalBufferSize), this.allocId.put(0, 0L), this.bufferOffset);
-                    //}
+                    if (this.allocId.get(0) == 0L) {
+                        return vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = finalBufferSize), this.allocId, this.bufferOffset);
+                    }
+                    return VK_SUCCESS;
                 };
 
                 // initiate free procedure
@@ -281,32 +285,31 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     });
                 }
 
-
-
                 // wait when virtual memory will free...
                 // WARNING! Your game may LAG! But it's needs for await memory chunk to free.
                 // i.e. it's manual, artificial stutter (also, known as micro-freeze).
-                var res = memAlloc.call();
-                do {
-                    if (res == VK_SUCCESS) { break; };
-                    if (res != VK_SUCCESS && res != -2) {
-                        System.out.println("Allocation Failed: " + res);
-                        throw new Exception("Allocation Failed: " + res);
-                    };
-                } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling());
+                if (bufferSize != 0L) {
+                    var res = memAlloc.call();
+                    do {
+                        if (res == VK_SUCCESS) { break; }
+                        if (res != VK_SUCCESS && res != -2) {
+                            System.out.println("Allocation Failed: " + res);
+                            throw new Exception("Allocation Failed: " + res);
+                        }
+                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling());
 
-                // if anyways, isn't allocated...
-                if (res != VK_SUCCESS) {
-                    System.out.println("Allocation Failed, there is not free memory: " + res);
-                    throw new Exception("Allocation Failed, there is not free memory: " + res);
-                };
+                    // if anyways, isn't allocated...
+                    if (res != VK_SUCCESS) {
+                        System.out.println("Allocation Failed, there is not free memory: " + res);
+                        throw new Exception("Allocation Failed, there is not free memory: " + res);
+                    }
 
-                // get device address from
-                this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
-                if (this.mapped != null) {
-                    this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
+                    // get device address from
+                    this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
+                    if (earlyMapped) {
+                        this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
+                    }
                 }
-
 
             }
             return this;
