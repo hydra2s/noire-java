@@ -154,11 +154,20 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             IntStream.range(0, bindings.size()).forEach((I)->{
                 var index = keySet.get(I);
                 var binding = bindings.get(index);
-                if (binding != null) {
+                if (binding != null && binding.format != 0) {
                     binding.bufferAddress = bufferAddress;
                     binding.bufferSize = bufferSize;
                 }
             });
+            return this;
+        }
+
+        // oh my jesus...
+        public VirtualVertexArrayObj clear() {
+            this.bindings.clear();
+            for (int i=0;i<8;i++) {
+                this.bindings.put(i, new VirtualVertexArrayHeapCInfo.VertexBinding());
+            }
             return this;
         }
 
