@@ -254,7 +254,15 @@ public class DeviceObj extends BasicObj {
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fence_);
         var ref = new FenceProcess() {{
             fence = fence_;
-            deallocProcess = null;
+            deallocProcess = (result)->{
+                var fence = fence_.get(0);
+                int status = fence != 0 ? vkGetFenceStatus(device, fence) : VK_SUCCESS;
+                if (status != VK_NOT_READY && fence != 0) {
+                    whenDone.remove(deallocProcess);
+                    vkDestroyFence(device, fence_.get(0), null);
+                }
+                return status;
+            };
             promise = new Promise();
         }};
         ref.promise.fulfill(VK_SUCCESS);
@@ -348,28 +356,23 @@ public class DeviceObj extends BasicObj {
             var fence = fence_.get(0);
             int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
             if (status != VK_NOT_READY && fence != 0) {
-
+                //
+                toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
+                    try {
+                        semaphoreObj.deleteDirectly();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
 
                 //
-                synchronized (this) {
-                    //
-                    toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
-                        try {
-                            semaphoreObj.deleteDirectly();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                this.whenDone.remove(ref.deallocProcess);
+                queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy) - 1);
+                cmd.onDone.fulfill(status);
 
-                    //
-                    this.whenDone.remove(ref.deallocProcess);
-                    queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy) - 1);
-                    cmd.onDone.fulfill(status);
-
-                    //
-                    vkDestroyFence(this.device, fence, null);
-                    fence_.put(0, 0);
-                }
+                //
+                vkDestroyFence(this.device, fence, null);
+                fence_.put(0, 0);
             }
             return status;
             //return VK_SUCCESS;
