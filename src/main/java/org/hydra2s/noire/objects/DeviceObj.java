@@ -206,7 +206,9 @@ public class DeviceObj extends BasicObj {
         return this;
     }
 
-    //
+    // TODO: replace by queue group instead of queue family
+    // TODO: add queue indices support
+    // TODO: add timeline semaphore support
     public static class QueueFamily {
         public int index = 0;
         public LongBuffer cmdPool = memAllocLong(1).put(0, 0);
@@ -219,7 +221,7 @@ public class DeviceObj extends BasicObj {
         public ArrayList<VkCommandBuffer> cmdBufCache = null;
         public PointerBuffer cmdBufBuffer = null;
         public int cmdBufIndex = 0;
-    }
+    };
 
     public DeviceObj present(int queueFamilyIndex, long SwapChain, long waitSemaphore, IntBuffer imageIndex) {
         vkQueuePresentKHR(this.getQueue(queueFamilyIndex, 0), VkPresentInfoKHR.calloc()
