@@ -32,9 +32,8 @@ public class SemaphoreObj extends BasicObj {
     public SemaphoreObj delete() {
         var handle = this.handle;
         
-        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
-            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroySemaphore(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.remove(handle);

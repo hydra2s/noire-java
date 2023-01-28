@@ -244,14 +244,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 // initiate free procedure
                 if (oldAlloc != 0) {
-                    deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd() {{
+                    deviceObj.submitOnce(new BasicCInfo.SubmitCmd() {{
                         // TODO: correctly handle main queue family
                         whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
                         whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
                         //
                         queueFamilyIndex = cInfo.queueFamilyIndex;
-                        queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                         onDone = new Promise<>().thenApply((result) -> {
                             if (bound != null && oldAlloc != 0) {
                                 vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
@@ -323,14 +322,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
-                deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+                deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
                     // TODO: correctly handle main queue family
                     whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
                     whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
                     //
                     queueFamilyIndex = cInfo.queueFamilyIndex;
-                    queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
                     onDone = new Promise<>().thenApply((result)-> {
                         if (bound != null && oldAlloc != 0) {
                             vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);

@@ -100,9 +100,8 @@ public class ImageObj extends BasicObj {
     public ImageObj delete() {
         var handle = this.handle;
 
-        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
-            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyImage(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.put$(handle, null);

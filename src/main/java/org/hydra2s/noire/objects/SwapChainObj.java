@@ -22,6 +22,7 @@ import static org.lwjgl.vulkan.VK10.*;
 public class SwapChainObj extends BasicObj  {
     public LongBuffer images = null;
     public IntBuffer amountOfImagesInSwapchain = memAllocInt(1);
+
     //
     public ArrayList<Integer> presentModes = new ArrayList<>(Arrays.asList(VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_KHR));
     public ArrayList<Integer> surfaceFormats = new ArrayList<>(Arrays.asList(VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_FORMAT_B8G8R8A8_UNORM));
@@ -208,18 +209,14 @@ public class SwapChainObj extends BasicObj  {
 
     // TODO: more than one semaphore support
     public int acquireImageIndex(long semaphore) {
-        
+
         vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.getHandle().get(), 0L, this.imageIndex);
         return this.imageIndex.get(0);
     }
 
     // TODO: more than one semaphore support
-    public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
-        vkQueuePresentKHR(queue, VkPresentInfoKHR.calloc()
-            .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-            .pWaitSemaphores(semaphore != null ? semaphore : memAllocLong(1).put(0, this.semaphoreRenderingAvailable.getHandle().get()))
-            .pSwapchains(memAllocLong(1).put(0, this.handle.get())).swapchainCount(1)
-            .pImageIndices(this.imageIndex));
+    public SwapChainObj present(int queueFamilyIndex, LongBuffer semaphore) {
+        this.deviceObj.present(queueFamilyIndex, this.handle.get(), semaphore != null ? semaphore.get(0) : this.semaphoreRenderingAvailable.getHandle().get(), this.imageIndex);
         return this;
     }
 
@@ -236,8 +233,7 @@ public class SwapChainObj extends BasicObj  {
 
         // Here, probably, should to be image barrier operation
         @Override
-        public SwapChainObj present(VkQueue queue, LongBuffer semaphore) {
-            
+        public SwapChainObj present(int queueFamilyIndex, LongBuffer semaphore) {
             return this;
         }
 
@@ -256,10 +252,8 @@ public class SwapChainObj extends BasicObj  {
         }
 
         //
-        
-        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
-            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)-> {
                 vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.put$(handle, null);

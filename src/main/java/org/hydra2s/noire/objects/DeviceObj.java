@@ -21,6 +21,8 @@ import java.util.function.Function;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTGlobalPriority.*;
 import static org.lwjgl.vulkan.KHRGlobalPriority.VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR;
+import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -179,6 +181,7 @@ public class DeviceObj extends BasicObj {
             var qfi = this.queueFamilyIndices.get(Q);
             VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).orElse(null).cmdPool);
         }
+
     }
 
     //
@@ -195,6 +198,15 @@ public class DeviceObj extends BasicObj {
     }
 
     //
+    public DeviceObj freeCommands(int queueFamilyIndex, ArrayList<VkCommandBuffer> commandBuffers) {
+        var commandPool = this.getCommandPool(queueFamilyIndex);
+        commandBuffers.forEach((cmdBuf)->{
+            vkFreeCommandBuffers(device, commandPool, cmdBuf);
+        });
+        return this;
+    }
+
+    //
     public static class QueueFamily {
         public int index = 0;
         public LongBuffer cmdPool = memAllocLong(1).put(0, 0);
@@ -202,17 +214,31 @@ public class DeviceObj extends BasicObj {
         public ArrayList<SemaphoreObj> waitSemaphores = null;
         public ArrayList<Integer> waitStageMask = null;
         public ArrayList<Integer> queueBusy = null;
+
+        //
+        public ArrayList<VkCommandBuffer> cmdBufCache = null;
+        public PointerBuffer cmdBufBuffer = null;
+        public int cmdBufIndex = 0;
+    }
+
+    public DeviceObj present(int queueFamilyIndex, long SwapChain, long waitSemaphore, IntBuffer imageIndex) {
+        vkQueuePresentKHR(this.getQueue(queueFamilyIndex, 0), VkPresentInfoKHR.calloc()
+            .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
+            .pWaitSemaphores(waitSemaphore != 0 ? memAllocLong(1).put(0, waitSemaphore) : null)
+            .pSwapchains(memAllocLong(1).put(0, SwapChain)).swapchainCount(1)
+            .pImageIndices(imageIndex));
+        return this;
     }
 
     // TODO: pre-compute queues in families
-    public VkQueue getQueue(int queueFamilyIndex, int queueIndex) {
+    private VkQueue getQueue(int queueFamilyIndex, int queueIndex) {
         var queue = PointerBuffer.allocateDirect(1);
         VK10.vkGetDeviceQueue(this.device, queueFamilyIndex, queueIndex, queue);
         return new VkQueue(queue.get(0), this.device);
     }
 
     //
-    public long getCommandPool(int queueFamilyIndex) {
+    private long getCommandPool(int queueFamilyIndex) {
         return this.queueFamilies.get(queueFamilyIndex).orElse(null).cmdPool.get(0);
     }
 
@@ -395,20 +421,34 @@ public class DeviceObj extends BasicObj {
     }
 
     // TODO: support multiple commands
-    public VkCommandBuffer allocateCommand(long commandPool) {
-        PointerBuffer commands = memAllocPointer(1);
-        vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()
-            .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
-            .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-            .commandPool(commandPool)
-            .commandBufferCount(1), commands);
-        return new VkCommandBuffer(commands.get(0), this.device);
+    public VkCommandBuffer allocateCommand(int queueFamilyIndex) {
+        var maxCommandBufferCache = 8;
+        var queueFamily = this.queueFamilies.get(queueFamilyIndex).get();
+        if (queueFamily.cmdBufCache == null || queueFamily.cmdBufIndex >= queueFamily.cmdBufCache.size()) {
+            var commandPool = this.getCommandPool(queueFamilyIndex);
+            if (queueFamily.cmdBufCache == null) {
+                queueFamily.cmdBufBuffer = memAllocPointer(maxCommandBufferCache);
+                queueFamily.cmdBufCache = new ArrayList<>(maxCommandBufferCache);
+            }
+            vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()
+                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
+                .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+                .commandPool(commandPool)
+                .commandBufferCount(maxCommandBufferCache), queueFamily.cmdBufBuffer);
+            queueFamily.cmdBufCache.clear();
+            for (var I=0;I<maxCommandBufferCache;I++) {
+                queueFamily.cmdBufCache.add(new VkCommandBuffer(queueFamily.cmdBufBuffer.get(I), device));
+            }
+            queueFamily.cmdBufIndex = 0;
+        }
+        return queueFamily.cmdBufCache.get(queueFamily.cmdBufIndex++);
     }
 
     //
-    public FenceProcess submitOnce(long commandPool, BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
+    public FenceProcess submitOnce(BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         //
-        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(commandPool), VkCommandBufferBeginInfo.calloc()
+        var commandPool = this.getCommandPool(submitCmd.queueFamilyIndex);
+        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueFamilyIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
         fn.apply(submitCmd.cmdBuf);

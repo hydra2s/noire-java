@@ -159,9 +159,8 @@ public class BufferObj extends BasicObj {
     public BufferObj delete() {
         var handle = this.handle;
 
-        deviceObj.submitOnce(deviceObj.getCommandPool(cInfo.queueFamilyIndex), new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueFamilyIndex = cInfo.queueFamilyIndex;
-            queue = deviceObj.getQueue(cInfo.queueFamilyIndex, 0);
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyBuffer(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.remove(handle);
