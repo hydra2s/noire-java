@@ -220,8 +220,8 @@ public class PipelineLayoutObj extends BasicObj  {
         
 
         //
-        var RSIZE = (int) Math.max(physicalDeviceObj.deviceDescriptorBufferProperties.storageImageDescriptorSize(), physicalDeviceObj.deviceDescriptorBufferProperties.sampledImageDescriptorSize());
-        var SSIZE = (int) physicalDeviceObj.deviceDescriptorBufferProperties.samplerDescriptorSize();
+        var RSIZE = (int) Math.max(physicalDeviceObj.properties.descriptorBuffer.storageImageDescriptorSize(), physicalDeviceObj.properties.descriptorBuffer.sampledImageDescriptorSize());
+        var SSIZE = (int) physicalDeviceObj.properties.descriptorBuffer.samplerDescriptorSize();
 
         //
         ByteBuffer SMAP = this. samplerDescriptorBuffer.map(sizes.get(1), 0);

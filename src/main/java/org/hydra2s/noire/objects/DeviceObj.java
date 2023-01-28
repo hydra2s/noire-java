@@ -163,7 +163,7 @@ public class DeviceObj extends BasicObj {
 
         // TODO: Handle VkResult!!
         var result = VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.calloc()
-                .pNext(physicalDeviceObj.deviceFeatures.address())
+                .pNext(physicalDeviceObj.features.features.address())
                 .sType(VK10.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO)
                 .pQueueCreateInfos(this.queueFamiliesCInfo)
                 .ppEnabledExtensionNames(this.extensions)
