@@ -42,7 +42,8 @@ public class ImageSetObj extends BasicObj  {
         this.writingImageViews = new ArrayList<ImageViewObj>();
 
         //
-        for (var I=0;I<cInfo.formats.remaining();I++) {
+        var Rs = cInfo.formats.remaining();
+        for (var I=0;I<Rs;I++) {
             var fI = I;
             var imageCInfo = new ImageCInfo(){{
                 memoryAllocator = cInfo.memoryAllocator;
@@ -134,7 +135,8 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdSwapstage(VkCommandBuffer cmdBuf) {
-        for (var I=0;I<images.size();I++) {
+        var Is = images.size();
+        for (var I=0;I<Is;I++) {
             this.cmdSwapstageId(cmdBuf, I);
         }
         return this;
@@ -142,7 +144,8 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdBackstage(VkCommandBuffer cmdBuf) {
-        for (var I=0;I<images.size();I++) {
+        var Is = images.size();
+        for (var I=0;I<Is;I++) {
             this.cmdBackstageId(cmdBuf, I);
         }
         return this;

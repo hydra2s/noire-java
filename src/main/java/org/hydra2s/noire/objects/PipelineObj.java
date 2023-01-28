@@ -126,7 +126,8 @@ public class PipelineObj extends BasicObj  {
 
         //
         fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
-        for (var I=0;I<fbLayout.formats.remaining();I++) {
+        var Fs = fbLayout.formats.remaining();
+        for (var I=0;I<Fs;I++) {
             fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
             fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
             fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
@@ -257,7 +258,8 @@ public class PipelineObj extends BasicObj  {
             }
         } else {
             var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
-            for (var I=0;I<fbLayout.formats.remaining();I++) {
+            var Fs = fbLayout.formats.remaining();
+            for (var I=0;I<Fs;I++) {
                 fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
                 fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
                 fbClearC.get(I).colorAttachment(I);

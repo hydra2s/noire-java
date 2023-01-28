@@ -101,7 +101,8 @@ public class DeviceObj extends BasicObj {
         //
         var deviceExtensions = (extbuf.stream().filter((E) -> {
             Boolean found = false;
-            for (int K = 0; K < physicalDeviceObj.extensions.remaining(); K++) {
+            var Es = physicalDeviceObj.extensions.remaining();
+            for (int K = 0; K < Es; K++) {
                 String X = MemoryUtil.memUTF8(physicalDeviceObj.extensions.get(K).extensionName());
                 if (X.contains(E)) {
                     found = true;
@@ -113,14 +114,16 @@ public class DeviceObj extends BasicObj {
 
         // Extensions
         this.extensions = PointerBuffer.allocateDirect(deviceExtensions.size());
-        for (int I = 0; I < this.extensions.remaining(); I++) {
+        var Es = this.extensions.remaining();
+        for (int I = 0; I < Es; I++) {
             this.extensions.put(I, memUTF8(deviceExtensions.get(I)));
         }
         this.queueFamiliesCInfo = org.lwjgl.vulkan.VkDeviceQueueCreateInfo.calloc(cInfo.queueFamilies.size());
         this.queueFamilyIndices = memAllocInt(cInfo.queueFamilies.size());
 
         //
-        for (int Q = 0; Q < cInfo.queueFamilies.size(); Q++) {
+        var Qs = cInfo.queueFamilies.size();
+        for (var Q = 0; Q < Qs; Q++) {
             this.queueFamiliesCInfo.get(Q).sType(VK10.VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
 
             //
@@ -148,7 +151,8 @@ public class DeviceObj extends BasicObj {
             qf.cInfo = cInfo.queueFamilies.get(Q);
 
             // not loaded...
-            for (int I=0;I<queuePriorities.remaining();I++) {
+            var Qp = queuePriorities.remaining();
+            for (int I=0;I<Qp;I++) {
                 qf.queueBusy.add(0);
             }
 
@@ -171,7 +175,7 @@ public class DeviceObj extends BasicObj {
         this.device = new VkDevice(this.handle.get(), physicalDeviceObj.physicalDevice, this.deviceInfo);
 
         //
-        for (int Q = 0; Q < cInfo.queueFamilies.size(); Q++) {
+        for (int Q = 0; Q < Qs; Q++) {
             var qfi = this.queueFamilyIndices.get(Q);
             VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).queueFamilyIndex(qfi), null, this.queueFamilies.get(qfi).orElse(null).cmdPool);
         }

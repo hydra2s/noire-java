@@ -95,7 +95,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         // TODO: multiple heaps, one registry
         // TODO: morton coding support
         this.memoryHeaps = new ArrayList<VirtualMemoryHeap>();
-        for (var I=0;I<cInfo.heapCInfo.size();I++) {
+        var Hs = cInfo.heapCInfo.size();
+        for (var I=0;I<Hs;I++) {
             memoryHeaps.add(new VirtualMemoryHeap(this.base, cInfo.heapCInfo.get(I), cInfo.memoryAllocator));
         }
     }
@@ -110,7 +111,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, long size, int $queueFamilyIndex) throws Exception {
+    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueFamilyIndex, long size) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
@@ -122,7 +123,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public VirtualMutableBufferHeap clear() {
         super.clear();
         var cInfo = (VirtualMutableBufferHeapCInfo)this.cInfo;
-        for (var I=0;I<memoryHeaps.size();I++) {
+        var Hs = memoryHeaps.size();
+        for (var I=0;I<Hs;I++) {
             memoryHeaps.get(I).clear();
         }
         return this;
@@ -135,7 +137,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             .dstOffset(cp.dstOffset()+dst.offset())
             .srcOffset(cp.srcOffset()+src.offset())
             .size(min(src.range(), dst.range()))).toList();
-        for (var I=0;I<copies.remaining();I++) { copies.get(I).set(modified.get(I)); } // modify copies
+        var Rs = copies.remaining();
+        for (var I=0;I<Rs;I++) { copies.get(I).set(modified.get(I)); } // modify copies
         CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
     }
 

@@ -206,7 +206,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         this.multiDraw = VkMultiDrawInfoEXT.calloc(this.registry.size());
 
         // use sorted data for draw (and possible, culling)
-        for (var I=0;I<this.registry.size();I++) {
+        var Rs = this.registry.size();
+        for (var I=0;I<Rs;I++) {
             var drawCall = (VirtualDrawCallObj)this.registry.get(I);
             var drawCallCInfo = (VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo)drawCall.cInfo;
 

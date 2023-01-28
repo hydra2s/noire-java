@@ -53,9 +53,10 @@ public class SwapChainObj extends BasicObj  {
 
         //
         if (cInfo.surface != 0) {
+            var Ps = presentModes.size();
             var surfaceInfo = physicalDeviceObj.getSurfaceInfo(cInfo.surface, cInfo.queueFamilyIndex);
             var presentMode = presentModes.get(0);
-            for (var I = 0; I < presentModes.size(); I++) {
+            for (var I = 0; I < Ps; I++) {
                 var PM = presentModes.get(I);
                 if (List.of(surfaceInfo.presentModes).contains(PM)) {
                     presentMode = PM;
@@ -68,7 +69,8 @@ public class SwapChainObj extends BasicObj  {
             var colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
             //
-            for (var I = 0; I < surfaceFormats.size(); I++) {
+            var Ss = surfaceFormats.size();
+            for (var I = 0; I < Ss; I++) {
                 var F = surfaceFormats.get(I);
                 Integer finalFormat = format;
                 var ID = surfaceInfo.formats2.stream().toList().indexOf(surfaceInfo.formats2.stream().filter((F2) -> (F2.surfaceFormat().format() == finalFormat)).findFirst().orElse(null));
@@ -247,7 +249,8 @@ public class SwapChainObj extends BasicObj  {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public SwapChainObj delete() {
-        for (var i=0;i<this.imageViews.size();i++) {
+        var Is = this.imageViews.size();
+        for (var i=0;i<Is;i++) {
             this.imageViews.get(i).delete();
             this.imagesObj.get(i).delete();
         }
@@ -272,7 +275,8 @@ public class SwapChainObj extends BasicObj  {
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public SwapChainObj deleteDirectly() {
-        for (var i=0;i<this.imageViews.size();i++) {
+        var Is = this.imageViews.size();
+        for (var i=0;i<Is;i++) {
             this.imageViews.get(i).delete();
             this.imagesObj.get(i).delete();
         }
