@@ -305,27 +305,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     //
                     queueFamilyIndex = cInfo.queueFamilyIndex;
                     onDone = new Promise<>().thenApply((result)-> {
-                        if (bound != null && oldAlloc != 0) {
+                        if (heap != null && oldAlloc != 0) {
                             vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
                         }
                         bound.registry.removeIndex(DSC_ID);
                         return null;
                     });
                 }}, (cmdBuf)->{
-                    /*
-                    vkCmdFillBuffer(cmdBuf, srcBufferRange.buffer(), srcBufferRange.offset(), srcBufferRange.range(), 0);
-                    vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
-                        .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-                        .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                        .srcAccessMask( VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                        .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                        .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                        .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                        .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                        .buffer(srcBufferRange.buffer())
-                        .offset(srcBufferRange.offset())
-                        .size(srcBufferRange.range())
-                    ));*/
                     return VK_SUCCESS;
                 });
             } else {
@@ -345,10 +331,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         @Override
         public VirtualMutableBufferObj deleteDirectly() throws Exception {
             var oldAlloc = this.allocId.get(0);
-            if (bound != null && oldAlloc != 0) {
-                //synchronized(this) {
-                    vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                //}
+            if (heap != null && oldAlloc != 0) {
+                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
             }
             this.bufferSize = 0L;
             this.blockSize = 0L;
