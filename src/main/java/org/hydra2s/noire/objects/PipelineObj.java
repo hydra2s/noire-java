@@ -213,23 +213,27 @@ public class PipelineObj extends BasicObj  {
             vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
 
             //
-            for (var I = 0; I < fbLayout.blendStates.size(); I++) {
-                var blendAttachment = fbLayout.blendStates.get(I);
-                var blendEquation = VkColorBlendEquationEXT.calloc(1);
-                blendEquation.get(0).set(
-                    blendAttachment.srcRgbFactor,
-                    blendAttachment.dstRgbFactor,
-                    blendAttachment.blendOp, // TODO: support for RGB and alpha blend op
-                    blendAttachment.srcAlphaFactor,
-                    blendAttachment.dstAlphaFactor,
-                    blendAttachment.blendOp  // TODO: support for RGB and alpha blend op
+            var Bs = fbLayout.blendStates.size();
+            var blendEquation = VkColorBlendEquationEXT.calloc(Bs);
+            var blendAttachment = memAllocInt(Bs);
+            var colorMask = memAllocInt(Bs);
+            for (var I = 0; I < Bs; I++) {
+                blendAttachment.put(I, fbLayout.blendStates.get(I).enabled?1:0);
+                colorMask.put(I, fbLayout.colorMask.get(I).colorMask);
+                blendEquation.get(I).set(
+                    fbLayout.blendStates.get(I).srcRgbFactor,
+                    fbLayout.blendStates.get(I).dstRgbFactor,
+                    fbLayout.blendStates.get(I).blendOp, // TODO: support for RGB and alpha blend op
+                    fbLayout.blendStates.get(I).srcAlphaFactor,
+                    fbLayout.blendStates.get(I).dstAlphaFactor,
+                    fbLayout.blendStates.get(I).blendOp  // TODO: support for RGB and alpha blend op
                 );
-
-                // requires dynamic state 3 or Vulkan API 1.4
-                vkCmdSetColorBlendEquationEXT(cmdBuf, I, blendEquation);
-                vkCmdSetColorBlendEnableEXT(cmdBuf, I, new int[]{blendAttachment.enabled ? 1 : 0});
-                vkCmdSetColorWriteMaskEXT(cmdBuf, I, new int[]{fbLayout.colorMask.get(I).colorMask});
             }
+
+            // requires dynamic state 3 or Vulkan API 1.4
+            vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
+            vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
+            vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
 
             //
             vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
@@ -362,8 +366,6 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            ;
-            ;
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
 
             //
