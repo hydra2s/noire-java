@@ -210,6 +210,11 @@ public class PhysicalDeviceObj extends BasicObj {
     };
 
     //
+    public VkQueueFamilyProperties getQueueFamilyProperties(int queueFamilyIndex) {
+        return this.queueFamilyProperties.get(queueFamilyIndex);
+    }
+
+    //
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
         for (int I=0;I<this.queueFamilyCount.get();I++) {
