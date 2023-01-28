@@ -72,9 +72,9 @@ public class PhysicalDeviceObj extends BasicObj {
         public VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT atomicFloat2 = null;
         public VkPhysicalDeviceRayQueryFeaturesKHR rayQuery = null;
         public VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure = null;
-        public VkPhysicalDeviceVulkan11Features features11 = null;
-        public VkPhysicalDeviceVulkan12Features features12 = null;
-        public VkPhysicalDeviceVulkan13Features features13 = null;
+        public VkPhysicalDeviceVulkan11Features vulkan11 = null;
+        public VkPhysicalDeviceVulkan12Features vulkan12 = null;
+        public VkPhysicalDeviceVulkan13Features vulkan13 = null;
         public VkPhysicalDeviceFeatures2 features = null;
 
         public PhysicalDeviceFeatures() {
@@ -106,27 +106,27 @@ public class PhysicalDeviceObj extends BasicObj {
             this.robustness2 = VkPhysicalDeviceRobustness2FeaturesEXT.calloc().pNext(this.vertexInput.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT);
             this.rayQuery = VkPhysicalDeviceRayQueryFeaturesKHR.calloc().pNext(this.robustness2.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR);
             this.accelerationStructure = VkPhysicalDeviceAccelerationStructureFeaturesKHR.calloc().pNext(this.rayQuery.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR);
-            this.features11 = VkPhysicalDeviceVulkan11Features.calloc().pNext(this.accelerationStructure.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
-            this.features12 = VkPhysicalDeviceVulkan12Features.calloc().pNext(this.features11.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
-            this.features13 = VkPhysicalDeviceVulkan13Features.calloc().pNext(this.features12.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
-            this.features = VkPhysicalDeviceFeatures2.calloc().pNext(this.features13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
+            this.vulkan11 = VkPhysicalDeviceVulkan11Features.calloc().pNext(this.accelerationStructure.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES);
+            this.vulkan12 = VkPhysicalDeviceVulkan12Features.calloc().pNext(this.vulkan11.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES);
+            this.vulkan13 = VkPhysicalDeviceVulkan13Features.calloc().pNext(this.vulkan12.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES);
+            this.features = VkPhysicalDeviceFeatures2.calloc().pNext(this.vulkan13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2);
         }
     }
 
     //
     public static class PhysicalDeviceProperties {
         public VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorBuffer = null;
-        public VkPhysicalDeviceVulkan13Properties properties13 = null;
-        public VkPhysicalDeviceVulkan12Properties properties12 = null;
-        public VkPhysicalDeviceVulkan11Properties properties11 = null;
+        public VkPhysicalDeviceVulkan13Properties vulkan13 = null;
+        public VkPhysicalDeviceVulkan12Properties vulkan12 = null;
+        public VkPhysicalDeviceVulkan11Properties vulkan11 = null;
         public VkPhysicalDeviceProperties2 properties = null;
 
         public PhysicalDeviceProperties() {
             this.descriptorBuffer = VkPhysicalDeviceDescriptorBufferPropertiesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT);
-            this.properties13 = VkPhysicalDeviceVulkan13Properties.calloc().pNext(this.descriptorBuffer.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES);
-            this.properties12 = VkPhysicalDeviceVulkan12Properties.calloc().pNext(this.properties13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES);
-            this.properties11 = VkPhysicalDeviceVulkan11Properties.calloc().pNext(this.properties12.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES);
-            this.properties = VkPhysicalDeviceProperties2.calloc().pNext(this.properties11.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
+            this.vulkan13 = VkPhysicalDeviceVulkan13Properties.calloc().pNext(this.descriptorBuffer.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES);
+            this.vulkan12 = VkPhysicalDeviceVulkan12Properties.calloc().pNext(this.vulkan13.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES);
+            this.vulkan11 = VkPhysicalDeviceVulkan11Properties.calloc().pNext(this.vulkan12.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES);
+            this.properties = VkPhysicalDeviceProperties2.calloc().pNext(this.vulkan11.address()).sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2);
         }
     }
 
