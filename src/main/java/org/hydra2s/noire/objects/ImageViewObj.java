@@ -104,7 +104,7 @@ public class ImageViewObj extends BasicObj {
 
         // just await last process in queue family
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
-            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)-> {
                 //
                 if (cInfo.pipelineLayout != 0) {

@@ -57,7 +57,7 @@ public class ImageObj extends BasicObj {
             .samples(cInfo.samples)
             .format(cInfo.format)
             .tiling(cInfo.tiling)
-            .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : deviceObj.queueFamilyIndices);
+            .pQueueFamilyIndices(deviceObj.queueFamilyIndices);
 
         //
         int status = VK_NOT_READY;
@@ -101,7 +101,7 @@ public class ImageObj extends BasicObj {
         var handle = this.handle;
 
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
-            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyImage(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.put$(handle, null);

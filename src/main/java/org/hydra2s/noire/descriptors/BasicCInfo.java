@@ -7,6 +7,7 @@ import org.lwjgl.vulkan.*;
 //
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
@@ -32,10 +33,10 @@ import static org.lwjgl.vulkan.VK13.*;
 
 //
 public class BasicCInfo {
+    //
+    public int queueGroupIndex = 0;
 
-    public int queueFamilyIndex = 0;
-    public IntBuffer queueFamilyIndices = null;
-
+    //
     static public class VkFormatCompatibilityClass extends BasicCInfo {
         static public int
                 VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT = 0,
@@ -658,14 +659,18 @@ public class BasicCInfo {
 
     //
     public static class SubmitCmd extends BasicCInfo {
-        public VkQueue queue = null;
         public VkCommandBuffer cmdBuf = null;
-        public IntBuffer dstStageMask = null;
-        public LongBuffer waitSemaphores = null;
-        public LongBuffer signalSemaphores = null;
         public Promise<Integer> onDone = null;
-        public int whatQueueFamilyWillWait = -1;
-        public int whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        public int queueGroupIndex = 0;
+
+        //
+        public ArrayList<VkSemaphoreSubmitInfo> waitSemaphoreSubmitInfo = null;
+        public ArrayList<VkSemaphoreSubmitInfo> signalSemaphoreSubmitInfo = null;
+
+        //
+        public int whatQueueGroupWillWait = -1;
+        public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
+        public long whatValueBySemaphore = 0;
     };
 
     //

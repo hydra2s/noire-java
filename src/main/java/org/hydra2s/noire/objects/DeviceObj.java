@@ -19,11 +19,10 @@ import java.util.function.Function;
 
 //
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.EXTGlobalPriority.*;
-import static org.lwjgl.vulkan.KHRGlobalPriority.VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.*;
 
 //
 // TODO: implement await all fences and do all actions
@@ -34,7 +33,7 @@ public class DeviceObj extends BasicObj {
     protected IntBuffer layersAmount = memAllocInt(1).put(0, 0);
 
     // TODO: use per queue family dedicate
-    public ArrayList<Function<LongBuffer, Integer>> whenDone = new ArrayList<Function<LongBuffer, Integer>>();
+    public ArrayList<Function<SemaphoreObj, Integer>> whenDone = new ArrayList<Function<SemaphoreObj, Integer>>();
 
     //
     public PointerBuffer layers = null;
@@ -48,8 +47,37 @@ public class DeviceObj extends BasicObj {
     public VkDeviceQueueCreateInfo.Buffer queueFamiliesCInfo = null;
     protected IntBuffer extensionAmount = memAllocInt(1).put(0, 0);
 
+
+
+
+
+
+    //
+    public static class QueueInfo {
+        public ArrayList<VkSemaphoreSubmitInfo> waitSemaphoresInfo = null;
+        public ArrayList<SemaphoreObj> waitSemaphores = null;
+    };
+
+    // TODO: replace by queue group instead of queue family
+    // TODO: add queue indices support
+    // TODO: add timeline semaphore support
+    public static class QueueFamily {
+        public int index = 0;
+        public LongBuffer cmdPool = memAllocLong(1).put(0, 0);
+        public QueueFamilyCInfo cInfo = new QueueFamilyCInfo();
+
+        //
+        public ArrayList<VkCommandBuffer> cmdBufCache = null;
+        public PointerBuffer cmdBufBuffer = null;
+        public int cmdBufIndex = 0;
+
+        //
+        public ArrayList<QueueInfo> queueInfos = null;
+    };
+
     //
     public CombinedMap<Integer, QueueFamily> queueFamilies = new CombinedMap<Integer, QueueFamily>(16);
+    public ArrayList<DeviceCInfo.QueueGroup> queueGroups = null;
 
 
     //
@@ -130,6 +158,7 @@ public class DeviceObj extends BasicObj {
 
             //
             var queuePriorities = memAllocFloat(cInfo.queueFamilies.get(Q).priorities.length);
+            var Qp = queuePriorities.remaining();
             for (var I=0;I<cInfo.queueFamilies.get(Q).priorities.length;I++) {
                 queuePriorities.put(I, cInfo.queueFamilies.get(Q).priorities[I]);
             }
@@ -138,30 +167,51 @@ public class DeviceObj extends BasicObj {
             this.queueFamiliesCInfo.get(Q).pQueuePriorities(queuePriorities);
             this.queueFamiliesCInfo.get(Q).queueFamilyIndex(cInfo.queueFamilies.get(Q).index);
 
-            /*
-            this.queueFamiliesCInfo.get(Q).pNext(VkDeviceQueueGlobalPriorityCreateInfoKHR.calloc()
-                .sType(VK_STRUCTURE_TYPE_DEVICE_QUEUE_GLOBAL_PRIORITY_CREATE_INFO_KHR)
-                .globalPriority(VK_QUEUE_GLOBAL_PRIORITY_MEDIUM_KHR)
-            );*/
-
             //
             var qf = new QueueFamily();
-            qf.waitSemaphores = new ArrayList<>();
-            qf.waitStageMask = new ArrayList<>();
-            qf.queueBusy = new ArrayList<>();
             qf.index = cInfo.queueFamilies.get(Q).index;
             qf.cInfo = cInfo.queueFamilies.get(Q);
+            qf.queueInfos = new ArrayList<>();
 
-            // not loaded...
-            var Qp = queuePriorities.remaining();
-            for (int I=0;I<Qp;I++) {
-                qf.queueBusy.add(0);
+            //
+            var Ps = cInfo.queueFamilies.get(Q).priorities.length;
+            for (var I=0;I<Ps;I++) {
+                qf.queueInfos.add(new QueueInfo(){{
+                    waitSemaphoresInfo = new ArrayList<>();
+                    waitSemaphores = new ArrayList<>();
+                }});
             }
 
             //
             this.queueFamilies.put$(cInfo.queueFamilies.get(Q).index, qf);
             this.queueFamilyIndices.put(Q, qf.index);
         }
+
+        //
+        this.queueGroups = cInfo.queueGroups;
+
+        //
+        if (this.queueGroups == null) {
+            this.queueGroups = new ArrayList<>();
+            this.queueFamilies.forEach((index, qF)->{
+                var group = new DeviceCInfo.QueueGroup();
+                group.queueIndices = new ArrayList<>();
+                for (var I=0;I<qF.get().queueInfos.size();I++) {
+                    group.queueIndices.add(I);
+                }
+                this.queueGroups.add(group);
+            });
+        }
+
+        //
+        this.queueGroups.forEach((group)->{
+            if (group.queueBusy == null) {
+                group.queueBusy = new ArrayList<>();
+                for (var I=0;I<group.queueIndices.size();I++) {
+                    group.queueBusy.add(0);
+                }
+            };
+        });
 
         // TODO: Handle VkResult!!
         var result = VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.calloc()
@@ -198,7 +248,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public DeviceObj freeCommands(int queueFamilyIndex, ArrayList<VkCommandBuffer> commandBuffers) {
+    public DeviceObj freeCommandsByQueueFamily(int queueFamilyIndex, ArrayList<VkCommandBuffer> commandBuffers) {
         var commandPool = this.getCommandPool(queueFamilyIndex);
         commandBuffers.forEach((cmdBuf)->{
             vkFreeCommandBuffers(device, commandPool, cmdBuf);
@@ -206,25 +256,15 @@ public class DeviceObj extends BasicObj {
         return this;
     }
 
-    // TODO: replace by queue group instead of queue family
-    // TODO: add queue indices support
-    // TODO: add timeline semaphore support
-    public static class QueueFamily {
-        public int index = 0;
-        public LongBuffer cmdPool = memAllocLong(1).put(0, 0);
-        public QueueFamilyCInfo cInfo = new QueueFamilyCInfo();
-        public ArrayList<SemaphoreObj> waitSemaphores = null;
-        public ArrayList<Integer> waitStageMask = null;
-        public ArrayList<Integer> queueBusy = null;
+    //
+    public DeviceObj freeCommandsByQueueGroup(int queueGroupIndex, ArrayList<VkCommandBuffer> commandBuffers) {
+        return freeCommandsByQueueFamily(this.queueGroups.get(queueGroupIndex).queueFamilyIndex, commandBuffers);
+    }
 
-        //
-        public ArrayList<VkCommandBuffer> cmdBufCache = null;
-        public PointerBuffer cmdBufBuffer = null;
-        public int cmdBufIndex = 0;
-    };
-
-    public DeviceObj present(int queueFamilyIndex, long SwapChain, long waitSemaphore, IntBuffer imageIndex) {
-        vkQueuePresentKHR(this.getQueue(queueFamilyIndex, 0), VkPresentInfoKHR.calloc()
+    //
+    public DeviceObj present(int queueGroupIndex, long SwapChain, long waitSemaphore, IntBuffer imageIndex) {
+        var queueGroup = this.queueGroups.get(queueGroupIndex);
+        vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.calloc()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
             .pWaitSemaphores(waitSemaphore != 0 ? memAllocLong(1).put(0, waitSemaphore) : null)
             .pSwapchains(memAllocLong(1).put(0, SwapChain)).swapchainCount(1)
@@ -271,121 +311,141 @@ public class DeviceObj extends BasicObj {
 
     // you also needs `device.doPolling` or `device.waitFence`
     public static class FenceProcess {
-        public LongBuffer fence = null;
-        public Function<LongBuffer, Integer> deallocProcess = null;
+        public SemaphoreObj timelineSemaphore = null;
+        public Function<SemaphoreObj, Integer> deallocProcess = null;
         public Promise<Integer> promise = null; // for getting status
     };
 
     // for beginning of rendering
     public FenceProcess makeSignaled() {
-        LongBuffer fence_ = memAllocLong(1);
-        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fence_);
+        var querySignalSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
+            initialValue = 0;
+        }});
+
         var ref = new FenceProcess() {{
-            fence = fence_;
             deallocProcess = (result)->{
-                var fence = fence_.get(0);
-                int status = fence != 0 ? vkGetFenceStatus(device, fence) : VK_SUCCESS;
+                int status = querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
                 if (status != VK_NOT_READY) {
                     whenDone.remove(deallocProcess);
-                    vkDestroyFence(device, fence_.get(0), null);
-                    fence_.put(0, 0L);
+                    try {
+                        querySignalSemaphore.deleteDirectly();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                     promise.fulfill(status);
                 }
                 return status;
             };
             promise = new Promise();
         }};
+
+        //
         whenDone.add(ref.deallocProcess);
+
+        //
+        querySignalSemaphore.signalTimeline(2L);
+
+        //
         this.doPolling();
+
+        //
         return ref;
     }
 
     // TODO: support for submission v2
     public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
-        var signalOffset = (cmd.signalSemaphores != null ? cmd.signalSemaphores.remaining() : 0);
-        var waitOffset = (cmd.waitSemaphores != null ? cmd.waitSemaphores.remaining() : 0);
+        var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
+        var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
 
         //
-        var queueFamily = queueFamilies.get(cmd.queueFamilyIndex).orElse(null);
-        var signalSemaphores = memAllocLong(signalOffset+(cmd.whatQueueFamilyWillWait >= 0 ? 1 : 0));
-        var waitSemaphores = memAllocLong(waitOffset+queueFamily.waitSemaphores.size());
-        var waitStageMask = memAllocInt(waitOffset+queueFamily.waitSemaphores.size());
-
-        //
-        if (cmd.signalSemaphores != null) { memCopy(cmd.signalSemaphores, signalSemaphores); };
-        if (cmd.waitSemaphores != null) { memCopy(cmd.waitSemaphores, waitSemaphores); };
-        if (cmd.dstStageMask != null) { memCopy(cmd.dstStageMask, waitStageMask); };
-
-        //
-        for (var I=0;I<queueFamily.waitSemaphores.size();I++) {
-            waitSemaphores.put(waitOffset + I, queueFamily.waitSemaphores.get(I).getHandle().get());
-            waitStageMask.put(waitOffset + I, queueFamily.waitStageMask.get(I));
-        }
-
-        //
-        if (cmd.whatQueueFamilyWillWait >= 0) {
+        if (cmd.whatQueueGroupWillWait >= 0) {
             var signalSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
 
             }});
-            signalSemaphores.put(signalOffset, signalSemaphore.getHandle().get());
+            var submitInfo = signalSemaphore.makeSubmissionTimeline(cmd.whatWaitBySemaphore, cmd.whatValueBySemaphore);
 
-            // add for waiting
-            var forWhat = queueFamilies.get(cmd.whatQueueFamilyWillWait).orElse(null);
-            forWhat.waitSemaphores.add(signalSemaphore);
-            forWhat.waitStageMask.add(cmd.whatQueueFamilyWillWait);
+            //
+            signalSemaphoreSubmitInfo.add(submitInfo);
+
+            //
+            var queueGroup = queueGroups.get(cmd.whatQueueGroupWillWait);
+            queueGroup.queueIndices.forEach((idx)->{
+                var queueInfo = queueFamilies.get(queueGroup.queueFamilyIndex).get().queueInfos.get(idx);
+                queueInfo.waitSemaphores.add(signalSemaphore);
+                queueInfo.waitSemaphoresInfo.add(submitInfo);
+            });
         }
 
         //
-        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueFamily.waitSemaphores.clone();
-        queueFamily.waitSemaphores.clear();
-        queueFamily.waitStageMask.clear();
+        var queueGroup = this.queueGroups.get(cmd.queueGroupIndex);
+        var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
+
+        // TODO: globalize loading of queue
+        var lessBusyCount = Collections.min(queueGroup.queueBusy);
+        var lessBusy = queueGroup.queueBusy.indexOf(lessBusyCount);
+        var lessBusyQ = queueGroup.queueIndices.get(lessBusy);
+        var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
 
         //
-        LongBuffer fence_ = memAllocLong(1);
-        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
+        var querySignalSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
+            initialValue = 0;
+        }});
 
         //
-        var lessBusyCount = Collections.min(queueFamily.queueBusy);
-        var lessBusy = queueFamily.queueBusy.indexOf(lessBusyCount);
-
-        // increase loading index
-        queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy)+1);
+        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueInfo.waitSemaphores.clone();
+        toRemoveSemaphores.add(querySignalSemaphore);
 
         //
-        /*
-        if (cmd.queueFamilyIndex == 2) {
-            System.out.println("Used transfer queue 2");
-            System.out.println("Loaded indices: ");
-            for (var I=0;I<queueFamilies.get(cmd.queueFamilyIndex).queueBusy.size();I++) {
-                System.out.println(queueFamilies.get(cmd.queueFamilyIndex).queueBusy.get(I));
-            }
-            System.out.println("Minimum loading index: " + lessBusy);
-        }*/
+        signalSemaphoreSubmitInfo.add(querySignalSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, 2));
+        waitSemaphoreSubmitInfo.addAll(queueInfo.waitSemaphoresInfo);
+
+        //
+        queueInfo.waitSemaphoresInfo.clear();
+        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
         // TODO: queue submit v2
-        var queue = this.getQueue(cmd.queueFamilyIndex, lessBusy);
-        vkQueueSubmit(queue, VkSubmitInfo.calloc(1)
-            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO)
-            .pCommandBuffers(memAllocPointer(1).put(0, cmd.cmdBuf.address()))
-            .pWaitDstStageMask(waitStageMask)
-            .pSignalSemaphores(signalSemaphores)
-            .pWaitSemaphores(waitSemaphores)
-            .waitSemaphoreCount(waitSemaphores != null ? waitSemaphores.remaining() : 0), fence_.get(0));
+        var cmdInfo = VkCommandBufferSubmitInfo.calloc(1);
+        var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size());
+        var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size());
+
+        //
+        for (var I=0;I<signalSemaphoreSubmitInfo.size();I++) {
+            signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
+        }
+
+        //
+        for (var I=0;I<waitSemaphoreSubmitInfo.size();I++) {
+            waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
+        }
+
+        //
+        cmdInfo.get(0).commandBuffer(cmd.cmdBuf).deviceMask(0);
+
+        //
+        //LongBuffer fence_ = memAllocLong(1);
+        //vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
+        vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1)
+            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
+            .pCommandBufferInfos(cmdInfo)
+            .pSignalSemaphoreInfos(signalSemaphores)
+            .pWaitSemaphoreInfos(waitSemaphores), 0);
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
 
         //
         var ref = new FenceProcess() {{
-            fence = fence_;
+            timelineSemaphore = querySignalSemaphore;
             deallocProcess = null;
             promise = cmd.onDone;
         }};
 
         //
         this.whenDone.add(ref.deallocProcess = (_null_)->{
-            var fence = fence_.get(0);
-            int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
+            // TODO: correctly handle a status
+            int status = querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
+
+            //
             if (status != VK_NOT_READY) {
                 this.whenDone.remove(ref.deallocProcess);
 
@@ -399,12 +459,10 @@ public class DeviceObj extends BasicObj {
                 });
 
                 //
-                queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy) - 1);
-                cmd.onDone.fulfill(status);
+                queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy) - 1);
 
-                //
-                vkDestroyFence(this.device, fence, null);
-                fence_.put(0, 0);
+                // TODO: correctly handle a status
+                cmd.onDone.fulfill(status);
             }
             return status;
             //return VK_SUCCESS;
@@ -420,18 +478,19 @@ public class DeviceObj extends BasicObj {
     // TODO: fence registry, and correctly wait by fence
     public int waitFence(FenceProcess process) {
         var status = VK_NOT_READY;
-        while((status = process.deallocProcess.apply(process.fence)) == VK_NOT_READY) {
+        while((status = process.deallocProcess.apply(process.timelineSemaphore)) == VK_NOT_READY) {
             this.doPolling();
         };
         return status;
     }
 
     // TODO: support multiple commands
-    public VkCommandBuffer allocateCommand(int queueFamilyIndex) {
+    public VkCommandBuffer allocateCommand(int queueGroupIndex) {
         var maxCommandBufferCache = 8;
-        var queueFamily = this.queueFamilies.get(queueFamilyIndex).get();
+        var queueGroup = this.queueGroups.get(queueGroupIndex);
+        var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
         if (queueFamily.cmdBufCache == null || queueFamily.cmdBufIndex >= queueFamily.cmdBufCache.size()) {
-            var commandPool = this.getCommandPool(queueFamilyIndex);
+            var commandPool = this.getCommandPool(queueGroup.queueFamilyIndex);
             if (queueFamily.cmdBufCache == null) {
                 queueFamily.cmdBufBuffer = memAllocPointer(maxCommandBufferCache);
                 queueFamily.cmdBufCache = new ArrayList<>(maxCommandBufferCache);
@@ -452,9 +511,9 @@ public class DeviceObj extends BasicObj {
 
     //
     public FenceProcess submitOnce(BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
-        //
-        var commandPool = this.getCommandPool(submitCmd.queueFamilyIndex);
-        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueFamilyIndex), VkCommandBufferBeginInfo.calloc()
+        var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);
+        var commandPool = this.getCommandPool(queueGroup.queueFamilyIndex);
+        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
         fn.apply(submitCmd.cmdBuf);

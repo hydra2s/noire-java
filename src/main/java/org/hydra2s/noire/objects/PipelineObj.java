@@ -546,7 +546,7 @@ public class PipelineObj extends BasicObj  {
         var handle = this.handle;
         ;
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
-            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)->{
                 vkDestroyPipeline(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.put$(handle, null);

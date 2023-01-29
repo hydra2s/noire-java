@@ -93,7 +93,7 @@ public class SwapChainObj extends BasicObj  {
                     .imageArrayLayers(cInfo.layerCount)
                     .imageUsage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT)
                     .imageSharingMode(VK_SHARING_MODE_CONCURRENT)
-                    .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : deviceObj.queueFamilyIndices)
+                    .pQueueFamilyIndices(deviceObj.queueFamilyIndices)
                     .preTransform(surfaceInfo.capabilities2.surfaceCapabilities().currentTransform())
                     .compositeAlpha(surfaceInfo.capabilities2.surfaceCapabilities().supportedCompositeAlpha())
                     .presentMode(presentMode)
@@ -176,8 +176,8 @@ public class SwapChainObj extends BasicObj  {
         
 
         // useless for pure Vulkan, for test only
-        this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo());
-        this.semaphoreRenderingAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo());
+        this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; }});
+        this.semaphoreRenderingAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; }});
 
         //
         return this;
@@ -215,8 +215,8 @@ public class SwapChainObj extends BasicObj  {
     }
 
     // TODO: more than one semaphore support
-    public SwapChainObj present(int queueFamilyIndex, LongBuffer semaphore) {
-        this.deviceObj.present(queueFamilyIndex, this.handle.get(), semaphore != null ? semaphore.get(0) : this.semaphoreRenderingAvailable.getHandle().get(), this.imageIndex);
+    public SwapChainObj present(int queueGroupIndex, LongBuffer semaphore) {
+        this.deviceObj.present(queueGroupIndex, this.handle.get(), semaphore != null ? semaphore.get(0) : this.semaphoreRenderingAvailable.getHandle().get(), this.imageIndex);
         return this;
     }
 
@@ -253,7 +253,7 @@ public class SwapChainObj extends BasicObj  {
 
         //
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
-            queueFamilyIndex = cInfo.queueFamilyIndex;
+            queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)-> {
                 vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
                 deviceObj.handleMap.put$(handle, null);

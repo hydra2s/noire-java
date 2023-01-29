@@ -102,20 +102,20 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueFamilyIndex) {
+    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueGroupIndex) {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
-            queueFamilyIndex = $queueFamilyIndex;
+            queueGroupIndex = $queueGroupIndex;
         }});
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueFamilyIndex, long size) throws Exception {
+    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueGroupIndex, long size) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = heapId_;
             registryHandle = handle.get();
-            queueFamilyIndex = $queueFamilyIndex;
+            queueGroupIndex = $queueGroupIndex;
         }}).allocate(size);
     }
 
@@ -246,11 +246,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 if (oldAlloc != 0) {
                     deviceObj.submitOnce(new BasicCInfo.SubmitCmd() {{
                         // TODO: correctly handle main queue family
-                        whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
+                        whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
                         whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
                         //
-                        queueFamilyIndex = cInfo.queueFamilyIndex;
+                        queueGroupIndex = cInfo.queueGroupIndex;
                         onDone = new Promise<>().thenApply((result) -> {
                             if (heap != null && oldAlloc != 0) {
                                 vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
@@ -299,11 +299,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 var srcBufferRange = this.getBufferRange();
                 deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
                     // TODO: correctly handle main queue family
-                    whatQueueFamilyWillWait = cInfo.queueFamilyIndex != 0 ? 0 : -1;
+                    whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
                     whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
                     //
-                    queueFamilyIndex = cInfo.queueFamilyIndex;
+                    queueGroupIndex = cInfo.queueGroupIndex;
                     onDone = new Promise<>().thenApply((result)-> {
                         if (heap != null && oldAlloc != 0) {
                             vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);

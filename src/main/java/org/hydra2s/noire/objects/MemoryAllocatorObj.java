@@ -162,7 +162,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             var handle = this.handle;
             
             deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
-                queueFamilyIndex = cInfo.queueFamilyIndex;
+                queueGroupIndex = cInfo.queueGroupIndex;
                 onDone = new Promise<>().thenApply((result)->{
                     vkFreeMemory(deviceObj.device, handle.get(), null);
                     deviceObj.handleMap.remove(handle);
