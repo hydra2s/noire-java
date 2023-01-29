@@ -44,7 +44,10 @@ public class SemaphoreObj extends BasicObj {
         this.timelineInfo = VkSemaphoreTypeCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR).semaphoreType(cInfo.isTimeline ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY).initialValue(lastTimeline);
         vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, memLongBuffer(memAddress((this.handle = new Handle("Semaphore")).ptr(), 0), 1));
         vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = memAllocPointer(1));
-        deviceObj.handleMap.put$(this.handle, this);
+
+        if (cInfo.doRegister) {
+            deviceObj.handleMap.put$(this.handle, this);
+        }
     }
 
     @Override // TODO: multiple queue family support
@@ -60,7 +63,9 @@ public class SemaphoreObj extends BasicObj {
         if (sharedPtr <= 0) {
             vkDestroySemaphore(deviceObj.device, handle.get(), null);
             handle.ptr().put(0, 0L);
-            deviceObj.handleMap.remove(handle);
+            if (cInfo.doRegister) {
+                deviceObj.handleMap.remove(handle);
+            }
             this.deleted = true;
         };
 
@@ -91,7 +96,9 @@ public class SemaphoreObj extends BasicObj {
                     handle.ptr().put(0, 0L);
 
                     //
-                    deviceObj.handleMap.remove(handle);
+                    if (cInfo.doRegister) {
+                        deviceObj.handleMap.remove(handle);
+                    }
                     deleted = true;
                 };
                 return null;

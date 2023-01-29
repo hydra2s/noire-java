@@ -35,6 +35,7 @@ import static org.lwjgl.vulkan.VK13.*;
 public class BasicCInfo {
     //
     public int queueGroupIndex = 0;
+    public boolean doRegister = true;
 
     //
     static public class VkFormatCompatibilityClass extends BasicCInfo {
@@ -669,7 +670,7 @@ public class BasicCInfo {
 
         //
         public int whatQueueGroupWillWait = -1;
-        public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
+        public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_NONE;
     };
 
     //

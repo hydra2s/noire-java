@@ -309,13 +309,14 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-     public SemaphoreObj createTempSemaphore() throws Exception {
+    public SemaphoreObj createTempSemaphore() throws Exception {
         SemaphoreObj tempSemaphore = null;
         if (reusableSemaphoreStack.size() > 0) {
             tempSemaphore = reusableSemaphoreStack.remove(0);
             tempSemaphore.waitTimeline(true);
         } else {
             tempSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
+                doRegister = false;
                 isTimeline = true;
                 initialValue = 1;
             }});
