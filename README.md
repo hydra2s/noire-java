@@ -11,6 +11,18 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 - 📱 Unified memory
 - 📱 Few draw call per many models
 
+### Current generation - v1.4
+
+- Details will named later
+
+### Hypothetical gen v2.0
+
+- Timeline semaphores (finally)
+- Full-scale update - more FPS in some cases
+- Queue groups instead of queue family
+- Per-queue awaiting semaphores instead of queue family
+- Semaphore v2 (timeline), queue submit v2, and other Vulkan 1.3 features...
+
 ## ~~Part of [manhack](https://github.com/hydra2s/manhack) project~~
 ## Planned for [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) project
 
