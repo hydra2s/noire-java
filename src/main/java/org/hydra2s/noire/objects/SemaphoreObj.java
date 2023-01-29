@@ -30,14 +30,16 @@ public class SemaphoreObj extends BasicObj {
     // TODO: globalize such flag
     public boolean deleted = false;
     public long lastTimeline = 1;
+    public long prevTimeline = 0;
 
     public SemaphoreObj(Handle base, SemaphoreCInfo cInfo) {
         super(base, cInfo);
 
         //
+        this.prevTimeline = cInfo.initialValue;
         this.lastTimeline = cInfo.initialValue;
         this.deleted = false;
-        this.timeline = memAllocLong(1);
+        this.timeline = memAllocLong(1).put(0, cInfo.initialValue);
         this.timelineInfo = VkSemaphoreTypeCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR).semaphoreType(cInfo.isTimeline ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY).initialValue(lastTimeline);
         vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, memLongBuffer(memAddress((this.handle = new Handle("Semaphore")).ptr(), 0), 1));
         vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = memAllocPointer(1));
@@ -83,7 +85,7 @@ public class SemaphoreObj extends BasicObj {
 
     //
     public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask) {
-        lastTimeline++;
+        prevTimeline = lastTimeline; lastTimeline++;
         return VkSemaphoreSubmitInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
@@ -101,27 +103,34 @@ public class SemaphoreObj extends BasicObj {
 
     //
     public long getTimeline() {
-        vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline);
+        if (((SemaphoreCInfo)cInfo).isTimeline) {
+            vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline);
+        }
         return this.timeline.get(0);
     }
 
     //
     public SemaphoreObj signalTimeline() {
-        lastTimeline++;
-        vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc()
-            .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
-            .semaphore(this.handle.get())
-            .value(lastTimeline));
+        if (((SemaphoreCInfo)cInfo).isTimeline) {
+            prevTimeline = lastTimeline;
+            lastTimeline++;
+            vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc()
+                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
+                .semaphore(this.handle.get())
+                .value(lastTimeline));
+        }
         return this;
     }
 
     // UNSAFE!
     public SemaphoreObj waitTimeline(long lastTimeline, boolean any) {
-        vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
-            .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
-            .flags(any?VK_SEMAPHORE_WAIT_ANY_BIT:0)
-            .pSemaphores(memAllocLong(1).put(0, this.handle.get()))
-            .pValues(memAllocLong(1).put(0, lastTimeline)), 1024L * 1024L * 1024L);
+        if (((SemaphoreCInfo)cInfo).isTimeline) {
+            vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
+                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
+                .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
+                .pSemaphores(memAllocLong(1).put(0, this.handle.get()))
+                .pValues(memAllocLong(1).put(0, lastTimeline)), 1024L * 1024L * 1024L);
+        }
         return this;
     }
 }

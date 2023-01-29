@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.function.Function;
 
 //
+import static java.lang.Math.max;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
@@ -33,7 +34,7 @@ public class DeviceObj extends BasicObj {
     protected IntBuffer layersAmount = memAllocInt(1).put(0, 0);
 
     // TODO: use per queue family dedicate
-    public ArrayList<Function<SemaphoreObj, Integer>> whenDone = new ArrayList<Function<SemaphoreObj, Integer>>();
+    public ArrayList<Function<LongBuffer, Integer>> whenDone = new ArrayList<Function<LongBuffer, Integer>>();
 
     //
     public PointerBuffer layers = null;
@@ -50,7 +51,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public ArrayList<SemaphoreObj> reusableSemaphoreStack = null;
-
+    public long lastSubmit = 0;
 
 
     //
@@ -315,40 +316,54 @@ public class DeviceObj extends BasicObj {
     // you also needs `device.doPolling` or `device.waitFence`
     public static class FenceProcess {
         public SemaphoreObj timelineSemaphore = null;
-        public Function<SemaphoreObj, Integer> deallocProcess = null;
+        public Function<LongBuffer, Integer> deallocProcess = null;
         public Promise<Integer> promise = null; // for getting status
+        public LongBuffer fence = null;
     };
 
     //
     public SemaphoreObj createTempSemaphore() {
         SemaphoreObj tempSemaphore = null;
-        if (reusableSemaphoreStack.size() > 0) {
-            tempSemaphore = reusableSemaphoreStack.remove(reusableSemaphoreStack.size()-1);
-        } else {
+        //if (reusableSemaphoreStack.size() > 0) {
+            //tempSemaphore = reusableSemaphoreStack.remove(reusableSemaphoreStack.size()-1);
+        //} else {
             tempSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
+                isTimeline = false;
                 initialValue = 1;
             }});
-        }
+        //}
         return tempSemaphore;
     }
 
     //
-    public SemaphoreObj backTempSemaphore(SemaphoreObj tempSemaphore) {
-        reusableSemaphoreStack.add(tempSemaphore);
-        //tempSemaphore.lastTimeline++;
+    public SemaphoreObj backTempSemaphore(SemaphoreObj tempSemaphore) throws Exception {
+        tempSemaphore.deleteDirectly();
+        //reusableSemaphoreStack.add(tempSemaphore); lastSubmit = max(tempSemaphore.lastTimeline, lastSubmit);
+        //tempSemaphore.lastTimeline = lastSubmit++;
         return tempSemaphore;
     }
 
     // for beginning of rendering
     public FenceProcess makeSignaled() {
+        LongBuffer fence_ = memAllocLong(1).put(0, 0L);
+        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO).flags(VK_FENCE_CREATE_SIGNALED_BIT), null, fence_);
         var querySignalSemaphore = createTempSemaphore();
 
+        //
         var ref = new FenceProcess() {{
+            fence = fence_;
             deallocProcess = (result)->{
-                int status = querySignalSemaphore.getTimeline() == (querySignalSemaphore.lastTimeline-1) ? VK_NOT_READY : VK_SUCCESS;
-                if (status != VK_NOT_READY) {
+                var fence = fence_.get(0);
+                int status = VK_SUCCESS;//fence != 0 ? vkGetFenceStatus(device, fence) : VK_SUCCESS;
+                //int status = querySignalSemaphore.getTimeline() == (querySignalSemaphore.prevTimeline) ? VK_NOT_READY : VK_SUCCESS;
+                if (status != VK_NOT_READY && fence != 0) {
                     whenDone.remove(deallocProcess);
-                    backTempSemaphore(querySignalSemaphore);
+                    vkDestroyFence(device, fence, null); fence_.put(0, 0L);
+                    try {
+                        backTempSemaphore(querySignalSemaphore);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                     promise.fulfill(status);
                 }
                 return status;
@@ -363,124 +378,17 @@ public class DeviceObj extends BasicObj {
         querySignalSemaphore.signalTimeline();
 
         //
-        this.doPolling();
+        //this.doPolling();
 
         //
         return ref;
     }
 
-    //
-    public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
-        var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
-        var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
-
-        //
-        if (cmd.whatQueueGroupWillWait >= 0) {
-            var queueGroup = queueGroups.get(cmd.whatQueueGroupWillWait);
-            queueGroup.queueIndices.forEach((idx)->{
-                var signalSemaphore = createTempSemaphore();
-                var submitInfo = signalSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
-                signalSemaphoreSubmitInfo.add(submitInfo);
-
-                //
-                var queueInfo = queueFamilies.get(queueGroup.queueFamilyIndex).get().queueInfos.get(idx);
-                queueInfo.waitSemaphores.add(signalSemaphore);
-                queueInfo.waitSemaphoresInfo.add(submitInfo);
-            });
-        }
-
-        //
-        var queueGroup = this.queueGroups.get(cmd.queueGroupIndex);
-        var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
-
-        // TODO: globalize loading of queue
-        var lessBusyCount = Collections.min(queueGroup.queueBusy);
-        var lessBusy = queueGroup.queueBusy.indexOf(lessBusyCount);
-        var lessBusyQ = queueGroup.queueIndices.get(lessBusy);
-        var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
-
-        //
-        var querySignalSemaphore = createTempSemaphore();
-        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueInfo.waitSemaphores.clone();
-
-        //
-        signalSemaphoreSubmitInfo.add(querySignalSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT));
-        toRemoveSemaphores.add(querySignalSemaphore);
-
-        //
-        waitSemaphoreSubmitInfo.addAll(queueInfo.waitSemaphoresInfo);
-
-        //
-        queueInfo.waitSemaphoresInfo.clear();
-        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
-
-        //
-
-        var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size());
-        var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size());
-
-        //
-        for (var I=0;I<signalSemaphoreSubmitInfo.size();I++) {
-            signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
-        }
-
-        //
-        for (var I=0;I<waitSemaphoreSubmitInfo.size();I++) {
-            waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
-        }
-
-        //
-        var cmdInfo = VkCommandBufferSubmitInfo.calloc(1);
-        cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
-
-        //
-        //LongBuffer fence_ = memAllocLong(1);
-        //vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
-        vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1)
-            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
-            .pCommandBufferInfos(cmdInfo)
-            .pSignalSemaphoreInfos(signalSemaphores)
-            .pWaitSemaphoreInfos(waitSemaphores), 0);
-
-        //
-        if (cmd.onDone == null) { cmd.onDone = new Promise(); };
-
-        //
-        var ref = new FenceProcess() {{
-            timelineSemaphore = querySignalSemaphore;
-            deallocProcess = null;
-            promise = cmd.onDone;
-        }};
-
-        //
-        this.whenDone.add(ref.deallocProcess = (_null_)->{
-            // TODO: correctly handle a status
-            int status = querySignalSemaphore.getTimeline() == (querySignalSemaphore.lastTimeline-1) ? VK_NOT_READY : VK_SUCCESS;
-            if (status != VK_NOT_READY) {
-                whenDone.remove(ref.deallocProcess);
-
-                //
-                toRemoveSemaphores.stream().forEach((semaphoreObj) -> { backTempSemaphore(semaphoreObj); });
-                queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);
-
-                // TODO: correctly handle a status
-                cmd.onDone.fulfill(status);
-            }
-            return status;
-            //return VK_SUCCESS;
-        });
-
-        //
-        this.doPolling();
-
-        //
-        return ref;
-    }
 
     // TODO: fence registry, and correctly wait by fence
     public int waitFence(FenceProcess process) {
         var status = VK_NOT_READY;
-        while((status = process.deallocProcess.apply(process.timelineSemaphore)) == VK_NOT_READY) {
+        while ((status = process.deallocProcess.apply(process.fence)) == VK_NOT_READY) {
             this.doPolling();
         };
         return status;
@@ -512,6 +420,113 @@ public class DeviceObj extends BasicObj {
     }
 
     //
+    public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
+        var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
+        var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
+
+        //
+        var queueGroup = this.queueGroups.get(cmd.queueGroupIndex);
+        var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
+
+        //
+        if (cmd.whatQueueGroupWillWait >= 0 && cmd.whatQueueGroupWillWait != cmd.queueGroupIndex) {
+            var whatQueueGroup = queueGroups.get(cmd.whatQueueGroupWillWait);
+            whatQueueGroup.queueIndices.forEach((idx)->{
+                var signalSemaphore = createTempSemaphore();
+                var submitInfo = signalSemaphore.makeSubmissionTimeline(cmd.whatWaitBySemaphore);
+                signalSemaphoreSubmitInfo.add(submitInfo);
+
+                //
+                var whatQueueInfo = queueFamilies.get(whatQueueGroup.queueFamilyIndex).get().queueInfos.get(idx);
+                whatQueueInfo.waitSemaphores.add(signalSemaphore);
+                whatQueueInfo.waitSemaphoresInfo.add(submitInfo);
+            });
+        }
+
+        // TODO: globalize loading of queue
+        var lessBusyCount = Collections.min(queueGroup.queueBusy);
+        var lessBusy = queueGroup.queueBusy.indexOf(lessBusyCount);
+        var lessBusyQ = queueGroup.queueIndices.get(lessBusy);
+        var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
+
+        //
+        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
+
+        //
+        //var querySignalSemaphore = createTempSemaphore();
+        var toRemoveSemaphores = (ArrayList<SemaphoreObj>)queueInfo.waitSemaphores.clone();
+        //toRemoveSemaphores.add(querySignalSemaphore);
+        //signalSemaphoreSubmitInfo.add(querySignalSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT));
+        var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size());
+        for (var I=0;I<signalSemaphoreSubmitInfo.size();I++) {
+            signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
+        }
+
+        //
+        waitSemaphoreSubmitInfo.addAll(queueInfo.waitSemaphoresInfo);
+        var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size());
+        for (var I=0;I<waitSemaphoreSubmitInfo.size();I++) {
+            waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
+        }
+        queueInfo.waitSemaphoresInfo.clear();
+
+        //
+        var cmdInfo = VkCommandBufferSubmitInfo.calloc(1);
+        cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
+
+        //
+        LongBuffer fence_ = memAllocLong(1).put(0, 0L);
+        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
+        vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1)
+            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
+            .pCommandBufferInfos(cmdInfo)
+            .pSignalSemaphoreInfos(signalSemaphores)
+            .pWaitSemaphoreInfos(waitSemaphores), fence_.get(0));
+
+        //
+        if (cmd.onDone == null) { cmd.onDone = new Promise(); };
+
+        //
+        var ref = new FenceProcess() {{
+            fence = fence_;
+            //timelineSemaphore = querySignalSemaphore;
+            deallocProcess = null;
+            promise = cmd.onDone;
+        }};
+
+        //
+        this.whenDone.add(ref.deallocProcess = (_null_)->{
+            var fence = fence_.get(0);
+            int status = fence != 0 ? vkGetFenceStatus(device, fence) : VK_SUCCESS;
+            //int status = querySignalSemaphore.getTimeline() == (querySignalSemaphore.prevTimeline) ? VK_NOT_READY : VK_SUCCESS;
+            if (status != VK_NOT_READY && fence != 0) {
+                whenDone.remove(ref.deallocProcess);
+
+                //
+                toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
+                    try {
+                        backTempSemaphore(semaphoreObj);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);
+                vkDestroyFence(device, fence, null); fence_.put(0, 0L);
+
+                // TODO: correctly handle a status
+                cmd.onDone.fulfill(status);
+            }
+            return status;
+        });
+
+        //
+        //this.doPolling();
+
+        //
+        return ref;
+    }
+
+    //
     public FenceProcess submitOnce(BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) {
         var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);
         var commandPool = this.getCommandPool(queueGroup.queueFamilyIndex);
@@ -524,7 +539,7 @@ public class DeviceObj extends BasicObj {
         //
         if (submitCmd.onDone == null) { submitCmd.onDone = new Promise(); };
         submitCmd.onDone.thenApply((status)->{
-            //vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
+            vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
             return status;
         });
 
