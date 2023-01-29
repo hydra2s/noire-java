@@ -305,7 +305,7 @@ public class DeviceObj extends BasicObj {
         public Function<LongBuffer, Integer> deallocProcess = null;
         public Promise<Integer> promise = null; // for getting status
         public LongBuffer fence = null;
-        public int status = VK_SUCCESS;
+        public int status = VK_NOT_READY;
     }
 
     //
@@ -438,9 +438,6 @@ public class DeviceObj extends BasicObj {
         var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
 
         //
-        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
-
-        //
         var querySignalSemaphore = createTempSemaphore();
         var toRemoveSemaphores = new ArrayList<SemaphoreObj>();
         toRemoveSemaphores.addAll(queueInfo.waitSemaphores);
@@ -475,6 +472,15 @@ public class DeviceObj extends BasicObj {
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
+        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
+
+        //
+        /*if (queueGroup.queueBusy.size() > 1) {
+            System.out.println("Queue Group Offloading: ");
+            for (var I = 0; I < queueGroup.queueBusy.size(); I++) {
+                System.out.println(I + ": " + queueGroup.queueBusy.get(I));
+            }
+        }*/
 
         //
         var ref = new FenceProcess() {{
