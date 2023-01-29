@@ -367,7 +367,7 @@ public class DeviceObj extends BasicObj {
 
         //
         this.whenDone.add(ref.deallocProcess);
-        this.doPolling();
+        //this.doPolling();
 
         //
         return ref;
@@ -515,7 +515,7 @@ public class DeviceObj extends BasicObj {
 
         //
         this.whenDone.add(ref.deallocProcess);
-        this.doPolling();
+        //this.doPolling();
 
         //
         return ref;
