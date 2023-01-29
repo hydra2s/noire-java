@@ -158,7 +158,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         @Override // TODO: multiple queue family support
-        public DeviceMemoryObj delete() {
+        public DeviceMemoryObj delete() throws Exception {
             var handle = this.handle;
             
             deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{

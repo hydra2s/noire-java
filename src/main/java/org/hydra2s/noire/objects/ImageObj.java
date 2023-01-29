@@ -97,7 +97,7 @@ public class ImageObj extends BasicObj {
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
-    public ImageObj delete() {
+    public ImageObj delete() throws Exception {
         var handle = this.handle;
 
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{

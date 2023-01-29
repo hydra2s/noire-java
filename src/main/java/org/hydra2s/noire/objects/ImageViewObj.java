@@ -96,7 +96,7 @@ public class ImageViewObj extends BasicObj {
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
-    public ImageViewObj delete() {
+    public ImageViewObj delete() throws Exception {
         
         var handle = this.handle;
         var cInfo = (ImageViewCInfo)this.cInfo;

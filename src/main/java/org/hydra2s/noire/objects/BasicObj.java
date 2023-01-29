@@ -26,6 +26,11 @@ public class BasicObj {
     public PhysicalDeviceObj physicalDeviceObj;
     public MemoryAllocatorObj memoryAllocatorObj;
 
+    // TODO: globalize such flag
+    public boolean deleted = false;
+    public long sharedPtr = 0;
+
+
     public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
         public NativeLRUCache<K, V> cache = null;
 
@@ -242,12 +247,11 @@ public class BasicObj {
     // TODO: add destructors support
     // TODO: add parameters support
     public BasicObj delete() throws Exception {
-
         return this;
     }
 
     public BasicObj deleteDirectly() throws Exception {
-
+        if (sharedPtr > 0) { sharedPtr--; }
         return this;
     }
 

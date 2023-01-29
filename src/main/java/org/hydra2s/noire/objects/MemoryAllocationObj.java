@@ -89,7 +89,7 @@ public class MemoryAllocationObj extends BasicObj {
 
 
     @Override // TODO: multiple queue family support
-    public MemoryAllocationObj delete() {
+    public MemoryAllocationObj delete() throws Exception {
         var handle = this.handle;
         
 

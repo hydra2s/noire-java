@@ -542,9 +542,8 @@ public class PipelineObj extends BasicObj  {
     }
 
     @Override // TODO: multiple queue family support
-    public PipelineObj delete() {
+    public PipelineObj delete() throws Exception {
         var handle = this.handle;
-        ;
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)->{

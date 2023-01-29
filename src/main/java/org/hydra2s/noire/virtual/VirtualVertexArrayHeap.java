@@ -180,7 +180,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }
 
         // de-bloat a re-production of VAO
-        public VirtualVertexArrayObj delete() {
+        public VirtualVertexArrayObj delete() throws Exception {
             var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
             deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
                 queueGroupIndex = cInfo.queueGroupIndex;

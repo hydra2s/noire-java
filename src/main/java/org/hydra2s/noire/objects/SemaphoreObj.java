@@ -27,8 +27,9 @@ public class SemaphoreObj extends BasicObj {
     public VkSemaphoreCreateInfo createInfo;
     public LongBuffer timeline = null;
 
-    // TODO: globalize such flag
-    public boolean deleted = false;
+
+
+    //
     public long lastTimeline = 1;
     public long prevTimeline = 0;
 
@@ -52,11 +53,17 @@ public class SemaphoreObj extends BasicObj {
         var handle = this.handle;
 
         // needs semaphore reusing mechanism
-        vkDestroySemaphore(deviceObj.device, handle.get(), null);
+        if (handle.get() == 0) {
+            System.out.println("Trying to destroy already destroyed semaphore.");
+            throw new Exception("Trying to destroy already destroyed semaphore.");
+        };
+        if (sharedPtr <= 0) {
+            vkDestroySemaphore(deviceObj.device, handle.get(), null);
+            handle.ptr().put(0, 0L);
+            deviceObj.handleMap.remove(handle);
+            this.deleted = true;
+        };
 
-        //
-        deviceObj.handleMap.remove(handle);
-        this.deleted = true;
         return this;
     }
 
@@ -68,13 +75,25 @@ public class SemaphoreObj extends BasicObj {
         deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
             queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)->{
-
                 // needs semaphore reusing mechanism
-                vkDestroySemaphore(deviceObj.device, handle.get(), null);
+                if (sharedPtr > 0) { sharedPtr--; }
+                if (sharedPtr <= 0) {
+                    if (handle.get() == 0) {
+                        System.out.println("Trying to destroy already destroyed semaphore.");
+                        try {
+                            throw new Exception("Trying to destroy already destroyed semaphore.");
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    ;
+                    vkDestroySemaphore(deviceObj.device, handle.get(), null);
+                    handle.ptr().put(0, 0L);
 
-                //
-                deviceObj.handleMap.remove(handle);
-                deleted = true;
+                    //
+                    deviceObj.handleMap.remove(handle);
+                    deleted = true;
+                };
                 return null;
             });
         }}, (cmdBuf)->{
@@ -84,7 +103,11 @@ public class SemaphoreObj extends BasicObj {
     }
 
     //
-    public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask) {
+    public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask) throws Exception {
+        if (handle.get() == 0) {
+            System.out.println("Invalid or destroyed semaphore making info.");
+            throw new Exception("Invalid or destroyed semaphore making info.");
+        }
         prevTimeline = lastTimeline; lastTimeline++;
         return VkSemaphoreSubmitInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
@@ -94,7 +117,11 @@ public class SemaphoreObj extends BasicObj {
     }
 
     //
-    public VkSemaphoreSubmitInfo makeSubmissionBinary(long stageMask) {
+    public VkSemaphoreSubmitInfo makeSubmissionBinary(long stageMask) throws Exception {
+        if (handle.get() == 0) {
+            System.out.println("Invalid or destroyed semaphore making info.");
+            throw new Exception("Invalid or destroyed semaphore making info.");
+        }
         return VkSemaphoreSubmitInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
@@ -102,16 +129,26 @@ public class SemaphoreObj extends BasicObj {
     }
 
     //
-    public long getTimeline() {
+    public long getTimeline() throws Exception {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
-            vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline);
+            if (handle.get() == 0) {
+                System.out.println("Trying to get timeline from destroyed or invalid semaphore.");
+                throw new Exception("Trying to get timeline from destroyed or invalid semaphore.");
+            }
+            if (handle.get() != 0) {
+                vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline);
+            }
         }
         return this.timeline.get(0);
     }
 
     //
-    public SemaphoreObj signalTimeline() {
+    public SemaphoreObj signalTimeline() throws Exception {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
+            if (handle.get() == 0) {
+                System.out.println("Trying to signal timeline by destroyed or invalid semaphore.");
+                throw new Exception("Trying to signal timeline by destroyed or invalid semaphore.");
+            }
             prevTimeline = lastTimeline;
             lastTimeline++;
             vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc()
@@ -122,14 +159,23 @@ public class SemaphoreObj extends BasicObj {
         return this;
     }
 
-    public SemaphoreObj waitTimeline(boolean any) {
+    public SemaphoreObj waitTimeline(boolean any) throws Exception {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
+            if (handle.get() == 0) {
+                System.out.println("Trying to wait timeline a destroyed or invalid semaphore.");
+                throw new Exception("Trying to wait timeline a destroyed or invalid semaphore.");
+            }
             vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
                 .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
                 .pSemaphores(memAllocLong(1).put(0, this.handle.get()))
                 .pValues(memAllocLong(1).put(0, prevTimeline = lastTimeline)), 1024L * 1024L * 1024L);
         }
+        return this;
+    }
+
+    public SemaphoreObj incrementShared() {
+        this.sharedPtr++;
         return this;
     }
 }
