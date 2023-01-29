@@ -285,15 +285,18 @@ public class DeviceObj extends BasicObj {
             deallocProcess = (result)->{
                 var fence = fence_.get(0);
                 int status = fence != 0 ? vkGetFenceStatus(device, fence) : VK_SUCCESS;
-                if (status != VK_NOT_READY && fence != 0) {
+                if (status != VK_NOT_READY) {
                     whenDone.remove(deallocProcess);
                     vkDestroyFence(device, fence_.get(0), null);
+                    fence_.put(0, 0L);
+                    promise.fulfill(status);
                 }
                 return status;
             };
             promise = new Promise();
         }};
-        ref.promise.fulfill(VK_SUCCESS);
+        whenDone.add(ref.deallocProcess);
+        this.doPolling();
         return ref;
     }
 
@@ -383,7 +386,9 @@ public class DeviceObj extends BasicObj {
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             var fence = fence_.get(0);
             int status = fence != 0 ? vkGetFenceStatus(this.device, fence) : VK_SUCCESS;
-            if (status != VK_NOT_READY && fence != 0) {
+            if (status != VK_NOT_READY) {
+                this.whenDone.remove(ref.deallocProcess);
+
                 //
                 toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
                     try {
@@ -394,7 +399,6 @@ public class DeviceObj extends BasicObj {
                 });
 
                 //
-                this.whenDone.remove(ref.deallocProcess);
                 queueFamily.queueBusy.set(lessBusy, queueFamily.queueBusy.get(lessBusy) - 1);
                 cmd.onDone.fulfill(status);
 
