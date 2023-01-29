@@ -247,7 +247,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     deviceObj.submitOnce(new BasicCInfo.SubmitCmd() {{
                         // TODO: correctly handle main queue family
                         whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                        whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                        whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
 
                         //
                         queueGroupIndex = cInfo.queueGroupIndex;
@@ -300,7 +300,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
                     // TODO: correctly handle main queue family
                     whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                    whatWaitBySemaphore = VK_PIPELINE_STAGE_TRANSFER_BIT;
+                    whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
 
                     //
                     queueGroupIndex = cInfo.queueGroupIndex;
