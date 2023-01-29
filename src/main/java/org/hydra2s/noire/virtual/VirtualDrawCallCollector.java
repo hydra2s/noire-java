@@ -20,7 +20,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
+import static org.lwjgl.vulkan.VK13.*;
 
 // Will collect draw calls data for building acceleration structures
 // TODO: needs add sorting support (per morton-code)
@@ -347,6 +347,21 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
                 memSlice(cInfo.uniformData, 400, 8).putLong(0, indexBuffer.address);
                 vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, cInfo.uniformData);
             }
+
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+                .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_READ_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .buffer(uniformBuffer.handle)
+                .offset(uniformBuffer.offset)
+                .size(((VirtualDrawCallCollectorCInfo)bound.cInfo).drawCallUniformStride); // TODO: support partial synchronization
+
+            //
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
 
             // bring back VAO data
             if (cInfo.vertexBuffer != null) {

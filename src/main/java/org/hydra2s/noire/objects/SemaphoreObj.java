@@ -122,14 +122,13 @@ public class SemaphoreObj extends BasicObj {
         return this;
     }
 
-    // UNSAFE!
-    public SemaphoreObj waitTimeline(long lastTimeline, boolean any) {
+    public SemaphoreObj waitTimeline(boolean any) {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
             vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
                 .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
                 .pSemaphores(memAllocLong(1).put(0, this.handle.get()))
-                .pValues(memAllocLong(1).put(0, lastTimeline)), 1024L * 1024L * 1024L);
+                .pValues(memAllocLong(1).put(0, prevTimeline = lastTimeline)), 1024L * 1024L * 1024L);
         }
         return this;
     }
