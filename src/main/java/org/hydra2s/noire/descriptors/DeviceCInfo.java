@@ -20,7 +20,7 @@ public class DeviceCInfo extends BasicCInfo {
     }
 
     //
-    public ArrayList<QueueFamilyCInfo> queueFamilies = new ArrayList<QueueFamilyCInfo>();
-    public ArrayList<QueueGroup> queueGroups = new ArrayList<QueueGroup>();
+    public ArrayList<QueueFamilyCInfo> queueFamilies = null;//new ArrayList<QueueFamilyCInfo>();
+    public ArrayList<QueueGroup> queueGroups = null;//new ArrayList<QueueGroup>();
 
 }

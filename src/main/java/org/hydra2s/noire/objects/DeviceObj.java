@@ -196,6 +196,7 @@ public class DeviceObj extends BasicObj {
             this.queueFamilies.forEach((index, qF)->{
                 var group = new DeviceCInfo.QueueGroup();
                 group.queueIndices = new ArrayList<>();
+                group.queueFamilyIndex = index;
                 for (var I=0;I<qF.get().queueInfos.size();I++) {
                     group.queueIndices.add(I);
                 }
@@ -324,8 +325,8 @@ public class DeviceObj extends BasicObj {
 
         var ref = new FenceProcess() {{
             deallocProcess = (result)->{
-                int status = querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
-                if (status != VK_NOT_READY) {
+                int status = !querySignalSemaphore.deleted && querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
+                if (!querySignalSemaphore.deleted && status != VK_NOT_READY) {
                     whenDone.remove(deallocProcess);
                     try {
                         querySignalSemaphore.deleteDirectly();
@@ -446,11 +447,9 @@ public class DeviceObj extends BasicObj {
         //
         this.whenDone.add(ref.deallocProcess = (_null_)->{
             // TODO: correctly handle a status
-            int status = querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
-
-            //
-            if (status != VK_NOT_READY) {
-                this.whenDone.remove(ref.deallocProcess);
+            int status = !querySignalSemaphore.deleted && querySignalSemaphore.getTimeline() == 0 ? VK_NOT_READY : VK_SUCCESS;
+            if (status != VK_NOT_READY && !querySignalSemaphore.deleted) {
+                whenDone.remove(ref.deallocProcess);
 
                 //
                 toRemoveSemaphores.stream().forEach((semaphoreObj) -> {
@@ -462,7 +461,7 @@ public class DeviceObj extends BasicObj {
                 });
 
                 //
-                queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy) - 1);
+                queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);
 
                 // TODO: correctly handle a status
                 cmd.onDone.fulfill(status);

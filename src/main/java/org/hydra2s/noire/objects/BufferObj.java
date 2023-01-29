@@ -55,7 +55,7 @@ public class BufferObj extends BasicObj {
             .size(Math.max(cInfo.size, 0L))
             .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
             .sharingMode(VK_SHARING_MODE_CONCURRENT)
-            .pQueueFamilyIndices(cInfo.queueFamilyIndices != null ? cInfo.queueFamilyIndices : deviceObj.queueFamilyIndices);
+            .pQueueFamilyIndices(deviceObj.queueFamilyIndices);
 
         //
         int status = VK_NOT_READY;
