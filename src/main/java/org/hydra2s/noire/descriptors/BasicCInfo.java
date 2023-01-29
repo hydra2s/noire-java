@@ -670,7 +670,7 @@ public class BasicCInfo {
         //
         public int whatQueueGroupWillWait = -1;
         public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT;
-        public long whatValueBySemaphore = 0;
+        public long whatValueBySemaphore = 2;
     };
 
     //

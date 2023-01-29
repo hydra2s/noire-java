@@ -352,16 +352,19 @@ public class DeviceObj extends BasicObj {
         return ref;
     }
 
-    // TODO: support for submission v2
+    //
     public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) {
         var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
         var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
 
         //
         if (cmd.whatQueueGroupWillWait >= 0) {
+            //
             var signalSemaphore = new SemaphoreObj(this.getHandle(), new SemaphoreCInfo(){{
 
             }});
+
+            //
             var submitInfo = signalSemaphore.makeSubmissionTimeline(cmd.whatWaitBySemaphore, cmd.whatValueBySemaphore);
 
             //
@@ -403,7 +406,7 @@ public class DeviceObj extends BasicObj {
         queueInfo.waitSemaphoresInfo.clear();
         queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
-        // TODO: queue submit v2
+        //
         var cmdInfo = VkCommandBufferSubmitInfo.calloc(1);
         var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size());
         var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size());
