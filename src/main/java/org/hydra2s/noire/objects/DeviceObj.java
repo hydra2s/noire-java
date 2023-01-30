@@ -5,6 +5,7 @@ import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
 import org.hydra2s.noire.descriptors.SemaphoreCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
@@ -85,8 +86,7 @@ public class DeviceObj extends BasicObj {
         public PointerBuffer cmdBufBlock = null;
         public int cmdBufIndex = 0;
         //public ArrayList<PointerBuffer> cmdBufferBlocks = null;
-        public ArrayList<VkCommandBuffer> onceCmdBuffers = null;
-        public ArrayList<Long> fences = null;
+        public ArrayList<UtilsCInfo.Pair<Long, VkCommandBuffer>> onceCmdBuffers = null;
     };
 
 
@@ -198,8 +198,6 @@ public class DeviceObj extends BasicObj {
                 qf.commandPoolInfo.add(new CommandPoolInfo(){{
                     cmdBufCache = new ArrayList<>();
                     onceCmdBuffers = new ArrayList<>();
-                    //cmdBufferBlocks = new ArrayList<>();
-                    fences = new ArrayList<>();
                 }});
             }
 
@@ -337,26 +335,16 @@ public class DeviceObj extends BasicObj {
         commandPoolInfo.cmdBufCache.clear();
         commandPoolInfo.cmdBufBlock = null;
         var commandPool = getCommandPool(queueGroup.queueFamilyIndex, commandPoolIndex);
-        var fences = memAllocLong(commandPoolInfo.fences.size());
-        for (var F=0;F<commandPoolInfo.fences.size();F++) {
-            fences.put(F, commandPoolInfo.fences.get(F));
-        }
 
-        // TODO: using polling!
-        vkWaitForFences(device, fences, true, 9007199254740991L);
-
-        //
-        //commandPoolInfo.cmdBufferBlocks.forEach((block)->{ vkFreeCommandBuffers(device, commandPool, block); });
-        //commandPoolInfo.cmdBufferBlocks.clear();
-
-        // TODO: using pair of command buffer and fence
         // impossible to free command buffers, even sent once
-        commandPoolInfo.onceCmdBuffers.forEach((once)->{ vkFreeCommandBuffers(device, commandPool, once); });
-        commandPoolInfo.onceCmdBuffers.clear();
-
-        // TODO: using pair of command buffer and fence
-        commandPoolInfo.fences.forEach((fence)->{ vkDestroyFence(device, fence, null); });
-        commandPoolInfo.fences.clear();
+        commandPoolInfo.onceCmdBuffers = new ArrayList(commandPoolInfo.onceCmdBuffers.stream().filter((pair)->{
+            var status = vkWaitForFences(device, pair.first, true, 9007199254740991L);
+            if (status != VK_NOT_READY) {
+                vkDestroyFence(device, pair.first, null);
+                vkFreeCommandBuffers(device, commandPool, pair.second);
+            }
+            return status == VK_NOT_READY;
+        }).toList());
 
         // Corrupted and BROKEN function! (currently...)
         //vkResetCommandPool(device, commandPool, /*VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT*/0);
@@ -621,8 +609,6 @@ public class DeviceObj extends BasicObj {
         // TODO: rarer fence creation
         LongBuffer fence_ = memAllocLong(1).put(0, 0L);
         vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
-
-        //
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
@@ -635,8 +621,7 @@ public class DeviceObj extends BasicObj {
 
         // all was in vain...
         submitCmd.onDone.thenApply((status)->{
-            commandPoolInfo.fences.add(fence_.get(0));
-            commandPoolInfo.onceCmdBuffers.add(submitCmd.cmdBuf);
+            commandPoolInfo.onceCmdBuffers.add(new UtilsCInfo.Pair<Long, VkCommandBuffer>(fence_.get(0), submitCmd.cmdBuf));
             return status;
         });
 

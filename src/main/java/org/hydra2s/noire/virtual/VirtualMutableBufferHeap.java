@@ -245,10 +245,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 // initiate free procedure
                 if (oldAlloc != 0) {
+                    deviceObj.doPolling();
                     deviceObj.submitOnce(new DeviceObj.SubmitCmd() {{
                         // TODO: correctly handle main queue family
-                        whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                        whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
+                        //whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
+                        //whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
 
                         //
                         queueGroupIndex = cInfo.queueGroupIndex;
@@ -298,11 +299,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public VirtualMutableBufferObj delete() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
-                var srcBufferRange = this.getBufferRange();
+                deviceObj.doPolling();
                 deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
                     // TODO: correctly handle main queue family
-                    whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                    whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
+                    //whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
+                    //whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
 
                     //
                     queueGroupIndex = cInfo.queueGroupIndex;
