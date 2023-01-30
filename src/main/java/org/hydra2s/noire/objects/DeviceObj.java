@@ -327,6 +327,9 @@ public class DeviceObj extends BasicObj {
 
     //
     public DeviceObj resetCommandPool(int queueGroupIndex, int commandPoolIndex) {
+        this.doPolling();
+
+        //
         var queueGroup = this.queueGroups.get(queueGroupIndex);
         var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
         var commandPoolInfo = queueFamily.commandPoolInfo.get(commandPoolIndex);
@@ -427,7 +430,7 @@ public class DeviceObj extends BasicObj {
                 var fence_ = fence.get(0);
                 status = querySignalSemaphore.getTimeline() <= prevTimeline ? VK_NOT_READY : VK_SUCCESS;
                 if (status != VK_NOT_READY) {
-                    //backTempSemaphore(querySignalSemaphore);
+                    backTempSemaphore(querySignalSemaphore);
                     promise.fulfill(status);
                 }
                 return status;
@@ -507,7 +510,7 @@ public class DeviceObj extends BasicObj {
          var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
 
          //
-         final int maxSemaphoreQueue = 8;
+         final int maxSemaphoreQueue = 64;
          if (queueInfo.querySemaphoreObj == null) {
              queueInfo.querySemaphoreObj = new ArrayList<>();
              for (var I=0;I<maxSemaphoreQueue;I++) {

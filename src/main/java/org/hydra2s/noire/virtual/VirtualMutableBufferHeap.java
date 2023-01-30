@@ -275,7 +275,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                             System.out.println("Allocation Failed: " + res);
                             throw new Exception("Allocation Failed: " + res);
                         }
-                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling() && (currentTimeMillis() - beginTiming) < 1000);
+                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling() && (currentTimeMillis() - beginTiming) < 10000);
 
                     // if anyways, isn't allocated...
                     if (res != VK_SUCCESS) {
