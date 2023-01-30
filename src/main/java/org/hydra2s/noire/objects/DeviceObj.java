@@ -395,6 +395,7 @@ public class DeviceObj extends BasicObj {
     // TODO: rework that system
      public VkCommandBuffer allocateCommand(int queueGroupIndex, int commandPoolIndex) {
         var maxCommandBufferCache = 1;
+        /*
         var queueGroup = this.queueGroups.get(queueGroupIndex);
         var queueFamily = this.queueFamilies.get(queueGroup.queueFamilyIndex).get();
         if (queueFamily.cmdBufCache == null || queueFamily.cmdBufIndex >= queueFamily.cmdBufCache.size()) {
@@ -414,7 +415,16 @@ public class DeviceObj extends BasicObj {
             }
             queueFamily.cmdBufIndex = 0;
         }
-        return queueFamily.cmdBufCache.get(queueFamily.cmdBufIndex++);
+        return queueFamily.cmdBufCache.get(queueFamily.cmdBufIndex++);*/
+         var cmdBufPtr = memAllocPointer(1);
+         var queueGroup = this.queueGroups.get(queueGroupIndex);
+         var commandPool = this.getCommandPool(queueGroup.queueFamilyIndex, commandPoolIndex);
+         vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()
+             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO)
+             .level(VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+             .commandPool(commandPool)
+             .commandBufferCount(maxCommandBufferCache), cmdBufPtr);
+         return new VkCommandBuffer(cmdBufPtr.get(0), device);
     }
 
     //
@@ -534,8 +544,6 @@ public class DeviceObj extends BasicObj {
 
     //
     public FenceProcess submitOnce(BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
-        var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);
-        var commandPool = this.getCommandPool(queueGroup.queueFamilyIndex, submitCmd.commandPoolIndex);
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
@@ -544,12 +552,6 @@ public class DeviceObj extends BasicObj {
 
         //
         if (submitCmd.onDone == null) { submitCmd.onDone = new Promise(); };
-        submitCmd.onDone.thenApply((status)->{
-            //vkFreeCommandBuffers(this.device, commandPool, submitCmd.cmdBuf);
-            return status;
-        });
-
-        //
         return submitCommand(submitCmd);
     }
 
