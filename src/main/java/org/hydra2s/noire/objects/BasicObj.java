@@ -32,16 +32,16 @@ public class BasicObj {
 
 
     public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
-        public NativeLRUCache<K, V> cache = null;
+        //public NativeLRUCache<K, V> cache = null;
 
         public CombinedMap(int capacity) {
             super(1024);
-            this.cache = new NativeLRUCache<K, V>(capacity);
+            //this.cache = new NativeLRUCache<K, V>(capacity);
         }
 
         //
         public void put$(K key, V value) {
-            cache.put(key, value);
+            //cache.put(key, value);
             super.put(key, Optional.ofNullable(value));
         }
 
@@ -52,32 +52,34 @@ public class BasicObj {
 
         @Override
         public Optional<V> get(Object key) {
-            return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+            //return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
         }
 
-        @Override
-        public Optional<V> put(K key, Optional<V> value) {
-            cache.put(key, value.orElse(null));
-            super.put(key, value);
-            return value;
-        }
+        //@Override
+        //public Optional<V> put(K key, Optional<V> value) {
+            //cache.put(key, value.orElse(null));
+            //super.put(key, value);
+            //return value;
+        //}
 
         @Override
         public Optional<V> remove(Object key) {
-            var a = cache.remove((K) key);
-            var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
-            return Optional.ofNullable(a.orElse(b.orElse(null)));
+            //var a = cache.remove((K) key);
+            //var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
+            //return Optional.ofNullable(a.orElse(b.orElse(null)));
+            return Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
         }
 
-        @Override
-        public boolean containsKey(Object key) {
-            return (cache.containsKey((K) key) || super.containsKey(key));
-        }
+        //@Override
+        //public boolean containsKey(Object key) {
+            //return (cache.containsKey((K) key) || super.containsKey(key));
+        //}
 
-        @Override
-        public int size() {
-            return super.size();
-        }
+        //@Override
+        //public int size() {
+            //return super.size();
+        //}
     }
 
     //
