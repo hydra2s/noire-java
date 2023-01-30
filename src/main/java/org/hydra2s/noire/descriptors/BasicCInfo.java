@@ -663,6 +663,7 @@ public class BasicCInfo {
         public VkCommandBuffer cmdBuf = null;
         public Promise<Integer> onDone = null;
         public int queueGroupIndex = 0;
+        public int commandPoolIndex = 0;
 
         //
         public ArrayList<VkSemaphoreSubmitInfo> waitSemaphoreSubmitInfo = null;

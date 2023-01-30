@@ -24,7 +24,7 @@ public class SwapChainObj extends BasicObj  {
     public IntBuffer amountOfImagesInSwapchain = memAllocInt(1);
 
     //
-    public ArrayList<Integer> presentModes = new ArrayList<>(Arrays.asList(VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_KHR));
+    public ArrayList<Integer> presentModes = new ArrayList<>(Arrays.asList(VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_RELAXED_KHR, VK_PRESENT_MODE_FIFO_KHR, VK_PRESENT_MODE_MAILBOX_KHR));
     public ArrayList<Integer> surfaceFormats = new ArrayList<>(Arrays.asList(VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_FORMAT_B8G8R8A8_UNORM));
     public VkSwapchainCreateInfoKHR createInfo = null;
     public VkImageViewCreateInfo imageViewInfo = null;
@@ -209,7 +209,6 @@ public class SwapChainObj extends BasicObj  {
 
     // TODO: more than one semaphore support
     public int acquireImageIndex(long semaphore) {
-
         vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.getHandle().get(), 0L, this.imageIndex);
         return this.imageIndex.get(0);
     }
