@@ -49,6 +49,7 @@ public class PipelineObj extends BasicObj  {
 
     //
     public BufferObj uniformDescriptorBuffer = null;
+    public LongBuffer uniformDescriptorSet = null;
 
     //
     public static class DirectAccessInfo {
@@ -106,7 +107,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (directInfo.pipelineLayoutObj != null) {
-            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, directInfo.pipelineObj.uniformDescriptorBuffer != null ? directInfo.pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet.get(0) : 0L);
         }
 
         //
@@ -200,7 +201,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (directInfo.pipelineLayoutObj != null && directInfo.pipelineObj != null) {
-            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorBuffer != null ? directInfo.pipelineObj.uniformDescriptorBuffer.getDeviceAddress() : 0L);
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet.get(0) : 0L);
         }
 
         //
@@ -332,6 +333,10 @@ public class PipelineObj extends BasicObj  {
                         isDevice = true;
                     }};
                 }});
+
+                //
+                var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
+                this.uniformDescriptorSet = $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer);
             }
         }
     }
@@ -537,6 +542,10 @@ public class PipelineObj extends BasicObj  {
                         isDevice = true;
                     }};
                 }});
+
+                //
+                var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
+                this.uniformDescriptorSet = $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer);
             }
         }
     }
