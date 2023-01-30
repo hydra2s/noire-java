@@ -107,7 +107,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (directInfo.pipelineLayoutObj != null) {
-            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet.get(0) : 0L);
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet : null);
         }
 
         //
@@ -201,7 +201,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         if (directInfo.pipelineLayoutObj != null && directInfo.pipelineObj != null) {
-            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet.get(0) : 0L);
+            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet : null);
         }
 
         //
@@ -314,7 +314,7 @@ public class PipelineObj extends BasicObj  {
             this.createInfo = VkComputePipelineCreateInfo.calloc(1)
                 .pNext(this.robustness.address())
                 .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
-                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
+                .flags((PipelineLayoutObj.useLegacyBindingSystem ? 0 : VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
                 .stage(createShaderModuleInfo(deviceObj.createShaderModule(cInfo.computeCode), VK_SHADER_STAGE_COMPUTE_BIT, "main"))
                 .layout(cInfo.pipelineLayout);
 
@@ -514,7 +514,7 @@ public class PipelineObj extends BasicObj  {
             //
             this.createInfo
                 .pNext(this.dynamicRenderingPipelineInfo.address())
-                .flags(VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
+                .flags((PipelineLayoutObj.useLegacyBindingSystem ? 0 : VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
                 .pStages(this.shaderStageInfo)
                 .pVertexInputState(this.vertexInputInfo)
                 .pColorBlendState(this.colorBlendInfo)
