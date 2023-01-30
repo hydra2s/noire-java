@@ -173,10 +173,11 @@ public class SemaphoreObj extends BasicObj {
                 throw new Exception("Trying to wait timeline a destroyed or invalid semaphore.");
             }
             vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
-                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
+                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO)
                 .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
                 .pSemaphores(memAllocLong(1).put(0, this.handle.get()))
-                .pValues(memAllocLong(1).put(0, prevTimeline = lastTimeline)), 1024L * 1024L * 1024L);
+                .semaphoreCount(1)
+                .pValues(memAllocLong(1).put(0, prevTimeline = lastTimeline)), 9007199254740991L);
         }
         return this;
     }
