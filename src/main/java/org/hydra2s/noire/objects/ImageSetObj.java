@@ -10,7 +10,6 @@ import org.lwjgl.vulkan.VkImageSubresourceRange;
 //
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -103,12 +102,12 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdBackstageId(VkCommandBuffer cmdBuf, int I) {
-        CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
-            new CopyInfoCInfo.ImageViewCopyInfo(){{
+        CommandUtils.cmdCopyImageViewToImageView(cmdBuf,
+            new CommandUtils.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = currentImageViews.get(I).handle.get();
             }},
-            new CopyInfoCInfo.ImageViewCopyInfo(){{
+            new CommandUtils.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = previousImageViews.get(I).handle.get();
             }},
@@ -119,12 +118,12 @@ public class ImageSetObj extends BasicObj  {
 
     //
     public ImageSetObj cmdSwapstageId(VkCommandBuffer cmdBuf, int I) {
-        CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
-            new CopyInfoCInfo.ImageViewCopyInfo(){{
+        CommandUtils.cmdCopyImageViewToImageView(cmdBuf,
+            new CommandUtils.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = writingImageViews.get(I).handle.get();
             }},
-            new CopyInfoCInfo.ImageViewCopyInfo(){{
+            new CommandUtils.ImageViewCopyInfo(){{
                 device = base.get();
                 imageView = currentImageViews.get(I).handle.get();
             }},
@@ -256,12 +255,12 @@ public class ImageSetObj extends BasicObj  {
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var extent = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
-                CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
-                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                CommandUtils.cmdCopyImageViewToImageView(cmdBuf,
+                    new CommandUtils.ImageViewCopyInfo(){{
                         device = base.get();
                         imageView = currentDepthStencilImageView.handle.get();
                     }},
-                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                    new CommandUtils.ImageViewCopyInfo(){{
                         device = base.get();
                         imageView = previousDepthStencilImageView.handle.get();
                     }},
@@ -282,12 +281,12 @@ public class ImageSetObj extends BasicObj  {
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var extent = VkExtent3D.calloc().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
-                CopyUtilObj.cmdCopyImageViewToImageView(cmdBuf,
-                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                CommandUtils.cmdCopyImageViewToImageView(cmdBuf,
+                    new CommandUtils.ImageViewCopyInfo(){{
                         device = base.get();
                         imageView = writingDepthStencilImageView.handle.get();
                     }},
-                    new CopyInfoCInfo.ImageViewCopyInfo(){{
+                    new CommandUtils.ImageViewCopyInfo(){{
                         device = base.get();
                         imageView = currentDepthStencilImageView.handle.get();
                     }},

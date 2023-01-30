@@ -2,9 +2,7 @@ package org.hydra2s.noire.objects;
 
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
@@ -15,7 +13,6 @@ import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
-import static org.lwjgl.vulkan.VK13.*;
 
 //
 // DEFAULT IS ResizableBAR!
@@ -141,7 +138,7 @@ public class BufferObj extends BasicObj {
     // necessary after `unmap()` op
     // Resizable BAR!
     public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
-        CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
+        CommandUtils.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
         return this;
     }
 
@@ -151,7 +148,7 @@ public class BufferObj extends BasicObj {
     // bounds updating data into command buffer
     public BufferObj cmdUpdateBuffer(VkCommandBuffer cmdBuf, ByteBuffer data, long byteOffset) {
         vkCmdUpdateBuffer(cmdBuf, this.handle.get(), byteOffset, data);
-        CopyUtilObj.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), byteOffset, data.remaining()));
+        CommandUtils.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), byteOffset, data.remaining()));
         return this;
     }
 

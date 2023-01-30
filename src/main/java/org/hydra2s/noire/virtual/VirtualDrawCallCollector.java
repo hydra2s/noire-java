@@ -14,10 +14,7 @@ import java.util.ArrayList;
 //
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static org.hydra2s.noire.virtual.VirtualDrawCallCollectorCInfo.*;
-import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.vertexArrayStride;
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.EXTIndexTypeUint8.VK_INDEX_TYPE_UINT8_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
@@ -344,10 +341,10 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             // copy draw data (if required)
             if (cInfo.vertexMode == 0 && vertexRange != null) {
-                CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, vertexRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vertexRange.offset()).dstOffset(vertexBuffer.offset).size(min(vertexRange.range(), vertexBuffer.range)));
+                CommandUtils.cmdCopyBufferToBuffer(cmdBuf, vertexRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vertexRange.offset()).dstOffset(vertexBuffer.offset).size(min(vertexRange.range(), vertexBuffer.range)));
             }
             if (cInfo.indexMode == 0) {
-                CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, indexRange.buffer(), indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset()).dstOffset(indexBuffer.offset).size(min(indexRange.range(), indexBuffer.range)));
+                CommandUtils.cmdCopyBufferToBuffer(cmdBuf, indexRange.buffer(), indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset()).dstOffset(indexBuffer.offset).size(min(indexRange.range(), indexBuffer.range)));
             }
 
             // copy uniform based information from memories

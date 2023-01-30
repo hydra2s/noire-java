@@ -1,7 +1,6 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
@@ -83,14 +82,14 @@ public class ImageViewObj extends BasicObj {
 
     //
     public ImageViewObj cmdTransitionBarrierFromInitial(VkCommandBuffer cmdBuf) {
-        CopyUtilObj.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, VK_IMAGE_LAYOUT_UNDEFINED, ((ImageViewCInfo)cInfo).imageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
+        CommandUtils.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, VK_IMAGE_LAYOUT_UNDEFINED, ((ImageViewCInfo)cInfo).imageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
         return this;
     }
 
     // simpler than traditional image
     public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout, boolean fromInitial) {
         if (fromInitial) { this.cmdTransitionBarrierFromInitial(cmdBuf); };
-        CopyUtilObj.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, ((ImageViewCInfo)cInfo).imageLayout, dstImageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
+        CommandUtils.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, ((ImageViewCInfo)cInfo).imageLayout, dstImageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
         ((ImageViewCInfo)cInfo).imageLayout = dstImageLayout;
         return this;
     }

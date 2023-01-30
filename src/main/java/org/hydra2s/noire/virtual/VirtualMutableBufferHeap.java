@@ -1,10 +1,8 @@
 package org.hydra2s.noire.virtual;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.noire.objects.*;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
@@ -17,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -27,7 +24,6 @@ import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.*;
 
 // Will uses large buffer concept with virtual allocation (VMA)
 // When used draw collector system, recommended to use host-based memory
@@ -140,7 +136,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             .size(min(src.range(), dst.range()))).toList();
         var Rs = copies.remaining();
         for (var I=0;I<Rs;I++) { copies.get(I).set(modified.get(I)); } // modify copies
-        CopyUtilObj.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
+        CommandUtils.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
     }
 
     // Will be able to deallocate and re-allocate again
