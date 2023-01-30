@@ -51,14 +51,14 @@ public class SemaphoreObj extends BasicObj {
     }
 
     @Override // TODO: multiple queue family support
-    public SemaphoreObj deleteDirectly() throws Exception {
+    public SemaphoreObj deleteDirectly() /*throws Exception*/ {
         super.deleteDirectly();
         var handle = this.handle;
 
         // needs semaphore reusing mechanism
         if (handle.get() == 0) {
-            System.out.println("Trying to destroy already destroyed semaphore.");
-            throw new Exception("Trying to destroy already destroyed semaphore.");
+            //System.out.println("Trying to destroy already destroyed semaphore.");
+            //throw new Exception("Trying to destroy already destroyed semaphore.");
         };
         if (sharedPtr <= 0) {
             vkDestroySemaphore(deviceObj.device, handle.get(), null);
@@ -136,12 +136,12 @@ public class SemaphoreObj extends BasicObj {
     }
 
     //
-    public long getTimeline() throws Exception {
+    public long getTimeline() /*throws Exception*/ {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
-            if (handle.get() == 0) {
-                System.out.println("Trying to get timeline from destroyed or invalid semaphore.");
-                throw new Exception("Trying to get timeline from destroyed or invalid semaphore.");
-            }
+            //if (handle.get() == 0) {
+                //System.out.println("Trying to get timeline from destroyed or invalid semaphore.");
+                //throw new Exception("Trying to get timeline from destroyed or invalid semaphore.");
+            //}
             if (handle.get() != 0) {
                 vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline);
             }

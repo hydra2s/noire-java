@@ -252,7 +252,7 @@ public class BasicObj {
         return this;
     }
 
-    public BasicObj deleteDirectly() throws Exception {
+    public BasicObj deleteDirectly() /*throws Exception*/ {
         if (sharedPtr > 0) { sharedPtr--; }
         return this;
     }

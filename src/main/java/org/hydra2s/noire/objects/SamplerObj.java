@@ -61,8 +61,8 @@ public class SamplerObj extends BasicObj  {
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
-    public SamplerObj deleteDirectly() throws Exception {
-        super.delete();
+    public SamplerObj deleteDirectly() /*throws Exception*/ {
+        super.deleteDirectly();
         
         var cInfo = (SamplerCInfo)this.cInfo;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);

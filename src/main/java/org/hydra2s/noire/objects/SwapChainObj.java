@@ -267,11 +267,11 @@ public class SwapChainObj extends BasicObj  {
     }
 
     @Override // TODO: multiple queue family support (and Promise.all)
-    public SwapChainObj deleteDirectly() throws Exception {
+    public SwapChainObj deleteDirectly() /*throws Exception*/ {
         var Is = this.imageViews.size();
         for (var i=0;i<Is;i++) {
-            this.imageViews.get(i).delete();
-            this.imagesObj.get(i).delete();
+            this.imageViews.get(i).deleteDirectly();
+            this.imagesObj.get(i).deleteDirectly();
         }
 
         //

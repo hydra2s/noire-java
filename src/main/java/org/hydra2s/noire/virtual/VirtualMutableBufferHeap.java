@@ -329,7 +329,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         @Override
-        public VirtualMutableBufferObj deleteDirectly() throws Exception {
+        public VirtualMutableBufferObj deleteDirectly() /*throws Exception*/ {
             var oldAlloc = this.allocId.get(0);
             if (heap != null && oldAlloc != 0) {
                 vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
