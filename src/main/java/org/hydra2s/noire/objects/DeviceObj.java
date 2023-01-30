@@ -307,7 +307,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public DeviceObj resetCommandPool(int queueGroupIndex, int commandPoolIndex) {
-        vkResetCommandPool(device, getCommandPool(this.queueGroups.get(queueGroupIndex).queueFamilyIndex, commandPoolIndex), VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+        vkResetCommandPool(device, getCommandPool(this.queueGroups.get(queueGroupIndex).queueFamilyIndex, commandPoolIndex), 0);
         return this;
     }
 
@@ -395,7 +395,7 @@ public class DeviceObj extends BasicObj {
 
         //
         this.whenDone.add(ref.deallocProcess);
-        //this.doPolling();
+        this.doPolling();
 
         //
         return ref;
@@ -554,7 +554,7 @@ public class DeviceObj extends BasicObj {
 
         //
         this.whenDone.add(ref.deallocProcess);
-        //this.doPolling();
+        this.doPolling();
 
         //
         return ref;
