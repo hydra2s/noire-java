@@ -63,6 +63,9 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     public VkAccelerationStructureInstanceKHR instanceInfo = null;
 
     //
+    static final public boolean enableRayTracing = false;
+
+    //
     public VirtualDrawCallCollector(Handle base, VirtualDrawCallCollectorCInfo cInfo) throws Exception {
         super(base, cInfo);
 
@@ -111,57 +114,59 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         }};
 
         //
-        this.bottomLvl = new AccelerationStructureObj.BottomAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.BottomAccelerationStructureCInfo(){{
-            memoryAllocator = memoryAllocatorObj.getHandle().get();
-            geometries = new ArrayList<>() {{
-                for (int I = 0; I < cInfo.maxDrawCalls; I++) {
-                    add(new DataCInfo.TriangleGeometryCInfo() {{
-                        vertexBinding = new DataCInfo.VertexBindingCInfo() {{
-                            stride = 48;
-                            vertexCount = (int) (cInfo.vertexAverageCount * 3);
-                            format = VK_FORMAT_R32G32B32_SFLOAT;
-                        }};
-                        indexBinding = new DataCInfo.IndexBindingCInfo() {{
-                            vertexCount = (int) (cInfo.vertexAverageCount * 3);
-                            type = VK_INDEX_TYPE_UINT32;
-                        }};
-                    }});
-                }
-            }};
-        }});
-
-        //
-        this.instanceBuffer = new BufferObj(deviceObj.getHandle(), new BufferCInfo(){{
-            memoryAllocationInfo = new MemoryAllocationCInfo() {{
-                isHost = true;
-                isDevice = true;
-            }};
-            size = VkAccelerationStructureInstanceKHR.SIZEOF;
-            usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            memoryAllocator = cInfo.memoryAllocator;
-        }});
-
-        //
-        this.instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0)));
-        this.instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
-
-        // will be changed into camera position shifting
-        this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
-            1.0F, 0.0F, 0.0F, 0.0F,
-            0.0F, 1.0F, 0.0F, 0.0F,
-            0.0F, 0.0F, 1.0F, 0.0F
-        })));
-
-        //
-        this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo(){{
-            memoryAllocator = memoryAllocatorObj.getHandle().get();
-            instances = new DataCInfo.InstanceGeometryCInfo(){{
-                instanceBinding = new DataCInfo.InstanceBindingCInfo(){{
-                    address = instanceBuffer.getDeviceAddress();
-                    vertexCount = 1;
+        if (enableRayTracing) {
+            this.bottomLvl = new AccelerationStructureObj.BottomAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.BottomAccelerationStructureCInfo() {{
+                memoryAllocator = memoryAllocatorObj.getHandle().get();
+                geometries = new ArrayList<>() {{
+                    for (int I = 0; I < cInfo.maxDrawCalls; I++) {
+                        add(new DataCInfo.TriangleGeometryCInfo() {{
+                            vertexBinding = new DataCInfo.VertexBindingCInfo() {{
+                                stride = 48;
+                                vertexCount = (int) (cInfo.vertexAverageCount * 3);
+                                format = VK_FORMAT_R32G32B32_SFLOAT;
+                            }};
+                            indexBinding = new DataCInfo.IndexBindingCInfo() {{
+                                vertexCount = (int) (cInfo.vertexAverageCount * 3);
+                                type = VK_INDEX_TYPE_UINT32;
+                            }};
+                        }});
+                    }
                 }};
-            }};
-        }});
+            }});
+
+            //
+            this.instanceBuffer = new BufferObj(deviceObj.getHandle(), new BufferCInfo() {{
+                memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                    isHost = true;
+                    isDevice = true;
+                }};
+                size = VkAccelerationStructureInstanceKHR.SIZEOF;
+                usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+                memoryAllocator = cInfo.memoryAllocator;
+            }});
+
+            //
+            this.instanceInfo = VkAccelerationStructureInstanceKHR.create(memAddress(instanceBuffer.map(VkAccelerationStructureInstanceKHR.SIZEOF, 0)));
+            this.instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
+
+            // will be changed into camera position shifting
+            this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
+                1.0F, 0.0F, 0.0F, 0.0F,
+                0.0F, 1.0F, 0.0F, 0.0F,
+                0.0F, 0.0F, 1.0F, 0.0F
+            })));
+
+            //
+            this.topLvl = new AccelerationStructureObj.TopAccelerationStructureObj(deviceObj.getHandle(), new AccelerationStructureCInfo.TopAccelerationStructureCInfo() {{
+                memoryAllocator = memoryAllocatorObj.getHandle().get();
+                instances = new DataCInfo.InstanceGeometryCInfo() {{
+                    instanceBinding = new DataCInfo.InstanceBindingCInfo() {{
+                        address = instanceBuffer.getDeviceAddress();
+                        vertexCount = 1;
+                    }};
+                }};
+            }});
+        }
     }
 
     // TODO: reusing same memory support
@@ -183,15 +188,17 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
     // TODO: multiple instance support
     public VirtualDrawCallCollector cmdBuildAccelerationStructure(VkCommandBuffer cmdBuf) {
-        this.bottomLvl.recallGeometryInfo();
-        this.bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
-        this.instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
-        this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
-                .primitiveCount(1)
-                .firstVertex(0)
-                .primitiveOffset(0)
-                .transformOffset(0),
-            VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+        if (enableRayTracing) {
+            this.bottomLvl.recallGeometryInfo();
+            this.bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+            this.instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
+            this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
+                    .primitiveCount(1)
+                    .firstVertex(0)
+                    .primitiveOffset(0)
+                    .transformOffset(0),
+                VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+        }
         return this;
     }
 
@@ -218,20 +225,24 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             //
             this.multiDraw.get(I).set(0, drawCallCInfo.vertexCount);
             this.ranges.get(I).set(drawCallCInfo.vertexCount/3, 0, 0, 0);
-            this.geometries.add(new DataCInfo.TriangleGeometryCInfo() {{
-                transformAddress = drawCall.uniformBuffer.address; //+ vertexArrayStride;
-                indexBinding = new DataCInfo.IndexBindingCInfo(){{
-                    address = drawCallCInfo.indexBuffer.getBufferAddress();
-                    type = drawCallCInfo.indexBuffer.getBufferAddress() != 0 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_NONE_KHR;
-                    vertexCount = (int) drawCallCInfo.vertexCount;
-                }};
-                vertexBinding = new DataCInfo.VertexBindingCInfo() {{
-                    address = vertexBinding0.bufferAddress;
-                    stride = vertexBinding0.stride;
-                    vertexCount = drawCallCInfo.vertexCount;
-                    format = vertexBinding0.format;
-                }};
-            }});
+
+            //
+            if (enableRayTracing) {
+                this.geometries.add(new DataCInfo.TriangleGeometryCInfo() {{
+                    transformAddress = drawCall.uniformBuffer.address; //+ vertexArrayStride;
+                    indexBinding = new DataCInfo.IndexBindingCInfo() {{
+                        address = drawCallCInfo.indexBuffer.getBufferAddress();
+                        type = drawCallCInfo.indexBuffer.getBufferAddress() != 0 ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_NONE_KHR;
+                        vertexCount = (int) drawCallCInfo.vertexCount;
+                    }};
+                    vertexBinding = new DataCInfo.VertexBindingCInfo() {{
+                        address = vertexBinding0.bufferAddress;
+                        stride = vertexBinding0.stride;
+                        vertexCount = drawCallCInfo.vertexCount;
+                        format = vertexBinding0.format;
+                    }};
+                }});
+            }
         }
 
         //

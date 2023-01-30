@@ -210,9 +210,15 @@ public class PipelineObj extends BasicObj  {
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
 
             //
-            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
-            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
             vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
+            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
+            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
+            vkCmdSetStencilTestEnable(cmdBuf, false);
+            vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
+            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
+            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
+            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
+            vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
 
             //
             var Bs = fbLayout.blendStates.size();
@@ -232,27 +238,14 @@ public class PipelineObj extends BasicObj  {
                 );
             }
 
+            // not supported by RenderDoc
             // requires dynamic state 3 or Vulkan API 1.4
             vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
             vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
             vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
-
-            //
-            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
-            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
-
-            // TODO: add stencil support
-            vkCmdSetStencilTestEnable(cmdBuf, false);
-
-            //
-            vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
-            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
-            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
-
-            //
             vkCmdSetVertexInputEXT(cmdBuf, null, null);
-            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1).put(0, fbLayout.scissor));
-            vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1).put(0, fbLayout.viewport));
+            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
+            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
         }
 
         if (cmdInfo.multiDraw != null && cmdInfo.pipeline != 0) {
