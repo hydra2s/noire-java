@@ -37,7 +37,7 @@ public class SemaphoreObj extends BasicObj {
         super(base, cInfo);
 
         //
-        this.prevTimeline = cInfo.initialValue;
+        this.prevTimeline = cInfo.initialValue-1;
         this.lastTimeline = cInfo.initialValue;
         this.deleted = false;
         this.timeline = memAllocLong(1).put(0, cInfo.initialValue);
@@ -110,12 +110,12 @@ public class SemaphoreObj extends BasicObj {
     }
 
     //
-    public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask) throws Exception {
+    public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask, boolean forWait) throws Exception {
         if (handle.get() == 0) {
             System.out.println("Invalid or destroyed semaphore making info.");
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
-        prevTimeline = lastTimeline; lastTimeline++;
+        prevTimeline = lastTimeline; if (!forWait) { lastTimeline++; };
         return VkSemaphoreSubmitInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
@@ -156,8 +156,7 @@ public class SemaphoreObj extends BasicObj {
                 System.out.println("Trying to signal timeline by destroyed or invalid semaphore.");
                 throw new Exception("Trying to signal timeline by destroyed or invalid semaphore.");
             }
-            prevTimeline = lastTimeline;
-            lastTimeline++;
+            prevTimeline = lastTimeline; lastTimeline++;
             vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc()
                 .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
                 .semaphore(this.handle.get())
@@ -166,6 +165,7 @@ public class SemaphoreObj extends BasicObj {
         return this;
     }
 
+    //
     public SemaphoreObj waitTimeline(boolean any) throws Exception {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
             if (handle.get() == 0) {

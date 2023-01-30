@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
+import static java.lang.System.currentTimeMillis;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
@@ -267,13 +268,14 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 // i.e. it's manual, artificial stutter (also, known as micro-freeze).
                 if (bufferSize != 0L) {
                     var res = memAlloc.call();
+                    var beginTiming = currentTimeMillis();
                     do {
                         if (res == VK_SUCCESS) { break; }
                         if (res != VK_SUCCESS && res != -2) {
                             System.out.println("Allocation Failed: " + res);
                             throw new Exception("Allocation Failed: " + res);
                         }
-                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling());
+                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling() && (currentTimeMillis() - beginTiming) < 1000);
 
                     // if anyways, isn't allocated...
                     if (res != VK_SUCCESS) {
