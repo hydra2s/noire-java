@@ -3,11 +3,11 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.CopyInfoCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.util.stream.IntStream;
 
-import static org.hydra2s.noire.descriptors.BasicCInfo.pipelineStagesByAccessMask;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 import static org.lwjgl.vulkan.VK13.*;
@@ -325,16 +325,16 @@ abstract public class CopyUtilObj {
     // TODO: support for queue families
     public static void cmdTransitionBarrier(VkCommandBuffer cmdBuf, long image, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
         // get correct access mask by image layouts
-        var dstAccessMask = BasicCInfo.getCorrectAccessMaskByImageLayout(newLayout);
-        var srcAccessMask = BasicCInfo.getCorrectAccessMaskByImageLayout(oldLayout);
+        var dstAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(newLayout);
+        var srcAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(oldLayout);
 
         // if undefined, use memory mask
         if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
         if (srcAccessMask == 0) { srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
 
         //
-        var srcStageMask = BasicCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask);
-        var dstStageMask = BasicCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask);
+        var srcStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask);
+        var dstStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask);
 
         //
         if (srcStageMask == 0) { srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; };

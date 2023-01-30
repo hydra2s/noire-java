@@ -244,7 +244,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 // initiate free procedure
                 if (oldAlloc != 0) {
-                    deviceObj.submitOnce(new BasicCInfo.SubmitCmd() {{
+                    deviceObj.submitOnce(new DeviceObj.SubmitCmd() {{
                         // TODO: correctly handle main queue family
                         whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
                         whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
@@ -297,7 +297,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0) {
                 var srcBufferRange = this.getBufferRange();
-                deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
+                deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
                     // TODO: correctly handle main queue family
                     whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
                     whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;

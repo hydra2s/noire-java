@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 import org.hydra2s.noire.descriptors.BasicCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 //
@@ -170,11 +171,9 @@ public class PhysicalDeviceObj extends BasicObj {
         VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount, this.extensions = VkExtensionProperties.calloc(this.extensionCount.get(0)));
     }
 
-
-
     //
-    public BasicCInfo.SurfaceCapability getSurfaceInfo(long surface, int queueFamilyIndex) {
-        BasicCInfo.SurfaceCapability capability = new BasicCInfo.SurfaceCapability();
+    public UtilsCInfo.SurfaceCapability getSurfaceInfo(long surface, int queueFamilyIndex) {
+        UtilsCInfo.SurfaceCapability capability = new UtilsCInfo.SurfaceCapability();
 
         //
         org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport);
@@ -243,13 +242,13 @@ public class PhysicalDeviceObj extends BasicObj {
     }
 
     //
-    public BasicCInfo.FormatProperties getFormatProperties(int format) {
-        var formatProperties = new BasicCInfo.FormatProperties();
+    public UtilsCInfo.FormatProperties getFormatProperties(int format) {
+        var formatProperties = new UtilsCInfo.FormatProperties();
         formatProperties.properties3 = VkFormatProperties3.calloc().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3);
         formatProperties.properties2 = VkFormatProperties2.calloc().sType(VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2);
         vkGetPhysicalDeviceFormatProperties2(this.physicalDevice, format, formatProperties.properties2);
         formatProperties.properties = formatProperties.properties2.formatProperties();
-        formatProperties.info = BasicCInfo.vk_format_table.get(format);
+        formatProperties.info = UtilsCInfo.vk_format_table.get(format);
         return formatProperties;
     }
 

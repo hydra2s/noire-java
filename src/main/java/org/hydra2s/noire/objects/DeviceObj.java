@@ -59,6 +59,24 @@ public class DeviceObj extends BasicObj {
         public ArrayList<SemaphoreObj> waitSemaphores = null;
     };
 
+    //
+    public static class SubmitCmd extends BasicCInfo {
+        public VkCommandBuffer cmdBuf = null;
+        public Promise<Integer> onDone = null;
+        public int queueGroupIndex = 0;
+        public int commandPoolIndex = 0;
+
+        //
+        public ArrayList<VkSemaphoreSubmitInfo> waitSemaphoreSubmitInfo = null;
+        public ArrayList<VkSemaphoreSubmitInfo> signalSemaphoreSubmitInfo = null;
+
+        //
+        public int whatQueueGroupWillWait = -1;
+        public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_NONE;
+    };
+
+
+
     // TODO: replace by queue group instead of queue family
     // TODO: add queue indices support
     // TODO: add timeline semaphore support
@@ -428,7 +446,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-     public FenceProcess submitCommand(BasicCInfo.SubmitCmd cmd) throws Exception {
+     public FenceProcess submitCommand(SubmitCmd cmd) throws Exception {
         var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
         var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
 
@@ -543,7 +561,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public FenceProcess submitOnce(BasicCInfo.SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
+    public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
         vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));

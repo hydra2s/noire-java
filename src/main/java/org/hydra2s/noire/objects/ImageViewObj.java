@@ -103,7 +103,7 @@ public class ImageViewObj extends BasicObj {
         var self = this;
 
         // just await last process in queue family
-        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
             queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)-> {
                 //

@@ -42,7 +42,7 @@ public class SamplerObj extends BasicObj  {
         var cInfo = (SamplerCInfo)this.cInfo;
         var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;
-        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
             queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)-> {
                 if (pipelineLayoutObj != null) {

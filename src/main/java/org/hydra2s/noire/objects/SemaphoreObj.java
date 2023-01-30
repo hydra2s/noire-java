@@ -77,7 +77,7 @@ public class SemaphoreObj extends BasicObj {
         super.delete();
         var handle = this.handle;
 
-        deviceObj.submitOnce(new BasicCInfo.SubmitCmd(){{
+        deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
             queueGroupIndex = cInfo.queueGroupIndex;
             onDone = new Promise<>().thenApply((result)->{
                 // needs semaphore reusing mechanism
