@@ -44,8 +44,8 @@ public class ImageObj extends BasicObj {
                     .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT )
                     .address())
             .sType(VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO)
-            .flags(VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT |
-                    (((imageType == VK_IMAGE_TYPE_3D)) ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0) |
+            .flags(
+                    (imageType == VK_IMAGE_TYPE_3D ? (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) : 0) |
                     (((arrayLayers % 6) == 0 && extent.height() == extent.width()) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0))
             .extent(cInfo.extent3D)
             .imageType(imageType)
