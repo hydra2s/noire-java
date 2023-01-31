@@ -45,12 +45,13 @@ public class CompatibleBufferObj extends BufferObj {
         if (this.hostBuffer == null) {
             super.cmdSynchronizeFromHost(cmdBuf);
         } else {
-            // TODO: new methods
-            /*CommandUtils.cmdCopyBufferToBuffer(cmdBuf, this.hostBuffer.getHandle().get(), this.getHandle().get(), VkBufferCopy2.calloc(1)
-                    .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
-                    .srcOffset(0)
-                    .dstOffset(0)
-                    .size(this.createInfo.size()));*/
+            CommandUtils.cmdCopyBufferToBuffer(cmdBuf, new CommandUtils.BufferCopyInfo(){{
+                buffer = hostBuffer.getHandle().get();
+                range = createInfo.size();
+            }}, new CommandUtils.BufferCopyInfo(){{
+                buffer = getHandle().get();
+                range = createInfo.size();
+            }});
         }
 
         //

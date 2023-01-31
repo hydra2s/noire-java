@@ -341,18 +341,14 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             // copy draw data (if required)
             if (cInfo.vertexMode == 0 && vertexRange != null) {
-                // TODO: new methods
-                //CommandUtils.cmdCopyBufferToBuffer(cmdBuf, vertexRange.buffer(), vertexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(vertexRange.offset()).dstOffset(vertexBuffer.offset).size(min(vertexRange.range(), vertexBuffer.range)));
+                CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, vertexRange, VkDescriptorBufferInfo.calloc().set(vertexBuffer.handle, vertexBuffer.offset, vertexBuffer.range));
             }
-            if (cInfo.indexMode == 0) {
-                // TODO: new methods
-                //CommandUtils.cmdCopyBufferToBuffer(cmdBuf, indexRange.buffer(), indexBuffer.handle, VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(indexRange.offset()).dstOffset(indexBuffer.offset).size(min(indexRange.range(), indexBuffer.range)));
+            if (cInfo.indexMode == 0 && indexRange != null) {
+                CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, indexRange, VkDescriptorBufferInfo.calloc().set(indexBuffer.handle, indexBuffer.offset, indexBuffer.range));
             }
 
             // copy uniform based information from memories
             vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset + 512, vertexArrayObj.bindingsMapped);
-
-            // TODO: write index type
             if (cInfo.uniformData != null) {
                 memSlice(cInfo.uniformData, 400, 8).putLong(0, indexBuffer.address);
                 vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, cInfo.uniformData);
