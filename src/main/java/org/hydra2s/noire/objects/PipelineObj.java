@@ -98,7 +98,7 @@ public class PipelineObj extends BasicObj  {
 
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-                this.uniformDescriptorSet = $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer);
+                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
             }
         }
     }
@@ -307,7 +307,7 @@ public class PipelineObj extends BasicObj  {
 
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-                this.uniformDescriptorSet = $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer);
+                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
             }
         }
     }

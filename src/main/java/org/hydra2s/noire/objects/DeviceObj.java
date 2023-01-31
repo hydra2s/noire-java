@@ -399,10 +399,17 @@ public class DeviceObj extends BasicObj {
             fence = fence_;
             deallocProcess = (result)->{
                 var fence_ = fence.get(0);
-                status = querySignalSemaphore.getTimeline() <= prevTimeline ? VK_NOT_READY : VK_SUCCESS;
+                var timeline =  querySignalSemaphore.getTimeline();
+                status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
+                if (timeline <= 0) { status = VK_ERROR_DEVICE_LOST; };
                 if (status != VK_NOT_READY) {
                     backTempSemaphore(querySignalSemaphore);
-                    promise.fulfill(status);
+
+                    if (status == VK_SUCCESS) {
+                        promise.fulfill(status);
+                    } else {
+                        promise.fulfillExceptionally(new Exception("Status: " + status + "! Device Lost!"));
+                    }
                 }
                 return status;
             };
@@ -427,7 +434,7 @@ public class DeviceObj extends BasicObj {
     }
 
     public int waitFence(FenceProcess process) {
-        return waitFence(process, 1000);
+        return waitFence(process, 10000);
     }
 
      //
@@ -480,7 +487,7 @@ public class DeviceObj extends BasicObj {
          var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
 
          //
-         final int maxSemaphoreQueue = 64;
+         final int maxSemaphoreQueue = 1;
          if (queueInfo.querySemaphoreObj == null) {
              queueInfo.querySemaphoreObj = new ArrayList<>();
              for (var I=0;I<maxSemaphoreQueue;I++) {
@@ -563,12 +570,18 @@ public class DeviceObj extends BasicObj {
         var ref = new FenceProcess() {{
             timelineSemaphore = querySignalSemaphore;
             deallocProcess = (_null_)->{
-                status = querySignalSemaphore.getTimeline() <= prevTimeline ? VK_NOT_READY : VK_SUCCESS;
+                var timeline = querySignalSemaphore.getTimeline();
+                status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
+                if (timeline <= 0) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
                 if (status != VK_NOT_READY) {
                     queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);
 
-                    // TODO: correctly handle a status
-                    cmd.onDone.fulfill(status);
+                    //
+                    if (status == VK_SUCCESS) {
+                        cmd.onDone.fulfill(status);
+                    } else {
+                        cmd.onDone.fulfillExceptionally(new Exception("Status: " + status + "! Device Lost!"));
+                    }
                 }
                 return status;
             };

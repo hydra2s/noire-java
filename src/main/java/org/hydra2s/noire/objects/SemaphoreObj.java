@@ -37,7 +37,7 @@ public class SemaphoreObj extends BasicObj {
         super(base, cInfo);
 
         //
-        this.prevTimeline = cInfo.initialValue-1;
+        this.prevTimeline = cInfo.initialValue;
         this.lastTimeline = cInfo.initialValue;
         this.deleted = false;
         this.timeline = memAllocLong(1).put(0, cInfo.initialValue);
@@ -132,6 +132,7 @@ public class SemaphoreObj extends BasicObj {
         return VkSemaphoreSubmitInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
+            .value(lastTimeline)
             .stageMask(stageMask);
     }
 

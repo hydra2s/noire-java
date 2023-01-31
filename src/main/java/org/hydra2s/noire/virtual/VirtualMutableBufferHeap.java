@@ -22,6 +22,7 @@ import static java.lang.System.currentTimeMillis;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
+import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -44,7 +45,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             // TODO: add support for ResizableBAR! It's necessary!
             this.bufferHeap = new BufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
-                usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
                 memoryAllocator = $memoryAllocator;
                 memoryAllocationInfo = new MemoryAllocationCInfo() {{
                     isHost = cInfo.isHost;
@@ -256,6 +257,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 if (bufferSize != 0L) {
                     var res = memAlloc.call();
                     var beginTiming = currentTimeMillis();
+
+                    /*
                     do {
                         if (res == VK_SUCCESS) { break; }
                         if (res != VK_SUCCESS && res != -2) {
@@ -263,7 +266,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                             throw new Exception("Allocation Failed: " + res);
                         }
                     } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling() && (currentTimeMillis() - beginTiming) < 10000);
-
+*/
+                    
                     // if anyways, isn't allocated...
                     if (res != VK_SUCCESS) {
                         System.out.println("Allocation Failed, there is not free memory: " + res);

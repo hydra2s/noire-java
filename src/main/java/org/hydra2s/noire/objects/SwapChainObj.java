@@ -176,8 +176,8 @@ public class SwapChainObj extends BasicObj  {
         
 
         // useless for pure Vulkan, for test only
-        this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; }});
-        this.semaphoreRenderingAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; }});
+        this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
+        this.semaphoreRenderingAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
 
         //
         return this;

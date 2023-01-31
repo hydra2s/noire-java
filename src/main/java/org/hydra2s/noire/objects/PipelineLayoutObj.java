@@ -6,6 +6,7 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
+import org.hydra2s.noire.virtual.VirtualMutableBufferHeap;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
@@ -40,7 +41,7 @@ public class PipelineLayoutObj extends BasicObj  {
     }
 
     //
-    public static final boolean useLegacyBindingSystem = true;
+    public static final boolean useLegacyBindingSystem = false;
 
     //
     public static class DescriptorSetLayoutInfo {
@@ -181,7 +182,7 @@ public class PipelineLayoutObj extends BasicObj  {
 
             this.descriptorPoolSizes.get(4)
                 .type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-                .descriptorCount(128);
+                .descriptorCount(1024);
 
             this.descriptorPoolCreateInfo =
                 VkDescriptorPoolCreateInfo.calloc()
@@ -189,7 +190,7 @@ public class PipelineLayoutObj extends BasicObj  {
                     .flags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO)
                     .pPoolSizes(this.descriptorPoolSizes)
-                    .maxSets(256);
+                    .maxSets(1024);
 
             //
             vkCreateDescriptorPool(deviceObj.device, this.descriptorPoolCreateInfo, null, this.descriptorPool = memAllocLong(1));
@@ -295,17 +296,16 @@ public class PipelineLayoutObj extends BasicObj  {
     }
 
     //
-    public LongBuffer createDescriptorSetForUniformBuffer(BufferObj uniformBufferObj) {
-        var descriptorSet = memAllocLong(1);
-
-        //
+    public PipelineLayoutObj createDescriptorSetForUniformBuffer(BufferObj uniformBufferObj, LongBuffer descriptorSet) {
         if (useLegacyBindingSystem) {
-            vkAllocateDescriptorSets(deviceObj.device,
-                VkDescriptorSetAllocateInfo.calloc()
-                    .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO)
-                    .pSetLayouts(memSlice(this.descriptorSetLayouts, 3, 1))
-                    .descriptorPool(this.descriptorPool.get(0))
-                , descriptorSet);
+            if (descriptorSet.get(0) == 0L) {
+                vkAllocateDescriptorSets(deviceObj.device,
+                    VkDescriptorSetAllocateInfo.calloc()
+                        .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO)
+                        .pSetLayouts(memSlice(this.descriptorSetLayouts, 3, 1))
+                        .descriptorPool(this.descriptorPool.get(0))
+                    , descriptorSet);
+            }
 
             //
             VkDescriptorBufferInfo.Buffer uniformWrite = VkDescriptorBufferInfo.calloc(1);
@@ -328,8 +328,61 @@ public class PipelineLayoutObj extends BasicObj  {
             descriptorSet.put(0, uniformBufferObj.getDeviceAddress());
         }
 
-        return descriptorSet;
+        return this;
     }
+
+    //
+    public PipelineLayoutObj createDescriptorSetForUniformBuffer(VirtualMutableBufferHeap.VirtualMutableBufferObj uniformBufferObj, LongBuffer descriptorSet) {
+        if (useLegacyBindingSystem) {
+            if (descriptorSet.get(0) == 0L) {
+                vkAllocateDescriptorSets(deviceObj.device,
+                    VkDescriptorSetAllocateInfo.calloc()
+                        .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO)
+                        .pSetLayouts(memSlice(this.descriptorSetLayouts, 3, 1))
+                        .descriptorPool(this.descriptorPool.get(0))
+                    , descriptorSet);
+            }
+
+            //
+            VkDescriptorBufferInfo.Buffer uniformWrite = VkDescriptorBufferInfo.calloc(1);
+            uniformWrite.get(0).set(uniformBufferObj.getBufferRange());
+
+            //
+            var writeDescriptorSets = VkWriteDescriptorSet.calloc(1);
+            writeDescriptorSets.get(0)
+                .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)
+                .descriptorType(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                .descriptorCount(1)
+                .dstArrayElement(0)
+                .dstBinding(0)
+                .dstSet(descriptorSet.get(0))
+                .pBufferInfo(uniformWrite);
+
+            //
+            vkUpdateDescriptorSets(deviceObj.device, writeDescriptorSets, null);
+        } else {
+            descriptorSet.put(0, uniformBufferObj.getBufferAddress());
+        }
+
+        return this;
+    }
+
+    //
+    public PipelineLayoutObj deallocateDescriptorSets(ArrayList<Long> descriptorSets) {
+        LongBuffer descriptorSetsBuf = memAllocLong(descriptorSets.size());
+        for (var I=0;I<descriptorSets.size();I++) {
+            descriptorSetsBuf.put(I, descriptorSets.get(I));
+        }
+        return deallocateDescriptorSets(descriptorSetsBuf);
+    };
+
+    //
+    public PipelineLayoutObj deallocateDescriptorSets(LongBuffer descriptorSets) {
+        if (useLegacyBindingSystem) {
+            vkFreeDescriptorSets(deviceObj.device, descriptorPool.get(0), descriptorSets);
+        }
+        return this;
+    };
 
     //
     public PipelineLayoutObj writeDescriptors () {

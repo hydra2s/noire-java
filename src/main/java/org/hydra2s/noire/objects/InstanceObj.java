@@ -123,7 +123,7 @@ public class InstanceObj extends BasicObj {
                 .pApplicationInfo(this.appInfo.get(0))
                 .ppEnabledExtensionNames(this.extensions)
                 // validator is BROKEN!
-                //.ppEnabledLayerNames(this.layers)
+                .ppEnabledLayerNames(this.layers)
                 .get();
         VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr());
 
