@@ -95,11 +95,7 @@ public class CommandManagerObj extends BasicObj {
             callers.add((cmdBuf)->{
                 if (lazy) { tempOp.run(); };
                 var allocation = allocation_.get();
-                CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocation.offset.get(0), allocation.range), bufferRange, VkBufferCopy2.calloc(1)
-                    .sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2)
-                    .srcOffset(0)
-                    .dstOffset(0)
-                    .size(min(allocation.range, bufferRange.range())));
+                CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocation.offset.get(0), allocation.range), bufferRange);
                 return cmdBuf;
             });
 

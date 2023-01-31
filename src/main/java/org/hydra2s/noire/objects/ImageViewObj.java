@@ -48,31 +48,37 @@ public class ImageViewObj extends BasicObj {
         }
     }
 
-    // TODO: will critically needed in future usage!
-    public ImageViewCInfo.CriticalDump getCriticalDump() {
+    //
+    public CommandUtils.SubresourceRange subresourceRange() {
         var $DSC_ID = DSC_ID;
-        return new ImageViewCInfo.CriticalDump() {{
-            DSC_ID = $DSC_ID;
-            image = createInfo.image();
-            subresource = subresourceRange();
-            imageLayout = getImageLayout();
-            imageView = handle.get();
+        return new CommandUtils.SubresourceRange() {{
+            subresource = ((ImageViewCInfo)cInfo).subresourceRange;
+            imageViewInfo = new CommandUtils.ImageViewInfo() {{
+                image = ((ImageViewCInfo)cInfo).image;
+                imageLayout = ((ImageViewCInfo)cInfo).imageLayout;
+                imageView = handle.get();
+                DSC_ID = $DSC_ID;
+            }};
         }};
     }
 
     //
-    public VkImageSubresourceRange subresourceRange() {
-        return this.createInfo.subresourceRange();
-    }
-
-    //
-    public VkImageSubresourceLayers subresourceLayers(int mipLevel) {
-        var subresourceRange = this.subresourceRange();
-        return VkImageSubresourceLayers.calloc()
-            .aspectMask(subresourceRange.aspectMask())
-            .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
-            .baseArrayLayer(subresourceRange.baseArrayLayer())
-            .layerCount(subresourceRange.layerCount());
+    public CommandUtils.SubresourceLayers subresourceLayers(int mipLevel) {
+        var subresourceRange = ((ImageViewCInfo)cInfo).subresourceRange;
+        var $DSC_ID = DSC_ID;
+        return new CommandUtils.SubresourceLayers() {{
+            subresource = VkImageSubresourceLayers.calloc()
+                .aspectMask(subresourceRange.aspectMask())
+                .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
+                .baseArrayLayer(subresourceRange.baseArrayLayer())
+                .layerCount(subresourceRange.layerCount());
+            imageViewInfo = new CommandUtils.ImageViewInfo() {{
+                image = ((ImageViewCInfo)cInfo).image;
+                imageLayout = ((ImageViewCInfo)cInfo).imageLayout;
+                imageView = handle.get();
+                DSC_ID = $DSC_ID;
+            }};
+        }};
     }
 
     //
@@ -82,15 +88,14 @@ public class ImageViewObj extends BasicObj {
 
     //
     public ImageViewObj cmdTransitionBarrierFromInitial(VkCommandBuffer cmdBuf) {
-        CommandUtils.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, VK_IMAGE_LAYOUT_UNDEFINED, ((ImageViewCInfo)cInfo).imageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
+        CommandUtils.cmdTransitionBarrier(cmdBuf, this.subresourceRange().setImageLayout(((ImageViewCInfo)cInfo).imageLayout));
         return this;
     }
 
     // simpler than traditional image
     public ImageViewObj cmdTransitionBarrier(VkCommandBuffer cmdBuf, int dstImageLayout, boolean fromInitial) {
         if (fromInitial) { this.cmdTransitionBarrierFromInitial(cmdBuf); };
-        CommandUtils.cmdTransitionBarrier(cmdBuf, ((ImageViewCInfo)cInfo).image, ((ImageViewCInfo)cInfo).imageLayout, dstImageLayout, ((ImageViewCInfo)cInfo).subresourceRange);
-        ((ImageViewCInfo)cInfo).imageLayout = dstImageLayout;
+        CommandUtils.cmdTransitionBarrier(cmdBuf, this.subresourceRange().setImageLayout(((ImageViewCInfo)cInfo).imageLayout = dstImageLayout));
         return this;
     }
 

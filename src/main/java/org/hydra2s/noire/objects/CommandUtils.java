@@ -56,16 +56,15 @@ abstract public class CommandUtils {
         public boolean clearDepthStencil = true;
     }
 
-
-    public static class ImageViewCopyInfo {
+    /*public static class ImageViewCopyInfo {
         // TODO: fix device requirements issues
         public long device = 0L;
         public long imageView = 0L;
         public VkOffset3D offset = VkOffset3D.calloc().set(0, 0, 0);
         public int mipLevel = 0;
-    }
+    }*/
 
-    public static class BufferRangeCopyInfo {
+    public static class BufferCopyInfo {
         public long buffer;
         public long offset = 0L;
         public long range = VK_WHOLE_SIZE;
@@ -75,122 +74,53 @@ abstract public class CommandUtils {
         public int imageHeight = 0;
     }
 
-    public static class ImageCopyInfo {
+    public static class ImageViewInfo {
         public long image = 0L;
+        public long imageView = 0L;
         public int imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-        public VkOffset3D offset = VkOffset3D.calloc().set(0, 0, 0);
+        public int DSC_ID = -1;
+        public ImageViewInfo setImageLayout(int imageLayout) {
+            this.imageLayout = imageLayout;
+            return this;
+        }
+    }
+
+    public static class SubresourceRange {
+        public ImageViewInfo imageViewInfo = null;
+        public VkImageSubresourceRange subresource = VkImageSubresourceRange.calloc().set(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+        public VkOffset3D offset3D = VkOffset3D.calloc().set(0, 0, 0);
+        public VkImageSubresourceLayers getSubresourceLayers(int mipLevel) {
+            return VkImageSubresourceLayers.calloc().set(subresource.aspectMask(), mipLevel, subresource.baseArrayLayer(), subresource.layerCount());
+        }
+        public SubresourceRange setOffset3D(VkOffset3D offset3D) {
+            if (this.offset3D == null) { this.offset3D = offset3D; } else { this.offset3D.set(offset3D); };
+            return this;
+        }
+        public SubresourceRange setImageLayout(int imageLayout) {
+            this.imageViewInfo.imageLayout = imageLayout;
+            return this;
+        }
+    }
+
+    public static class SubresourceLayers {
+        public ImageViewInfo imageViewInfo = null;
         public VkImageSubresourceLayers subresource = VkImageSubresourceLayers.calloc().set(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1);
-    }
-
-
-    //
-    public static void cmdCopyBufferToImageView(
-        VkCommandBuffer cmdBuf,
-        BufferRangeCopyInfo srcBufferRange,
-        ImageViewCopyInfo dstImageView,
-        VkExtent3D extent
-    ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device).orElse(null);
-        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView)).orElse(null);
-
-        //
-        CommandUtils.cmdCopyBufferToImage(cmdBuf, srcBufferRange.buffer, ((ImageViewCInfo)dstImageViewObj.cInfo).image,
-            ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
-                .bufferOffset(srcBufferRange.offset)
-                .bufferRowLength(srcBufferRange.rowLength)
-                .bufferImageHeight(srcBufferRange.imageHeight)
-                .imageOffset(dstImageView.offset).imageExtent(extent)
-                .imageSubresource(dstImageViewObj.subresourceLayers(dstImageView.mipLevel))
-        );
+        public VkOffset3D offset3D = VkOffset3D.calloc().set(0, 0, 0);
+        public VkImageSubresourceRange getSubresourceRange() {
+            return VkImageSubresourceRange.calloc().set(subresource.aspectMask(), subresource.mipLevel(), 1, subresource.baseArrayLayer(), subresource.layerCount());
+        }
+        public SubresourceLayers setOffset3D(VkOffset3D offset3D) {
+            if (this.offset3D == null) { this.offset3D = offset3D; } else { this.offset3D.set(offset3D); };
+            return this;
+        }
+        public SubresourceLayers setImageLayout(int imageLayout) {
+            this.imageViewInfo.imageLayout = imageLayout;
+            return this;
+        }
     }
 
     //
-    public static void cmdCopyImageViewToBuffer(
-        VkCommandBuffer cmdBuf,
-        ImageViewCopyInfo srcImageView,
-        BufferRangeCopyInfo dstBufferRange,
-        VkExtent3D extent
-    ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
-
-        //
-        CommandUtils.cmdCopyImageToBuffer(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstBufferRange.buffer,
-            ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, VkBufferImageCopy2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2)
-                .bufferOffset(dstBufferRange.offset)
-                .bufferRowLength(dstBufferRange.rowLength)
-                .bufferImageHeight(dstBufferRange.imageHeight)
-                .imageOffset(srcImageView.offset).imageExtent(extent)
-                .imageSubresource(srcImageViewObj.subresourceLayers(srcImageView.mipLevel))
-        );
-    }
-
-    //
-    public static void cmdCopyImageViewToImageView(
-        VkCommandBuffer cmdBuf,
-        ImageViewCopyInfo srcImageView,
-        ImageViewCopyInfo dstImageView,
-        VkExtent3D extent
-    ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
-
-        //
-        CommandUtils.cmdCopyImageToImageView(cmdBuf, new ImageCopyInfo(){{
-            image = ((ImageViewCInfo)srcImageViewObj.cInfo).image;
-            imageLayout = srcImageViewObj.getImageLayout();
-            offset = srcImageView.offset;
-            subresource = srcImageViewObj.subresourceLayers(srcImageView.mipLevel);
-        }}, dstImageView, extent);
-    }
-
-    //
-    public static void cmdCopyImageViewToImage(
-        VkCommandBuffer cmdBuf,
-        ImageCopyInfo dstImage,
-        ImageViewCopyInfo srcImageView,
-        VkExtent3D extent
-    ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(srcImageView.device).orElse(null);
-        var srcImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", srcImageView.imageView)).orElse(null);
-
-        //
-        CommandUtils.cmdCopyImageToImage(cmdBuf, ((ImageViewCInfo)srcImageViewObj.cInfo).image, dstImage.image, ((ImageViewCInfo)srcImageViewObj.cInfo).imageLayout, dstImage.imageLayout,
-            VkImageCopy2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
-                .extent(extent)
-                .srcOffset(srcImageView.offset)
-                .dstOffset(dstImage.offset)
-                .srcSubresource(srcImageViewObj.subresourceLayers(srcImageView.mipLevel))
-                .dstSubresource(dstImage.subresource));
-    }
-
-    //
-    public static void cmdCopyImageToImageView(
-        VkCommandBuffer cmdBuf,
-        ImageCopyInfo srcImage,
-        ImageViewCopyInfo dstImageView,
-        VkExtent3D extent
-    ) {
-        var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(dstImageView.device).orElse(null);
-        var dstImageViewObj = (ImageViewObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageView", dstImageView.imageView)).orElse(null);
-
-        //
-        CommandUtils.cmdCopyImageToImage(cmdBuf, srcImage.image, ((ImageViewCInfo)dstImageViewObj.cInfo).image, srcImage.imageLayout, ((ImageViewCInfo)dstImageViewObj.cInfo).imageLayout,
-            VkImageCopy2.calloc(1)
-                .sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2)
-                .extent(extent)
-                .dstOffset(dstImageView.offset)
-                .srcOffset(srcImage.offset)
-                .dstSubresource(dstImageViewObj.subresourceLayers(dstImageView.mipLevel))
-                .srcSubresource(srcImage.subresource));
-    }
-
-    //
-    static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, long srcImage, long dstImage, int srcImageLayout, int dstImageLayout, VkImageCopy2.Buffer regions) {
-        // TODO: reuse same barrier info (i.e. template)
+    static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, SubresourceLayers dstImage, VkExtent3D extent3D) {
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -200,9 +130,9 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(srcImageLayout);
+            .newLayout(srcImage.imageViewInfo.imageLayout);
 
-        // TODO: reuse same barrier info (i.e. template)
+        //
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -212,44 +142,22 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(dstImageLayout);
+            .newLayout(dstImage.imageViewInfo.imageLayout);
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(regions.remaining()*2);
+        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(2);
+        imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+        imageMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
 
-        // TODO: support a correct buffer size
-        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I*2+0, writeMemoryBarrierTemplate);
-            imageMemoryBarrier.get(I*2+0)
-                .image(dstImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(dstImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
-                .aspectMask(regions.get(I).dstSubresource().aspectMask())
-                .baseArrayLayer(regions.get(I).dstSubresource().baseArrayLayer())
-                .baseMipLevel(regions.get(I).dstSubresource().mipLevel())
-                .layerCount(regions.get(I).dstSubresource().layerCount())
-                .levelCount(1)
-            );
-            imageMemoryBarrier.put(I*2+1, readMemoryBarrierTemplate);
-            imageMemoryBarrier.get(I*2+1)
-                .image(srcImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(srcImageLayout).subresourceRange(VkImageSubresourceRange.calloc()
-                .aspectMask(regions.get(I).srcSubresource().aspectMask())
-                .baseArrayLayer(regions.get(I).srcSubresource().baseArrayLayer())
-                .baseMipLevel(regions.get(I).srcSubresource().mipLevel())
-                .layerCount(regions.get(I).srcSubresource().layerCount())
-                .levelCount(1)
-            );
-        });
-
-        // TODO: correct image layout, and dual side image barrier
-        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage).dstImageLayout(dstImageLayout).srcImageLayout(srcImageLayout).srcImage(srcImage).pRegions(regions));
+        //
+        var imageCopyRegion = VkImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2).dstSubresource(dstImage.subresource).srcSubresource(srcImage.subresource).srcOffset(srcImage.offset3D).dstOffset(dstImage.offset3D).extent(extent3D);
+        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage.imageViewInfo.image).dstImageLayout(dstImage.imageViewInfo.imageLayout).srcImageLayout(srcImage.imageViewInfo.imageLayout).srcImage(srcImage.imageViewInfo.image).pRegions(imageCopyRegion));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(imageMemoryBarrier));
-
-        //
-        //return this;
     }
 
     //
-    static public void cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, long srcImage, long dstBuffer, int imageLayout, VkBufferImageCopy2.Buffer regions) {
-        // TODO: reuse same barrier info (i.e. template)
+    static public void cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, BufferCopyInfo dstBuffer, VkExtent3D extent3D) {
+        //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -259,9 +167,9 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(imageLayout);
+            .newLayout(srcImage.imageViewInfo.imageLayout);
 
-        // TODO: reuse same barrier info (i.e. template)
+        //
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -272,35 +180,22 @@ abstract public class CommandUtils {
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(regions.remaining());
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(regions.remaining());
-
-        // TODO: support a correct buffer size
-        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I, readMemoryBarrierTemplate);
-            imageMemoryBarrier.get(I)
-                .image(srcImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
-                .aspectMask(regions.get(I).imageSubresource().aspectMask())
-                .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
-                .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
-                .layerCount(regions.get(I).imageSubresource().layerCount())
-                .levelCount(1)
-            );
-            bufferMemoryBarrier.put(I, writeMemoryBarrierTemplate);
-            bufferMemoryBarrier.get(I).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(dstBuffer);
-        });
-
-        // TODO: correct image layout, and dual side image barrier
-        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(imageLayout).srcImage(srcImage).dstBuffer(dstBuffer).pRegions(regions));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(1);
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1);
 
         //
-        //return this;
+        imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+        bufferMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
+
+        //
+        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(srcImage.subresource).imageSubresource(srcImage.subresource).bufferOffset(dstBuffer.offset).bufferRowLength(dstBuffer.rowLength).bufferImageHeight(dstBuffer.imageHeight).imageExtent(extent3D);
+        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(srcImage.imageViewInfo.imageLayout).srcImage(srcImage.imageViewInfo.image).dstBuffer(dstBuffer.buffer).pRegions(imageBufferCopyRegion));
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
     }
 
     //
-    static public void cmdCopyBufferToImage(VkCommandBuffer cmdBuf, long srcBuffer, long dstImage, int imageLayout, VkBufferImageCopy2.Buffer regions) {
-        // TODO: reuse same barrier info (i.e. template)
+    static public void cmdCopyBufferToImage(VkCommandBuffer cmdBuf, BufferCopyInfo srcBuffer, SubresourceLayers dstImage,VkExtent3D extent3D) {
+        //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -310,7 +205,7 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        // TODO: reuse same barrier info (i.e. template)
+        //
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -320,38 +215,24 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(imageLayout);
+            .newLayout(dstImage.imageViewInfo.imageLayout);
 
         //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(regions.remaining());
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(regions.remaining());
+        var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(1);
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1);
 
-        // TODO: support a correct buffer size
-        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            imageMemoryBarrier.put(I, writeMemoryBarrierTemplate);
-            imageMemoryBarrier.get(I)
-                .image(dstImage).oldLayout(VK_IMAGE_LAYOUT_UNDEFINED).newLayout(imageLayout).subresourceRange(VkImageSubresourceRange.calloc()
-                .aspectMask(regions.get(I).imageSubresource().aspectMask())
-                .baseArrayLayer(regions.get(I).imageSubresource().baseArrayLayer())
-                .baseMipLevel(regions.get(I).imageSubresource().mipLevel())
-                .layerCount(regions.get(I).imageSubresource().layerCount())
-                .levelCount(1)
-            );
-            bufferMemoryBarrier.put(I, readMemoryBarrierTemplate);
-            bufferMemoryBarrier.get(I).offset(regions.bufferOffset()).size(VK_WHOLE_SIZE).buffer(srcBuffer);
-        });
+        //
+        imageMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
+        bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
 
-        // TODO: correct image layout, and dual side image barrier
-        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(imageLayout).srcBuffer(srcBuffer).dstImage(dstImage).pRegions(regions));
+        //
+        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(dstImage.subresource).imageSubresource(dstImage.subresource).bufferOffset(srcBuffer.offset).bufferRowLength(srcBuffer.rowLength).bufferImageHeight(srcBuffer.imageHeight).imageExtent(extent3D);
+        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(dstImage.imageViewInfo.imageLayout).dstImage(dstImage.imageViewInfo.image).srcBuffer(srcBuffer.buffer).pRegions(imageBufferCopyRegion));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
-
-        //
-        //return this;
     }
 
     //
-    static public void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, long srcBuffer, long dstBuffer, VkBufferCopy2.Buffer regions) {
-        // TODO: reuse same barrier info (i.e. template)
+    static public void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, BufferCopyInfo srcBuffer, BufferCopyInfo dstBuffer) {
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
@@ -361,7 +242,7 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        // TODO: reuse same barrier info (i.e. template)
+        //
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
@@ -372,27 +253,21 @@ abstract public class CommandUtils {
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
         //
-        var memoryBarriers = VkBufferMemoryBarrier2.calloc(regions.remaining()*2);
-        IntStream.range(0, regions.remaining()).forEachOrdered((I)->{
-            memoryBarriers.put(I*2+0, readMemoryBarrierTemplate);
-            memoryBarriers.get(I*2+0).offset(regions.srcOffset()).size(regions.size()).buffer(srcBuffer);
-            memoryBarriers.put(I*2+1, writeMemoryBarrierTemplate);
-            memoryBarriers.get(I*2+1).offset(regions.dstOffset()).size(regions.size()).buffer(dstBuffer);
-        });
+        var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(2);
+        bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
+        bufferMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
 
         //
-        vkCmdCopyBuffer2(cmdBuf, VkCopyBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2).srcBuffer(srcBuffer).dstBuffer(dstBuffer).pRegions(regions));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(memoryBarriers));
-
-        //
-        //return this;
+        var bufferCopyRegion = VkBufferCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(srcBuffer.offset).dstOffset(dstBuffer.offset).size(min(dstBuffer.range, srcBuffer.range));
+        vkCmdCopyBuffer2(cmdBuf, VkCopyBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2).srcBuffer(srcBuffer.buffer).dstBuffer(dstBuffer.buffer).pRegions(bufferCopyRegion));
+        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
     }
 
     // TODO: support for queue families
-    public static void cmdTransitionBarrier(VkCommandBuffer cmdBuf, long image, int oldLayout, int newLayout, VkImageSubresourceRange subresourceRange) {
+    public static void cmdTransitionBarrier(VkCommandBuffer cmdBuf, SubresourceRange image) {
         // get correct access mask by image layouts
-        var dstAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(newLayout);
-        var srcAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(oldLayout);
+        var dstAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(image.imageViewInfo.imageLayout);
+        var srcAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 
         // if undefined, use memory mask
         if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
@@ -417,24 +292,25 @@ abstract public class CommandUtils {
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(newLayout)
-            .subresourceRange(subresourceRange)
-            .image(image);
+            .newLayout(image.imageViewInfo.imageLayout)
+            .subresourceRange(image.subresource)
+            .image(image.imageViewInfo.image);
 
         //
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
     }
 
     // virtual buffer copying version
-    public static void cmdCopyVBufferToVBuffer(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo src, VkDescriptorBufferInfo dst, VkBufferCopy2.Buffer copies) {
-        // TODO: fix VK_WHOLE_SIZE issues!
-        var modified = copies.stream().map((cp)-> cp
-            .dstOffset(cp.dstOffset()+dst.offset())
-            .srcOffset(cp.srcOffset()+src.offset())
-            .size(min(src.range(), dst.range()))).toList();
-        var Rs = copies.remaining();
-        for (var I=0;I<Rs;I++) { copies.get(I).set(modified.get(I)); } // modify copies
-        CommandUtils.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
+    public static void cmdCopyVBufferToVBuffer(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo src, VkDescriptorBufferInfo dst) {
+        CommandUtils.cmdCopyBufferToBuffer(cmdBuf, new BufferCopyInfo(){{
+            buffer = src.buffer();
+            offset = src.offset();
+            range = src.range();
+        }}, new BufferCopyInfo(){{
+            buffer = dst.buffer();
+            offset = dst.offset();
+            range = dst.range();
+        }});
     }
 
     // TODO: support for queue families
@@ -633,7 +509,7 @@ abstract public class CommandUtils {
             var Fs = fbLayout.formats.remaining();
             for (var I=0;I<Fs;I++) {
                 fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-                fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).aspectMask());
+                fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).subresource.aspectMask());
                 fbClearC.get(I).colorAttachment(I);
             }
 
@@ -643,7 +519,7 @@ abstract public class CommandUtils {
             if (hasDepthStencil && cmdInfo.clearDepthStencil) {
                 vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1)
                     .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                    .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).aspectMask())
+                    .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).subresource.aspectMask())
                     .colorAttachment(0), VkClearRect.calloc(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc().set(fbLayout.scissor)));
             }
         }

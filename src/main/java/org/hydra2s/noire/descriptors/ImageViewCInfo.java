@@ -25,13 +25,6 @@ public class ImageViewCInfo extends BasicCInfo  {
         .b(VK_COMPONENT_SWIZZLE_B)
         .a(VK_COMPONENT_SWIZZLE_A);
 
-    // TODO: will critically needed in future usage!
-    public static class CriticalDump {
-        public long image = 0L;
-        public long imageView = 0L;
-        public int imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-        public int DSC_ID = -1;
-        public VkImageSubresourceRange subresource = VkImageSubresourceRange.calloc().set(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
-    }
+
 
 }
