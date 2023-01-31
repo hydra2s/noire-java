@@ -108,7 +108,7 @@ public class CommandManagerObj extends BasicObj {
                 CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo(){{
                     buffer = manager.bufferHeap.getHandle().get();
                     offset = allocation.offset.get(0);
-                    range = data.remaining();
+                    range = allocation.range;
                     rowLength = imageInfo.rowLength;
                     imageHeight = imageInfo.imageHeight;
                 }}, imageInfo.image, imageInfo.extent3D);
