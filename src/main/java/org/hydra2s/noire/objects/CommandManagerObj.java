@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -23,7 +24,6 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // TODO: planned class in gen-v3 or gen-v2 part IV.
 // What planned?
@@ -47,6 +47,7 @@ public class CommandManagerObj extends BasicObj {
         public PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
         public LongBuffer offset = memAllocLong(1).put(0, 0L);
         protected VmaVirtualAllocationCreateInfo createInfo = null;
+        protected int status = -2;
 
         //
         public VirtualAllocation(long virtualBlock, long range) {
@@ -55,7 +56,12 @@ public class CommandManagerObj extends BasicObj {
             this.offset = memAllocLong(1).put(0, 0L);
             this.createInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
             this.range = range;
-            vmaVirtualAllocate(virtualBlock, this.createInfo.size(range), this.allocId, this.offset);
+            this.status = vmaVirtualAllocate(virtualBlock, this.createInfo.size(range), this.allocId, this.offset);
+        }
+
+        //
+        public int getStatus() {
+            return this.status;
         }
 
         //
@@ -95,27 +101,42 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) {
+        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = null;
 
-            Runnable tempOp = ()-> {
+            Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
-                var allocation = allocation_.get();
+                var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
-                memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                if (status == 0) {
+                    memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                } else {
+                    System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
+                    throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
+                }
+                return status;
             };
 
-            if (!lazy) { tempOp.run(); };
+            AtomicInteger status = new AtomicInteger(-2);
+            if (!lazy) { status.set(tempOp.call()); };
             callers.add((cmdBuf)->{
-                if (lazy) { tempOp.run(); };
+                if (lazy) {
+                    try {
+                        status.set(tempOp.call());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                };
                 var allocation = allocation_.get();
-                CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo(){{
-                    buffer = manager.bufferHeap.getHandle().get();
-                    offset = allocation.offset.get(0);
-                    range = allocation.range;
-                    rowLength = imageInfo.rowLength;
-                    imageHeight = imageInfo.imageHeight;
-                }}, imageInfo.image, imageInfo.extent3D);
+                if (status.get() == 0) {
+                    CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo() {{
+                        buffer = manager.bufferHeap.getHandle().get();
+                        offset = allocation.offset.get(0);
+                        range = allocation.range;
+                        rowLength = imageInfo.rowLength;
+                        imageHeight = imageInfo.imageHeight;
+                    }}, imageInfo.image, imageInfo.extent3D);
+                }
                 return cmdBuf;
             });
 
@@ -123,21 +144,36 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, VkDescriptorBufferInfo bufferRange, boolean lazy) {
+        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, VkDescriptorBufferInfo bufferRange, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = null;
 
-            Runnable tempOp = ()-> {
+            Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange.range())));
-                var allocation = allocation_.get();
+                var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
-                memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                if (status == 0) {
+                    memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                } else {
+                    System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
+                    throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
+                }
+                return status;
             };
 
-            if (!lazy) { tempOp.run(); };
+            AtomicInteger status = new AtomicInteger(-2);
+            if (!lazy) { status.set(tempOp.call()); };
             callers.add((cmdBuf)->{
-                if (lazy) { tempOp.run(); };
+                if (lazy) {
+                    try {
+                        status.set(tempOp.call());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                };
                 var allocation = allocation_.get();
-                CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocation.offset.get(0), allocation.range), bufferRange);
+                if (status.get() == 0) {
+                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocation.offset.get(0), allocation.range), bufferRange);
+                }
                 return cmdBuf;
             });
 
