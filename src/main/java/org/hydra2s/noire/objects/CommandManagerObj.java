@@ -24,6 +24,8 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.*;
+import static org.lwjgl.vulkan.VK13.VK_ACCESS_2_MEMORY_READ_BIT;
 
 // TODO: planned class in gen-v3 or gen-v2 part IV.
 // What planned?
@@ -138,6 +140,13 @@ public class CommandManagerObj extends BasicObj {
                         rowLength = imageInfo.rowLength;
                         imageHeight = imageInfo.imageHeight;
                     }}, imageInfo.image, imageInfo.extent3D);
+
+                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
+                        .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+                        .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                        .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                        .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                        .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)));*/
                 }
                 return cmdBuf;
             });
@@ -177,6 +186,13 @@ public class CommandManagerObj extends BasicObj {
                 if (status.get() == 0) {
                     var allocOffset = allocation.offset.get(0);
                     CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
+
+                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
+                        .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
+                        .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                        .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+                        .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                        .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)));*/
                 }
                 return cmdBuf;
             });
