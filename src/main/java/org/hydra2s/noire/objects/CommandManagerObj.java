@@ -9,10 +9,7 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
-import org.lwjgl.vulkan.VkBufferCopy2;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkDescriptorBufferInfo;
-import org.lwjgl.vulkan.VkExtent3D;
+import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -73,6 +70,7 @@ public class CommandManagerObj extends BasicObj {
         // specific
         public CommandUtils.SubresourceLayers image = null;
         public VkExtent3D extent3D = null;
+        //public VkOffset3D offset3D = VkOffset3D.calloc().set(0, 0, 0);
         public int rowLength = 0;
         public int imageHeight = 0;
     }
@@ -88,6 +86,12 @@ public class CommandManagerObj extends BasicObj {
             this.manager = manager;
             this.callers = new ArrayList<>();
             this.allocations = new ArrayList<>();
+        }
+
+        // TODO: correct naming
+        public CommandWriter cmdAdd(Function<VkCommandBuffer, VkCommandBuffer> caller) {
+            this.callers.add(caller);
+            return this;
         }
 
         //
@@ -157,7 +161,7 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
+        public DeviceObj.FenceProcess submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
             if (cmd.onDone == null) {
                 cmd.onDone = new Promise();
             }
@@ -165,11 +169,10 @@ public class CommandManagerObj extends BasicObj {
                 freeResources();
                 return status;
             });
-            manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+            return manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
                 cmdWrite(cmdBuf);
                 return null;
             });
-            return this;
         }
     };
 
