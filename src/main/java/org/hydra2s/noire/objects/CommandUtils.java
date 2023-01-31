@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.stream.IntStream;
 
+import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
@@ -422,6 +423,18 @@ abstract public class CommandUtils {
 
         //
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
+    }
+
+    // virtual buffer copying version
+    public static void cmdCopyVBufferToVBuffer(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo src, VkDescriptorBufferInfo dst, VkBufferCopy2.Buffer copies) {
+        // TODO: fix VK_WHOLE_SIZE issues!
+        var modified = copies.stream().map((cp)-> cp
+            .dstOffset(cp.dstOffset()+dst.offset())
+            .srcOffset(cp.srcOffset()+src.offset())
+            .size(min(src.range(), dst.range()))).toList();
+        var Rs = copies.remaining();
+        for (var I=0;I<Rs;I++) { copies.get(I).set(modified.get(I)); } // modify copies
+        CommandUtils.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
     }
 
     // TODO: support for queue families

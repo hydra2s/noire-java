@@ -127,17 +127,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         return this;
     }
 
-    // virtual buffer copying version
-    public static void cmdCopyVBufferToVBuffer(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo src, VkDescriptorBufferInfo dst, VkBufferCopy2.Buffer copies) {
-        // TODO: fix VK_WHOLE_SIZE issues!
-        var modified = copies.stream().map((cp)-> cp
-            .dstOffset(cp.dstOffset()+dst.offset())
-            .srcOffset(cp.srcOffset()+src.offset())
-            .size(min(src.range(), dst.range()))).toList();
-        var Rs = copies.remaining();
-        for (var I=0;I<Rs;I++) { copies.get(I).set(modified.get(I)); } // modify copies
-        CommandUtils.cmdCopyBufferToBuffer(cmdBuf, src.buffer(), dst.buffer(), copies);
-    }
+
 
     // Will be able to deallocate and re-allocate again
     // TODO: support for TRIM and trimming...

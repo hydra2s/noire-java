@@ -2,5 +2,5 @@ package org.hydra2s.noire.descriptors;
 
 // TODO:
 public class CommandManagerCInfo extends BasicCInfo {
-    public int queueGroupIndex = 0;
+    public long memoryAllocator;
 }
