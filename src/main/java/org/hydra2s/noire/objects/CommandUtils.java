@@ -188,7 +188,7 @@ abstract public class CommandUtils {
         bufferMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
 
         //
-        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(srcImage.subresource).imageSubresource(srcImage.subresource).bufferOffset(dstBuffer.offset).bufferRowLength(dstBuffer.rowLength).bufferImageHeight(dstBuffer.imageHeight).imageExtent(extent3D);
+        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(srcImage.subresource).imageOffset(srcImage.offset3D).imageSubresource(srcImage.subresource).bufferOffset(dstBuffer.offset).bufferRowLength(dstBuffer.rowLength).bufferImageHeight(dstBuffer.imageHeight).imageExtent(extent3D);
         vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(srcImage.imageViewInfo.imageLayout).srcImage(srcImage.imageViewInfo.image).dstBuffer(dstBuffer.buffer).pRegions(imageBufferCopyRegion));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
     }
@@ -226,7 +226,7 @@ abstract public class CommandUtils {
         bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
 
         //
-        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(dstImage.subresource).imageSubresource(dstImage.subresource).bufferOffset(srcBuffer.offset).bufferRowLength(srcBuffer.rowLength).bufferImageHeight(srcBuffer.imageHeight).imageExtent(extent3D);
+        var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageOffset(dstImage.offset3D).imageSubresource(dstImage.subresource).imageSubresource(dstImage.subresource).bufferOffset(srcBuffer.offset).bufferRowLength(srcBuffer.rowLength).bufferImageHeight(srcBuffer.imageHeight).imageExtent(extent3D);
         vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(dstImage.imageViewInfo.imageLayout).dstImage(dstImage.imageViewInfo.image).srcBuffer(srcBuffer.buffer).pRegions(imageBufferCopyRegion));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
     }
