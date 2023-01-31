@@ -218,6 +218,7 @@ public class CommandManagerObj extends BasicObj {
     public PointerBuffer virtualBlock = null;
     public BufferObj bufferHeap = null;
     public ArrayList<CommandWriter> writers = null;
+    protected VmaVirtualBlockCreateInfo vbInfo = null;
 
     //
     public CommandManagerObj(Handle base, CommandManagerCInfo cInfo) {
@@ -236,8 +237,7 @@ public class CommandManagerObj extends BasicObj {
         }});
 
         //
-        VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
-        vmaCreateVirtualBlock(vbInfo.size(bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+        vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
 
         //
         this.handle = new Handle("CommandManager", MemoryUtil.memAddress(memAllocLong(1)));
