@@ -169,10 +169,12 @@ public class CommandManagerObj extends BasicObj {
                 freeResources();
                 return status;
             });
-            return manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+            var fence = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
                 cmdWrite(cmdBuf);
                 return null;
             });
+            manager.deviceObj.doPolling();
+            return fence;
         }
     };
 
