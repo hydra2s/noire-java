@@ -44,6 +44,12 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.units = units;
             this.factor = factor;
         }
+
+        public DepthBias(DepthBias depthBias) {
+            this.enabled = depthBias.enabled;
+            this.units = depthBias.units;
+            this.factor = depthBias.factor;
+        }
     }
 
     //
@@ -57,6 +63,12 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.depthTest = depthTest;
             this.depthMask = depthMask;
             this.function = function;//glToVulkan(function);
+        }
+
+        public DepthState(DepthState depthState) {
+            this.depthTest = depthState.depthTest;
+            this.depthMask = depthState.depthMask;
+            this.function = depthState.function;//glToVulkan(function);
         }
 
         public static int glToVulkan(int value) {
@@ -164,6 +176,11 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.logicOp = op;
         }
 
+        public LogicOpState(LogicOpState logicOp) {
+            this.enabled = logicOp.enabled;
+            this.logicOp = logicOp.logicOp;
+        }
+
         public static int glToVulkan(int value) {
             return switch (value) {
                 case 5377 -> VK_LOGIC_OP_AND;
@@ -224,6 +241,10 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.colorMask = mask;
         }
 
+        public ColorMask(ColorMask mask) {
+            this.colorMask = mask.colorMask;
+        }
+
         public static int getColorMask(boolean r, boolean g, boolean b, boolean a) {
             return
                 (r ? VK_COLOR_COMPONENT_R_BIT : 0) |
@@ -269,7 +290,7 @@ public class ImageSetCInfo extends BasicCInfo  {
         }};
 
         // TODO: bound with vertex state
-        public boolean cullState;
+        public boolean cullState = true;
 
         //
         public VkImageMemoryBarrier2 depthStencilBarrier = VkImageMemoryBarrier2.calloc()
@@ -283,6 +304,30 @@ public class ImageSetCInfo extends BasicCInfo  {
 
         //
         public FBLayout() {
+
+        }
+
+        public FBLayout(FBLayout original) {
+            this.cullState = original.cullState;
+            this.colorMask = new ArrayList<>();
+            original.colorMask.forEach((m)->{
+                this.colorMask.add(new ColorMask(m));
+            });
+            this.blendStates = new ArrayList<>();
+            original.blendStates.forEach((b)->{
+                this.blendStates.add(new BlendState(b));
+            });
+            this.logicOp = new LogicOpState(original.logicOp);
+            this.depthBias = new DepthBias(original.depthBias);
+            this.depthState = new DepthState(original.depthState);
+            this.attachmentInfos = VkRenderingAttachmentInfo.calloc(original.attachmentInfos.remaining());
+            for (var I=0;I<original.attachmentInfos.remaining();I++) {
+                this.attachmentInfos.put(I, original.attachmentInfos.get(I));
+            }
+            this.depthStencilFormat = original.depthStencilFormat;
+            this.depthStencilAttachmentInfo = VkRenderingAttachmentInfo.calloc().set(original.depthStencilAttachmentInfo);
+            this.scissor = VkRect2D.calloc().set(original.scissor);
+            this.viewport = VkViewport.calloc().set(original.viewport);
 
         }
 
