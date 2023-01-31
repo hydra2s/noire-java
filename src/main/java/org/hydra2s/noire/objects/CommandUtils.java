@@ -123,7 +123,7 @@ abstract public class CommandUtils {
     static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, SubresourceLayers dstImage, VkExtent3D extent3D) {
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
@@ -135,7 +135,7 @@ abstract public class CommandUtils {
         //
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
@@ -160,7 +160,7 @@ abstract public class CommandUtils {
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
@@ -172,7 +172,7 @@ abstract public class CommandUtils {
         //
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
@@ -198,7 +198,7 @@ abstract public class CommandUtils {
         //
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
@@ -208,7 +208,7 @@ abstract public class CommandUtils {
         //
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
@@ -235,7 +235,7 @@ abstract public class CommandUtils {
     static public void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, BufferCopyInfo srcBuffer, BufferCopyInfo dstBuffer) {
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
@@ -245,7 +245,7 @@ abstract public class CommandUtils {
         //
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
@@ -319,7 +319,7 @@ abstract public class CommandUtils {
         // TODO: support for queue families
         var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
             .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)

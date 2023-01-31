@@ -142,16 +142,6 @@ public class BufferObj extends BasicObj {
         return this;
     }
 
-    // unrecommended if you have ResizableBAR support
-    // mostly, usable for uniform data and buffers
-    // also, support partial synchronization
-    // bounds updating data into command buffer
-    public BufferObj cmdUpdateBuffer(VkCommandBuffer cmdBuf, ByteBuffer data, long byteOffset) {
-        vkCmdUpdateBuffer(cmdBuf, this.handle.get(), byteOffset, data);
-        CommandUtils.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), byteOffset, data.remaining()));
-        return this;
-    }
-
     @Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj delete() throws Exception {
         var handle = this.handle;
