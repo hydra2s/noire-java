@@ -103,12 +103,15 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) throws Exception {
+        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, Callable<HostImageStage> imageInfoLazy, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
+            AtomicReference<HostImageStage> imageInfo_ = new AtomicReference<>();
             var payloadBackup = memAlloc(data.remaining());
             memCopy(data, payloadBackup);
 
+
             Callable<Integer> tempOp = ()-> {
+                imageInfo_.set(imageInfoLazy.call());
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
@@ -135,6 +138,7 @@ public class CommandManagerObj extends BasicObj {
                 var allocation = allocation_.get();
                 if (status.get() == 0) {
                     var allocOffset = allocation.offset.get(0);
+                    var imageInfo = imageInfo_.get();
                     CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo() {{
                         buffer = manager.bufferHeap.getHandle().get();
                         offset = allocOffset;
@@ -157,13 +161,15 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, VkDescriptorBufferInfo bufferRange, boolean lazy) throws Exception {
+        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
+            AtomicReference<VkDescriptorBufferInfo> bufferRange_ = new AtomicReference<>();
             var payloadBackup = memAlloc(data.remaining());
             memCopy(data, payloadBackup);
 
             Callable<Integer> tempOp = ()-> {
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange.range())));
+                bufferRange_.set(bufferRangeLazy.call());
+                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange_.get().range())));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
@@ -186,8 +192,9 @@ public class CommandManagerObj extends BasicObj {
                         throw new RuntimeException(e);
                     }
                 };
-                var allocation = allocation_.get();
                 if (status.get() == 0) {
+                    var bufferRange = bufferRange_.get();
+                    var allocation = allocation_.get();
                     var allocOffset = allocation.offset.get(0);
                     CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
 

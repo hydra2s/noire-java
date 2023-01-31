@@ -39,10 +39,14 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public BufferObj bufferHeap = null;
 
         //
+        public ArrayList<Long> toFree = null;
+
+        //
         public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
             super(base, cInfo);
 
             // TODO: add support for ResizableBAR! It's necessary!
+            this.toFree = new ArrayList<>();
             this.bufferHeap = new BufferObj(base, new BufferCInfo() {{
                 size = cInfo.bufferHeapSize;
                 usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -55,6 +59,15 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
             //
             vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+        }
+
+        //
+        public VirtualMemoryHeap garbage() {
+            this.toFree.forEach((alloc)->{
+                vmaVirtualFree(virtualBlock.get(0), alloc);
+            });
+            this.toFree.clear();
+            return this;
         }
 
         //
@@ -127,8 +140,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
         return this;
     }
-
-
 
     // Will be able to deallocate and re-allocate again
     // TODO: support for TRIM and trimming...
@@ -204,7 +215,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         // TODO: morton coding support
         // TODO: support for memory type when allocation, not when create
-        public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
+        public VirtualMutableBufferObj allocate(long bufferSize, VkCommandBuffer cmdBuf) throws Exception {
             final long MEM_BLOCK = 512L;
             this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
@@ -213,6 +224,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             {
                 // TODO: copy from old segment
                 var oldAlloc = this.allocId.get(0);
+                if (oldAlloc != 0L) {
+                    heap.toFree.add(oldAlloc);
+                }
+
+                //
                 var srcBufferRange = this.getBufferRange();
 
                 //
@@ -222,110 +238,55 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 this.allocId.put(0, 0L);
 
                 //
-                long finalBufferSize = bufferSize;
-                Callable<Integer> memAlloc = ()->{
-                    if (this.allocId.get(0) == 0L) {
-                        return vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = finalBufferSize), this.allocId, this.bufferOffset);
-                    }
-                    return VK_SUCCESS;
-                };
+                int res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId, this.bufferOffset);
 
-                // initiate free procedure
-                if (oldAlloc != 0) {
-                    deviceObj.doPolling();
-                    deviceObj.submitOnce(new DeviceObj.SubmitCmd() {{
-                        // TODO: correctly handle main queue family
-                        //whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                        //whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
-
-                        //
-                        queueGroupIndex = cInfo.queueGroupIndex;
-                        onDone = new Promise<>().thenApply((result) -> {
-                            if (heap != null && oldAlloc != 0) {
-                                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                            }
-                            return null;
-                        });
-                    }}, (cmdBuf) -> {
-                        return VK_SUCCESS;
-                    });
+                // if anyways, isn't allocated...
+                if (res != VK_SUCCESS) {
+                    System.out.println("Allocation Failed, there is not free memory: " + res);
+                    throw new Exception("Allocation Failed, there is not free memory: " + res);
                 }
 
-                // wait when virtual memory will free...
-                // WARNING! Your game may LAG! But it's needs for await memory chunk to free.
-                // i.e. it's manual, artificial stutter (also, known as micro-freeze).
-                if (bufferSize != 0L) {
-                    var res = memAlloc.call();
-                    var beginTiming = currentTimeMillis();
+                //
+                var dstBufferRange = this.getBufferRange();
+                if (oldAlloc != 0 && cmdBuf != null) {
+                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                }
 
-                    /*
-                    do {
-                        if (res == VK_SUCCESS) { break; }
-                        if (res != VK_SUCCESS && res != -2) {
-                            System.out.println("Allocation Failed: " + res);
-                            throw new Exception("Allocation Failed: " + res);
-                        }
-                    } while ((res = memAlloc.call()) == -2 && !deviceObj.doPolling() && (currentTimeMillis() - beginTiming) < 10000);
-*/
-                    
-                    // if anyways, isn't allocated...
-                    if (res != VK_SUCCESS) {
-                        System.out.println("Allocation Failed, there is not free memory: " + res);
-                        throw new Exception("Allocation Failed, there is not free memory: " + res);
-                    }
-
-                    // get device address from
-                    this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
-                    if (earlyMapped) {
-                        this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
-                    }
+                // get device address from
+                this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
+                if (earlyMapped) {
+                    this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
                 }
 
             }
             return this;
         }
 
+        public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
+            return this.allocate(bufferSize, null);
+        }
+
         @Override
         public VirtualMutableBufferObj delete() throws Exception {
             var oldAlloc = this.allocId.get(0);
-            if (oldAlloc != 0) {
-                deviceObj.doPolling();
-                deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
-                    // TODO: correctly handle main queue family
-                    //whatQueueGroupWillWait = cInfo.queueGroupIndex != 0 ? 0 : -1;
-                    //whatWaitBySemaphore = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT;
-
-                    //
-                    queueGroupIndex = cInfo.queueGroupIndex;
-                    onDone = new Promise<>().thenApply((result)-> {
-                        if (heap != null && oldAlloc != 0) {
-                            vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
-                        }
-                        bound.registry.removeIndex(DSC_ID);
-                        return null;
-                    });
-                }}, (cmdBuf)->{
-                    return VK_SUCCESS;
-                });
-            } else {
-                bound.registry.removeIndex(DSC_ID);
+            if (oldAlloc != 0L) {
+                this.heap.toFree.add(oldAlloc);
             }
-
-            //
             this.bufferSize = 0L;
             this.blockSize = 0L;
             this.address = 0L;
             this.bufferOffset.put(0, 0L);
             this.allocId.put(0, 0L);
             this.mapped = null;
+            this.bound.registry.removeIndex(this.DSC_ID);
             return this;
         }
 
         @Override
         public VirtualMutableBufferObj deleteDirectly() /*throws Exception*/ {
             var oldAlloc = this.allocId.get(0);
-            if (heap != null && oldAlloc != 0) {
-                vmaVirtualFree(heap.virtualBlock.get(0), oldAlloc);
+            if (oldAlloc != 0L) {
+                this.heap.toFree.add(oldAlloc);
             }
             this.bufferSize = 0L;
             this.blockSize = 0L;
