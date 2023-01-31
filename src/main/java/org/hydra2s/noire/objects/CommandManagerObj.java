@@ -12,6 +12,7 @@ import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
 import org.lwjgl.vulkan.VkBufferCopy2;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
+import org.lwjgl.vulkan.VkExtent3D;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -68,6 +69,15 @@ public class CommandManagerObj extends BasicObj {
     }
 
     //
+    public static class HostImageStage {
+        // specific
+        public CommandUtils.SubresourceLayers image = null;
+        public VkExtent3D extent3D = null;
+        public int rowLength = 0;
+        public int imageHeight = 0;
+    }
+
+    //
     public static class CommandWriter {
         public CommandManagerObj manager = null;
         public ArrayList<Function<VkCommandBuffer, VkCommandBuffer>> callers = null;
@@ -78,6 +88,34 @@ public class CommandManagerObj extends BasicObj {
             this.manager = manager;
             this.callers = new ArrayList<>();
             this.allocations = new ArrayList<>();
+        }
+
+        //
+        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) {
+            AtomicReference<VirtualAllocation> allocation_ = null;
+
+            Runnable tempOp = ()-> {
+                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
+                var allocation = allocation_.get();
+                this.allocations.add(allocation);
+                memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+            };
+
+            if (!lazy) { tempOp.run(); };
+            callers.add((cmdBuf)->{
+                if (lazy) { tempOp.run(); };
+                var allocation = allocation_.get();
+                CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo(){{
+                    buffer = manager.bufferHeap.getHandle().get();
+                    offset = allocation.offset.get(0);
+                    range = data.remaining();
+                    rowLength = imageInfo.rowLength;
+                    imageHeight = imageInfo.imageHeight;
+                }}, imageInfo.image, imageInfo.extent3D);
+                return cmdBuf;
+            });
+
+            return this;
         }
 
         //
