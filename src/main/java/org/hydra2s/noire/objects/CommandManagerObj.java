@@ -98,13 +98,15 @@ public class CommandManagerObj extends BasicObj {
 
         // TODO: correct naming
         public CommandWriter cmdAdd(Function<VkCommandBuffer, VkCommandBuffer> caller) {
-            this.callers.add(caller);
+            this.callers.add(this.callers.size(), caller);
             return this;
         }
 
         //
         public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
+            var payloadBackup = memAlloc(data.remaining());
+            memCopy(data, payloadBackup);
 
             Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
@@ -112,7 +114,7 @@ public class CommandManagerObj extends BasicObj {
                 this.allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
-                    memCopy(data, manager.bufferHeap.map(allocation.range, allocOffset));
+                    memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -122,7 +124,7 @@ public class CommandManagerObj extends BasicObj {
 
             AtomicInteger status = new AtomicInteger(-2);
             if (!lazy) { status.set(tempOp.call()); };
-            callers.add((cmdBuf)->{
+            this.cmdAdd((cmdBuf)->{
                 if (lazy) {
                     try {
                         status.set(tempOp.call());
@@ -157,6 +159,8 @@ public class CommandManagerObj extends BasicObj {
         //
         public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, VkDescriptorBufferInfo bufferRange, boolean lazy) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
+            var payloadBackup = memAlloc(data.remaining());
+            memCopy(data, payloadBackup);
 
             Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange.range())));
@@ -164,7 +168,7 @@ public class CommandManagerObj extends BasicObj {
                 this.allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
-                    memCopy(data, manager.bufferHeap.map(allocation.range, allocOffset));
+                    memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -174,7 +178,7 @@ public class CommandManagerObj extends BasicObj {
 
             AtomicInteger status = new AtomicInteger(-2);
             if (!lazy) { status.set(tempOp.call()); };
-            callers.add((cmdBuf)->{
+            this.cmdAdd((cmdBuf)->{
                 if (lazy) {
                     try {
                         status.set(tempOp.call());
