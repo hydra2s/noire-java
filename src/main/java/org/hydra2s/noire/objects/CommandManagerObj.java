@@ -102,14 +102,15 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, HostImageStage imageInfo, boolean lazy) throws Exception {
-            AtomicReference<VirtualAllocation> allocation_ = null;
+            AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
 
             Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
-                    memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                    var allocOffset = allocation.offset.get(0);
+                    memCopy(data, manager.bufferHeap.map(allocation.range, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -129,9 +130,10 @@ public class CommandManagerObj extends BasicObj {
                 };
                 var allocation = allocation_.get();
                 if (status.get() == 0) {
+                    var allocOffset = allocation.offset.get(0);
                     CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo() {{
                         buffer = manager.bufferHeap.getHandle().get();
-                        offset = allocation.offset.get(0);
+                        offset = allocOffset;
                         range = allocation.range;
                         rowLength = imageInfo.rowLength;
                         imageHeight = imageInfo.imageHeight;
@@ -145,14 +147,15 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, VkDescriptorBufferInfo bufferRange, boolean lazy) throws Exception {
-            AtomicReference<VirtualAllocation> allocation_ = null;
+            AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
 
             Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange.range())));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
-                    memCopy(data, manager.bufferHeap.map(allocation.range, allocation.offset.get(0)));
+                    var allocOffset = allocation.offset.get(0);
+                    memCopy(data, manager.bufferHeap.map(allocation.range, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -172,7 +175,8 @@ public class CommandManagerObj extends BasicObj {
                 };
                 var allocation = allocation_.get();
                 if (status.get() == 0) {
-                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocation.offset.get(0), allocation.range), bufferRange);
+                    var allocOffset = allocation.offset.get(0);
+                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
                 }
                 return cmdBuf;
             });
@@ -242,7 +246,6 @@ public class CommandManagerObj extends BasicObj {
         //
         this.handle = new Handle("CommandManager", MemoryUtil.memAddress(memAllocLong(1)));
         deviceObj.handleMap.put$(this.handle, this);
-        memoryAllocatorObj.handleMap.put$(this.handle, this);
     }
 
     //

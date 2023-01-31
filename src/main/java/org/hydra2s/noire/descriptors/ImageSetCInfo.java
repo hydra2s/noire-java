@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 //
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK13.*;
 
@@ -308,6 +309,32 @@ public class ImageSetCInfo extends BasicCInfo  {
         }
 
         public FBLayout(FBLayout original) {
+            // TODO: merge with ImageSet constructor
+            this.pipelineLayout = original.pipelineLayout;
+            this.memoryAllocator = original.memoryAllocator;
+
+            //
+            this.formats = memAllocInt(original.formats.remaining());//original.formats;
+            for (var I=0;I<original.formats.remaining();I++) {
+                this.formats.put(I, original.formats.get(I));
+            }
+
+            //
+            this.layerCounts = new ArrayList<Integer>();
+            this.extents = new ArrayList<VkExtent3D>();
+
+            //
+            original.layerCounts.forEach((L)->{
+                this.layerCounts.add(L);
+            });
+
+            //
+            original.extents.forEach((E)->{
+                this.extents.add(E);
+            });
+
+
+            // FBLayout statements
             this.cullState = original.cullState;
             this.colorMask = new ArrayList<>();
             original.colorMask.forEach((m)->{
@@ -326,8 +353,10 @@ public class ImageSetCInfo extends BasicCInfo  {
             }
             this.depthStencilFormat = original.depthStencilFormat;
             this.depthStencilAttachmentInfo = VkRenderingAttachmentInfo.calloc().set(original.depthStencilAttachmentInfo);
-            this.scissor = VkRect2D.calloc().set(original.scissor);
-            this.viewport = VkViewport.calloc().set(original.viewport);
+
+            //
+            if (original.scissor != null) this.scissor = VkRect2D.calloc().set(original.scissor);
+            if (original.viewport != null) this.viewport = VkViewport.calloc().set(original.viewport);
 
         }
 
