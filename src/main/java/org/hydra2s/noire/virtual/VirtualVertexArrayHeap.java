@@ -212,7 +212,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
                     return null;
                 });
             }}, (cmdBuf)->{
-                return VK_SUCCESS;
+                return cmdBuf;
             });
             return this;
         }

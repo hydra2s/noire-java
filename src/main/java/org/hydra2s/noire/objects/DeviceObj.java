@@ -78,7 +78,9 @@ public class DeviceObj extends BasicObj {
         //
         public int[] whatQueueGroupWillWait = {-1};
         public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_NONE;
-        public long fence = 0L;
+        public LongBuffer fence = memAllocLong(1).put(0, 0L);
+
+        public Function<VkCommandBuffer, VkCommandBuffer> writable = null;
     };
 
     //
@@ -87,7 +89,7 @@ public class DeviceObj extends BasicObj {
         public PointerBuffer cmdBufBlock = null;
         public int cmdBufIndex = 0;
         //public ArrayList<PointerBuffer> cmdBufferBlocks = null;
-        public ArrayList<UtilsCInfo.Pair<Long, VkCommandBuffer>> onceCmdBuffers = null;
+        public ArrayList<UtilsCInfo.Pair<LongBuffer, VkCommandBuffer>> onceCmdBuffers = null;
     };
 
 
@@ -322,11 +324,11 @@ public class DeviceObj extends BasicObj {
 
         // impossible to free command buffers, even sent once
         commandPoolInfo.onceCmdBuffers = new ArrayList(commandPoolInfo.onceCmdBuffers.stream().filter((pair)->{
-            var status = vkWaitForFences(device, pair.first, true, 9007199254740991L);
+            var status = pair.first.get(0) != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
             if (status != VK_NOT_READY) {
-                vkDestroyFence(device, pair.first, null);
-                vkFreeCommandBuffers(device, commandPool, pair.second);
                 if (status != VK_SUCCESS) { vkCheckStatus(status); };
+                vkDestroyFence(device, pair.first.get(0), null); pair.first.put(0, 0L);
+                vkFreeCommandBuffers(device, commandPool, pair.second);
             }
             return status == VK_NOT_READY;
         }).toList());
@@ -566,7 +568,7 @@ public class DeviceObj extends BasicObj {
             .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
             .pCommandBufferInfos(cmdInfo)
             .pSignalSemaphoreInfos(signalSemaphores)
-            .pWaitSemaphoreInfos(waitSemaphores), cmd.fence));
+            .pWaitSemaphoreInfos(waitSemaphores), cmd.fence.get(0)));
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
@@ -580,6 +582,7 @@ public class DeviceObj extends BasicObj {
 
         //
         var ref = new FenceProcess() {{
+            fence = cmd.fence;
             timelineSemaphore = querySignalSemaphore;
             deallocProcess = (_null_)->{
                 var timeline = querySignalSemaphore.getTimeline();
@@ -610,15 +613,15 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
+    public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, VkCommandBuffer> fn) throws Exception {
 
          // TODO: allocate command buffer with fence
         var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);
         var commandPoolInfo = queueGroup.commandPoolInfo.get(submitCmd.commandPoolIndex);
 
         // TODO: rarer fence creation
-        LongBuffer fence_ = memAllocLong(1).put(0, 0L);
-        vkCheckStatus(vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_));
+        submitCmd.fence = memAllocLong(1).put(0, 0L);
+        vkCheckStatus(vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, submitCmd.fence));
         vkCheckStatus(vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)));
@@ -626,12 +629,11 @@ public class DeviceObj extends BasicObj {
         vkCheckStatus(vkEndCommandBuffer(submitCmd.cmdBuf));
 
         //
-        submitCmd.fence = fence_.get(0);
+        var pair = new UtilsCInfo.Pair<LongBuffer, VkCommandBuffer>(submitCmd.fence, submitCmd.cmdBuf);
         if (submitCmd.onDone == null) { submitCmd.onDone = new Promise(); };
-
-        // all was in vain...
+        submitCmd.writable = fn;
         submitCmd.onDone.thenApply((status)->{
-            commandPoolInfo.onceCmdBuffers.add(new UtilsCInfo.Pair<Long, VkCommandBuffer>(fence_.get(0), submitCmd.cmdBuf));
+            commandPoolInfo.onceCmdBuffers.add(pair);
             return status;
         });
 

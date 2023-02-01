@@ -225,19 +225,19 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         // TODO: support for memory type when allocation, not when create
         public VirtualMutableBufferObj allocate(long bufferSize, VkCommandBuffer cmdBuf) throws Exception {
             final long MEM_BLOCK = 512L;
-            this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
 
             //
+            VkDescriptorBufferInfo srcBufferRange = null;
+            var oldAlloc = this.allocId.get(0);
+            if (oldAlloc != 0L) {
+                srcBufferRange = this.getBufferRange();
+                heap.toFree.add(oldAlloc);
+            }
+
+            //
+            this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
             if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
-                // TODO: copy from old segment
-                VkDescriptorBufferInfo srcBufferRange = null;
-                var oldAlloc = this.allocId.get(0);
-                if (oldAlloc != 0L) {
-                    srcBufferRange = this.getBufferRange();
-                    heap.toFree.add(oldAlloc);
-                }
-
                 //
                 boolean earlyMapped = this.mapped != null;
                 this.mapped = null;
@@ -249,22 +249,25 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                 // if anyways, isn't allocated...
                 if (res != VK_SUCCESS) {
+                    this.bufferSize = 0L;
+                    this.address = 0L;
+
+                    //
                     System.out.println("Allocation Failed, there is not free memory: " + res);
                     throw new Exception("Allocation Failed, there is not free memory: " + res);
-                }
+                } else {
+                    // get device address from
+                    this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
+                    if (earlyMapped) {
+                        this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
+                    }
 
-                //
-                var dstBufferRange = this.getBufferRange();
-                if (oldAlloc != 0 && cmdBuf != null) {
-                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                    //
+                    var dstBufferRange = this.getBufferRange();
+                    if (oldAlloc != 0 && cmdBuf != null && srcBufferRange.range() > 0 && dstBufferRange.range() > 0) {
+                        CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                    }
                 }
-
-                // get device address from
-                this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
-                if (earlyMapped) {
-                    this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
-                }
-
             }
             return this;
         }

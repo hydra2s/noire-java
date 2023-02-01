@@ -99,11 +99,11 @@ public class InstanceObj extends BasicObj {
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
-        this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 2);
+        this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 1);
         this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_get_surface_capabilities2")));
-        this.extensions.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_debug_utils")));
+        //this.extensions.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_debug_utils")));
         for (int i=0;i<this.glfwExt.limit();i++) {
-            this.extensions.put(i+2, MemoryUtil.memAddress(MemoryUtil.memUTF8(this.glfwExt.getStringUTF8(i))));
+            this.extensions.put(i+1, MemoryUtil.memAddress(MemoryUtil.memUTF8(this.glfwExt.getStringUTF8(i))));
         }
 
         //
@@ -134,7 +134,7 @@ public class InstanceObj extends BasicObj {
         System.out.println("Something wrong with Instance? " + Long.toHexString(this.handle.get()));
 
         //
-        vkCheckStatus(vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
+        /*vkCheckStatus(vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
                 .sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
                 .messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
                 .messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT)
@@ -207,7 +207,7 @@ public class InstanceObj extends BasicObj {
                         }
                         return 0;
                     }
-                }), null, this.messagerEXT = memAllocLong(1)));
+                }), null, this.messagerEXT = memAllocLong(1)));*/
     }
 
     //

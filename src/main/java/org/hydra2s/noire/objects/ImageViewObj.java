@@ -123,7 +123,7 @@ public class ImageViewObj extends BasicObj {
                 return null;
             });
         }}, (cmdBuf)->{
-            return VK_SUCCESS;
+            return cmdBuf;
         });
         return this;
     }

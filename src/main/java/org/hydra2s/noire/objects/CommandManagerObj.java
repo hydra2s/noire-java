@@ -4,6 +4,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.CommandManagerCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
@@ -25,8 +26,6 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
-import static org.lwjgl.vulkan.VK13.*;
-import static org.lwjgl.vulkan.VK13.VK_ACCESS_2_MEMORY_READ_BIT;
 
 // TODO: planned class in gen-v3 or gen-v2 part IV.
 // What planned?
@@ -86,20 +85,22 @@ public class CommandManagerObj extends BasicObj {
     //
     public static class CommandWriter {
         public CommandManagerObj manager = null;
-        public ArrayList<Function<VkCommandBuffer, VkCommandBuffer>> callers = null;
+        public ArrayList<UtilsCInfo.Pair<String, Function<VkCommandBuffer, VkCommandBuffer>>> callers = null;
         public ArrayList<VirtualAllocation> allocations = null;
+        public ArrayList<Runnable> toFree = null;
 
         //
         public CommandWriter(CommandManagerObj manager, CommandWriterCInfo cInfo) {
             this.manager = manager;
             this.callers = new ArrayList<>();
             this.allocations = new ArrayList<>();
+            this.toFree = new ArrayList<>();
         }
 
         // TODO: correct naming
-        public CommandWriter cmdAdd(Function<VkCommandBuffer, VkCommandBuffer> caller) {
+        public CommandWriter cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
             if (caller != null) {
-                this.callers.add(this.callers.size(), caller);
+                this.callers.add(this.callers.size(), new UtilsCInfo.Pair<>(typeName, caller));
             }
             return this;
         }
@@ -129,7 +130,7 @@ public class CommandManagerObj extends BasicObj {
 
             AtomicInteger status = new AtomicInteger(-2);
             if (!lazy) { status.set(tempOp.call()); };
-            this.cmdAdd((cmdBuf)->{
+            this.cmdAdd("Host To Image Copy", (cmdBuf)->{
                 if (lazy) {
                     try {
                         status.set(tempOp.call());
@@ -186,7 +187,7 @@ public class CommandManagerObj extends BasicObj {
 
             AtomicInteger status = new AtomicInteger(-2);
             if (!lazy) { status.set(tempOp.call()); };
-            this.cmdAdd((cmdBuf)->{
+            this.cmdAdd("Host To Buffer Copy", (cmdBuf)->{
                 if (lazy) {
                     try {
                         status.set(tempOp.call());
@@ -214,16 +215,16 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter freeResources() {
+        /*public CommandWriter freeResources() {
             this.allocations.forEach(VirtualAllocation::free);
             this.allocations.clear();
             return this;
-        }
+        }*/
 
         //
         public CommandWriter cmdWrite(VkCommandBuffer commandBuffer) {
             callers.forEach((run)->{
-                run.apply(commandBuffer);
+                run.second.apply(commandBuffer);
             });
             callers.clear();
             return this;
@@ -231,19 +232,83 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public DeviceObj.FenceProcess submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
-            if (cmd.onDone == null) {
-                cmd.onDone = new Promise();
-            }
+            if (this.callers.size() < 0) { return null; };
+
+            //
+            var toFreeFn = new ArrayList<Runnable>();
+            toFreeFn.addAll(this.toFree); this.toFree.clear();
+
+            //
+            var toFreeAlloc = new ArrayList<VirtualAllocation>();
+            toFreeAlloc.addAll(this.allocations); this.allocations.clear();
+
+            //
+            cmd.onDone = cmd.onDone != null ? cmd.onDone : new Promise();
             cmd.onDone.thenApply((status)->{
-                freeResources();
+                toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
+                toFreeFn.forEach(Runnable::run); toFreeFn.clear();
                 return status;
             });
+
+            //
             var fence = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
                 cmdWrite(cmdBuf);
                 return null;
             });
+
+            /*
+            AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
+            this.callers.forEach((fn)->{
+                DeviceObj.FenceProcess fence = null;
+
+                //
+                System.out.println("Command Type Name: " + fn.first);
+                System.out.println("Command Sequence ID: " + callers.indexOf(fn) + " of " + callers.size());
+
+                //
+                try {
+                    fence = manager.deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
+                        queueGroupIndex = cmd.queueGroupIndex;
+                        commandPoolIndex = cmd.commandPoolIndex;
+                        if (callers.indexOf(fn) == (callers.size()-1)) {
+                            waitSemaphoreSubmitInfo = cmd.waitSemaphoreSubmitInfo;
+                            signalSemaphoreSubmitInfo = cmd.signalSemaphoreSubmitInfo;
+                            onDone = cmd.onDone != null ? cmd.onDone : new Promise();
+                            onDone.thenApply((status)->{
+                                toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
+                                toFreeFn.forEach(Runnable::run); toFreeFn.clear();
+                                return status;
+                            });
+                        }
+                    }}, fn.second);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+
+                //
+                manager.deviceObj.doPolling();
+
+                //
+                if (fence.fence != null && fence.fence.get(0) != 0) {
+                    vkCheckStatus(vkWaitForFences(manager.deviceObj.device, fence.fence, true, 9007199254740991L));
+                };
+
+                //
+                if (callers.indexOf(fn) == (callers.size()-1)) {
+                    last.set(fence);
+                }
+            });
+            this.callers.clear();
+            return last.get();*/
+
             manager.deviceObj.doPolling();
             return fence;
+
+        }
+
+        public CommandWriter addToFree(Runnable fn) {
+
+            return this;
         }
     };
 

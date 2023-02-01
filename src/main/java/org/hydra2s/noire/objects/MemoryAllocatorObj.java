@@ -170,7 +170,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                     return null;
                 });
             }}, (cmdBuf)->{
-                return VK_SUCCESS;
+                return cmdBuf;
             });
             return this;
         }
