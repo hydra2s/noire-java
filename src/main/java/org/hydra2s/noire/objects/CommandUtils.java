@@ -67,7 +67,7 @@ abstract public class CommandUtils {
     public static class BufferCopyInfo {
         public long buffer = 0L;
         public long offset = 0L;
-        public long range = VK_WHOLE_SIZE;
+        public long range = 0L;//VK_WHOLE_SIZE;
 
         // specific
         public int rowLength = 0;

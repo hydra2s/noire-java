@@ -314,18 +314,10 @@ public class PipelineObj extends BasicObj  {
     }
 
     @Override // TODO: multiple queue family support
-    public PipelineObj delete() throws Exception {
+    public PipelineObj deleteDirectly() {
         var handle = this.handle;
-        deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
-            queueGroupIndex = cInfo.queueGroupIndex;
-            onDone = new Promise<>().thenApply((result)->{
-                vkDestroyPipeline(deviceObj.device, handle.get(), null);
-                deviceObj.handleMap.put$(handle, null);
-                return null;
-            });
-        }}, (cmdBuf)->{
-            return cmdBuf;
-        });
+        vkDestroyPipeline(deviceObj.device, handle.get(), null);
+        deviceObj.handleMap.put$(handle, null);
         return this;
     }
 

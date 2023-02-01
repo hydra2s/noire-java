@@ -200,24 +200,6 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         }
 
         // de-bloat a re-production of VAO
-        public VirtualVertexArrayObj delete() throws Exception {
-            var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(this.base.get()).orElse(null);
-            deviceObj.submitOnce(new DeviceObj.SubmitCmd(){{
-                queueGroupIndex = cInfo.queueGroupIndex;
-                onDone = new Promise<>().thenApply((result)-> {
-                    bound.registry.removeIndex(DSC_ID);
-                    address = 0L;
-                    bindingsMapped = null;
-                    bindings = null;
-                    return null;
-                });
-            }}, (cmdBuf)->{
-                return cmdBuf;
-            });
-            return this;
-        }
-
-        // de-bloat a re-production of VAO
         public VirtualVertexArrayObj deleteDirectly() {
             this.address = 0L;
             this.bound.registry.removeIndex(this.DSC_ID);

@@ -142,6 +142,11 @@ public class CommandManagerObj extends BasicObj {
                 if (status.get() == 0) {
                     var allocOffset = allocation.offset.get(0);
                     var imageInfo = imageInfo_.get();
+
+                    if (allocation.range <= 0L) {
+                        throw new RuntimeException("Command Writer Error (Host To Image): Bad Src Range");
+                    };
+
                     CommandUtils.cmdCopyBufferToImage(cmdBuf, new CommandUtils.BufferCopyInfo() {{
                         buffer = manager.bufferHeap.getHandle().get();
                         offset = allocOffset;
@@ -171,13 +176,13 @@ public class CommandManagerObj extends BasicObj {
             memCopy(data, payloadBackup);
 
             Callable<Integer> tempOp = ()-> {
-                bufferRange_.set(bufferRangeLazy.call());
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), min(data.remaining(), bufferRange_.get().range())));
+                bufferRange_.set(bufferRangeLazy.call()); var bufferRange = min(data.remaining(), bufferRange_.get().range());
+                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), bufferRange));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
-                    memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
+                    memCopy(payloadBackup, manager.bufferHeap.map(bufferRange, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -199,6 +204,11 @@ public class CommandManagerObj extends BasicObj {
                     var bufferRange = bufferRange_.get();
                     var allocation = allocation_.get();
                     var allocOffset = allocation.offset.get(0);
+
+                    if (bufferRange.range() <= 0L || allocation.range <= 0L) {
+                        throw new RuntimeException("Command Writer Error (Host To Buffer): Bad Src or Dst Range");
+                    };
+
                     CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
 
                     /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
@@ -256,8 +266,11 @@ public class CommandManagerObj extends BasicObj {
                 return null;
             });
 
-            /*
-            AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
+            manager.deviceObj.doPolling();
+            return fence;
+
+
+            /*AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
             this.callers.forEach((fn)->{
                 DeviceObj.FenceProcess fence = null;
 
@@ -301,13 +314,12 @@ public class CommandManagerObj extends BasicObj {
             this.callers.clear();
             return last.get();*/
 
-            manager.deviceObj.doPolling();
-            return fence;
+
 
         }
 
         public CommandWriter addToFree(Runnable fn) {
-
+            this.toFree.add(fn);
             return this;
         }
     };
