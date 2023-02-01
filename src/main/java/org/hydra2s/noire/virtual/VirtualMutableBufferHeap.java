@@ -259,7 +259,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     // get device address from
                     this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset.get(0);
                     if (earlyMapped) {
-                        this.mapped = this.heap.bufferHeap.map(this.bufferSize, this.bufferOffset.get(0));
+                        this.mapped = this.heap.bufferHeap.map(this.blockSize, this.bufferOffset.get(0));
                     }
 
                     //
