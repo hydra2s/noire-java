@@ -345,11 +345,11 @@ public class DeviceObj extends BasicObj {
     }
 
     public VkCommandBuffer writeCommand(VkCommandBuffer cmdBuf, Function<VkCommandBuffer, Integer> fn) {
-        vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.calloc()
+        vkCheckStatus(vkBeginCommandBuffer(cmdBuf, VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-            .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT));
+            .flags(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)));
         fn.apply(cmdBuf);
-        vkEndCommandBuffer(cmdBuf);
+        vkCheckStatus(vkEndCommandBuffer(cmdBuf));
         return cmdBuf;
     }
 
