@@ -187,11 +187,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public long getBufferAddress() {
+            if (this.address == 0) { throw new RuntimeException("Getting Bad Device Address Of Virtual Mutable Buffer!"); };
             return this.address;
         }
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
+            if (this.bufferSize == 0 || this.blockSize == 0) { throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!"); };
             return VkDescriptorBufferInfo.calloc().set(this.heap.getBufferRange().buffer(), this.bufferOffset.get(0), this.bufferSize);
         }
 
@@ -222,13 +224,12 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
                 // TODO: copy from old segment
+                VkDescriptorBufferInfo srcBufferRange = null;
                 var oldAlloc = this.allocId.get(0);
                 if (oldAlloc != 0L) {
+                    srcBufferRange = this.getBufferRange();
                     heap.toFree.add(oldAlloc);
                 }
-
-                //
-                var srcBufferRange = this.getBufferRange();
 
                 //
                 boolean earlyMapped = this.mapped != null;
