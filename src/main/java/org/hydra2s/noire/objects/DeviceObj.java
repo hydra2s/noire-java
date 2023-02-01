@@ -469,6 +469,9 @@ public class DeviceObj extends BasicObj {
 
     //
      public FenceProcess submitCommand(SubmitCmd cmd) throws Exception {
+         if (cmd.queueGroupIndex < 0) { throw new Exception("Cmd Submission Error - Bad Queue Group Index!"); };
+         if (cmd.cmdBuf == null) { throw new Exception("Cmd Submission Error - There Is Not Command Buffer!"); };
+
          // TODO: don't use clone operation
         //var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
         //var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
@@ -570,6 +573,12 @@ public class DeviceObj extends BasicObj {
         queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
         //
+         var timeline = querySignalSemaphore.getTimeline();
+         var status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
+         if (timeline < 0L || timeline == -1L || timeline == 0xffffffffffffffffL) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
+         if (status == VK_ERROR_DEVICE_LOST) { throw new RuntimeException("Status: " + status + "! Device Lost! (Semaphore Timeline: " + timeline + ")"); };
+
+        //
         var ref = new FenceProcess() {{
             timelineSemaphore = querySignalSemaphore;
             deallocProcess = (_null_)->{
@@ -583,8 +592,8 @@ public class DeviceObj extends BasicObj {
                     if (status == VK_SUCCESS) {
                         cmd.onDone.fulfill(status);
                     } else {
-                        cmd.onDone.fulfillExceptionally(new Exception("Status: " + status + "! Device Lost!"));
-                        throw new RuntimeException("Status: " + status + "! Device Lost!");
+                        cmd.onDone.fulfillExceptionally(new Exception("Status: " + status + "! Device Lost! (Semaphore Timeline: " + timeline + ")"));
+                        throw new RuntimeException("Status: " + status + "! Device Lost! (Semaphore Timeline: " + timeline + ")");
                     }
                 }
                 return status;
@@ -602,7 +611,6 @@ public class DeviceObj extends BasicObj {
 
     //
     public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
-        if (submitCmd.queueGroupIndex < 0) { throw new Exception("Cmd Submission Error - Bad Queue Group Index!"); };
 
          // TODO: allocate command buffer with fence
         var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);

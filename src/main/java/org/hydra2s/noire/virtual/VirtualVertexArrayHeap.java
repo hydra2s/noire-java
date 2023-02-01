@@ -127,6 +127,10 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         //
         public long getBufferAddress() {
+            if (this.address == 0L) {
+                System.out.println("VAO Error: Bad Buffer Address!");
+                throw new RuntimeException("VAO Error: Bad Buffer Address!");
+            };
             return this.address;
         }
 
@@ -153,7 +157,10 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         // for such games, as Minecraft with VulkanMod or Vanilla
         // TODO: multiple buffer bindings support
         public VirtualVertexArrayObj vertexBufferForAll(long bufferAddress, long bufferSize) {
-            if (bufferAddress == 0L || bufferSize == 0L) { throw new RuntimeException("VAO Error: Zero Device Buffer Address Or Size"); };
+            if (bufferAddress == 0L || bufferSize == 0L) {
+                System.out.println("VAO Error: Zero Device Buffer Address Or Size");
+                throw new RuntimeException("VAO Error: Zero Device Buffer Address Or Size");
+            };
 
             var keySet = bindings.keySet().stream().toList();
             IntStream.range(0, bindings.size()).forEach((I)->{
@@ -191,6 +198,9 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
                 queueGroupIndex = cInfo.queueGroupIndex;
                 onDone = new Promise<>().thenApply((result)-> {
                     bound.registry.removeIndex(DSC_ID);
+                    address = 0L;
+                    bindingsMapped = null;
+                    bindings = null;
                     return null;
                 });
             }}, (cmdBuf)->{
@@ -201,7 +211,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         // de-bloat a re-production of VAO
         public VirtualVertexArrayObj deleteDirectly() {
+            this.address = 0L;
             this.bound.registry.removeIndex(this.DSC_ID);
+            this.address = 0L;
+            this.bindingsMapped = null;
+            this.bindings = null;
             return this;
         }
     }

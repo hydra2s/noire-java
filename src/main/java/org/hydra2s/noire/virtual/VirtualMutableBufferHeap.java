@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.util.vma.Vma.*;
@@ -58,7 +59,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             }});
 
             //
-            vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+            vkCheckStatus(vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
         }
 
         //
@@ -187,13 +188,19 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public long getBufferAddress() {
-            if (this.address == 0) { throw new RuntimeException("Getting Bad Device Address Of Virtual Mutable Buffer!"); };
+            if (this.address == 0) {
+                System.out.println("Getting Bad Device Address Of Virtual Mutable Buffer!");
+                throw new RuntimeException("Getting Bad Device Address Of Virtual Mutable Buffer!");
+            };
             return this.address;
         }
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
-            if (this.bufferSize == 0 || this.blockSize == 0) { throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!"); };
+            if (this.bufferSize == 0 || this.blockSize == 0) {
+                System.out.println("Bad Buffer Size of Virtual Mutable Buffer!");
+                throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!");
+            };
             return VkDescriptorBufferInfo.calloc().set(this.heap.getBufferRange().buffer(), this.bufferOffset.get(0), this.bufferSize);
         }
 
@@ -238,7 +245,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 this.allocId.put(0, 0L);
 
                 //
-                int res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId, this.bufferOffset);
+                int res = vkCheckStatus(vmaVirtualAllocate(this.heap.virtualBlock.get(0), this.allocCreateInfo.size(this.blockSize = bufferSize), this.allocId, this.bufferOffset));
 
                 // if anyways, isn't allocated...
                 if (res != VK_SUCCESS) {

@@ -121,36 +121,13 @@ abstract public class CommandUtils {
 
     //
     static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, SubresourceLayers dstImage, VkExtent3D extent3D) {
-        var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-
-        //
-        var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
         //
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
@@ -160,13 +137,37 @@ abstract public class CommandUtils {
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
             .newLayout(dstImage.imageViewInfo.imageLayout);
+
+        //
+        var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
+            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+        //
+        var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
+            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         //
         var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(2);
@@ -191,9 +192,9 @@ abstract public class CommandUtils {
         var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
@@ -203,9 +204,9 @@ abstract public class CommandUtils {
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
@@ -213,9 +214,9 @@ abstract public class CommandUtils {
         var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
@@ -246,9 +247,9 @@ abstract public class CommandUtils {
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
@@ -256,9 +257,9 @@ abstract public class CommandUtils {
         var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
@@ -268,9 +269,9 @@ abstract public class CommandUtils {
         var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
@@ -300,9 +301,9 @@ abstract public class CommandUtils {
         var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
@@ -310,9 +311,9 @@ abstract public class CommandUtils {
         var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc()
             .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
             .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
             .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
@@ -429,9 +430,9 @@ abstract public class CommandUtils {
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)));
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
     }
 
     //
@@ -593,9 +594,9 @@ abstract public class CommandUtils {
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT)
+            .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)));
+            .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));
     }
 
 

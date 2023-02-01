@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static java.lang.Math.min;
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -56,9 +57,8 @@ public class CommandManagerObj extends BasicObj {
             this.virtualBlock = virtualBlock;
             this.allocId = memAllocPointer(1).put(0, 0L);
             this.offset = memAllocLong(1).put(0, 0L);
-            this.createInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
             this.range = range;
-            this.status = vmaVirtualAllocate(virtualBlock, this.createInfo.size(range), this.allocId, this.offset);
+            this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L).size(range), this.allocId, this.offset));
         }
 
         //
@@ -270,7 +270,7 @@ public class CommandManagerObj extends BasicObj {
         }});
 
         //
-        vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L));
+        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
 
         //
         this.handle = new Handle("CommandManager", MemoryUtil.memAddress(memAllocLong(1)));

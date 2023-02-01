@@ -62,15 +62,15 @@ public class SemaphoreObj extends BasicObj {
 
         // needs semaphore reusing mechanism
         if (handle.get() == 0) {
-            //System.out.println("Trying to destroy already destroyed semaphore.");
-            //throw new Exception("Trying to destroy already destroyed semaphore.");
+            System.out.println("Trying to destroy already destroyed semaphore.");
+            throw new RuntimeException("Trying to destroy already destroyed semaphore.");
         };
         if (sharedPtr <= 0) {
             vkDestroySemaphore(deviceObj.device, handle.get(), null);
-            handle.ptr().put(0, 0L);
             if (cInfo.doRegister) {
                 deviceObj.handleMap.remove(handle);
             }
+            handle.ptr().put(0, 0L);
             this.deleted = true;
         };
 
@@ -97,12 +97,10 @@ public class SemaphoreObj extends BasicObj {
                         }
                     }
                     vkDestroySemaphore(deviceObj.device, handle.get(), null);
-                    handle.ptr().put(0, 0L);
-
-                    //
                     if (cInfo.doRegister) {
                         deviceObj.handleMap.remove(handle);
                     }
+                    handle.ptr().put(0, 0L);
                     deleted = true;
                 };
                 return null;
@@ -143,10 +141,10 @@ public class SemaphoreObj extends BasicObj {
     //
     public long getTimeline() /*throws Exception*/ {
         if (((SemaphoreCInfo)cInfo).isTimeline) {
-            //if (handle.get() == 0) {
-                //System.out.println("Trying to get timeline from destroyed or invalid semaphore.");
-                //throw new Exception("Trying to get timeline from destroyed or invalid semaphore.");
-            //}
+            if (handle.get() == 0) {
+                System.out.println("Trying to get timeline from destroyed or invalid semaphore.");
+                throw new RuntimeException("Trying to get timeline from destroyed or invalid semaphore.");
+            }
             if (handle.get() != 0) {
                 vkCheckStatus(vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline));
             }
