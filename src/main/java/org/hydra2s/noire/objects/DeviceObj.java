@@ -21,6 +21,7 @@ import java.util.function.Function;
 //
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
@@ -236,13 +237,13 @@ public class DeviceObj extends BasicObj {
         });
 
         // TODO: Handle VkResult!!
-        var result = VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.calloc()
+        var result = vkCheckStatus(VK10.vkCreateDevice(physicalDeviceObj.physicalDevice, this.deviceInfo = VkDeviceCreateInfo.calloc()
                 .pNext(physicalDeviceObj.features.features.address())
                 .sType(VK10.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO)
                 .pQueueCreateInfos(this.queueFamiliesCInfo)
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers)
-                , null, (this.handle = new Handle("Device")).ptr());
+                , null, (this.handle = new Handle("Device")).ptr()));
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
 
         //
@@ -256,7 +257,7 @@ public class DeviceObj extends BasicObj {
                     cmdBufCache = new ArrayList<>();
                     onceCmdBuffers = new ArrayList<>();
                 }});
-                VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).flags(0).queueFamilyIndex(group.queueFamilyIndex), null, memSlice(group.cmdPool, C, 1));
+                vkCheckStatus(VK10.vkCreateCommandPool(this.device, org.lwjgl.vulkan.VkCommandPoolCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO).flags(0).queueFamilyIndex(group.queueFamilyIndex), null, memSlice(group.cmdPool, C, 1)));
             }
         });
 
@@ -271,7 +272,7 @@ public class DeviceObj extends BasicObj {
     public long createShaderModule(ByteBuffer shaderSrc){
         var shaderModuleInfo = VkShaderModuleCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO).pCode(shaderSrc);
         var shaderModule = memAllocLong(1);
-        vkCreateShaderModule(device, shaderModuleInfo, null, shaderModule);
+        vkCheckStatus(vkCreateShaderModule(device, shaderModuleInfo, null, shaderModule));
         return shaderModule.get(0);
     }
 
@@ -287,11 +288,11 @@ public class DeviceObj extends BasicObj {
     //
     public DeviceObj present(int queueGroupIndex, long SwapChain, long waitSemaphore, IntBuffer imageIndex) {
         var queueGroup = this.queueGroups.get(queueGroupIndex);
-        vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.calloc()
+        vkCheckStatus(vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.calloc()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
             .pWaitSemaphores(waitSemaphore != 0 ? memAllocLong(1).put(0, waitSemaphore) : null)
             .pSwapchains(memAllocLong(1).put(0, SwapChain)).swapchainCount(1)
-            .pImageIndices(imageIndex));
+            .pImageIndices(imageIndex)));
         return this;
     }
 
@@ -325,6 +326,7 @@ public class DeviceObj extends BasicObj {
             if (status != VK_NOT_READY) {
                 vkDestroyFence(device, pair.first, null);
                 vkFreeCommandBuffers(device, commandPool, pair.second);
+                if (status != VK_SUCCESS) { vkCheckStatus(status); };
             }
             return status == VK_NOT_READY;
         }).toList());
@@ -557,11 +559,11 @@ public class DeviceObj extends BasicObj {
         cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
 
         //
-        vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1)
+         vkCheckStatus(vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1)
             .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
             .pCommandBufferInfos(cmdInfo)
             .pSignalSemaphoreInfos(signalSemaphores)
-            .pWaitSemaphoreInfos(waitSemaphores), cmd.fence);
+            .pWaitSemaphoreInfos(waitSemaphores), cmd.fence));
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
@@ -608,12 +610,12 @@ public class DeviceObj extends BasicObj {
 
         // TODO: rarer fence creation
         LongBuffer fence_ = memAllocLong(1).put(0, 0L);
-        vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_);
-        vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
+        vkCheckStatus(vkCreateFence(this.device, VkFenceCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, fence_));
+        vkCheckStatus(vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-            .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT));
+            .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)));
         fn.apply(submitCmd.cmdBuf);
-        vkEndCommandBuffer(submitCmd.cmdBuf);
+        vkCheckStatus(vkEndCommandBuffer(submitCmd.cmdBuf));
 
         //
         submitCmd.fence = fence_.get(0);

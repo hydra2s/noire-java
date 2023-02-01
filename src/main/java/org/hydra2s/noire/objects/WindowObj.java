@@ -10,6 +10,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 
 //
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
@@ -27,15 +28,14 @@ public class WindowObj extends BasicObj  {
     public WindowObj(Handle base, long window) {
         super(base, new Handle("Window", window));
 
-
-        glfwCreateWindowSurface(instanceObj.instance, this.handle.get(), null, this.surface = memAllocLong(1));
+        vkCheckStatus(glfwCreateWindowSurface(instanceObj.instance, this.handle.get(), null, this.surface = memAllocLong(1)));
     }
 
     public WindowObj(Handle base, WindowCInfo cInfo) {
         super(base, cInfo);
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        glfwCreateWindowSurface(instanceObj.instance, (this.handle = new Handle("Window", glfwCreateWindow(cInfo.size.width(), cInfo.size.height(), "NoireWindow", 0L, 0L))).get(), null, this.surface = memAllocLong(1));
+        vkCheckStatus(glfwCreateWindowSurface(instanceObj.instance, (this.handle = new Handle("Window", glfwCreateWindow(cInfo.size.width(), cInfo.size.height(), "NoireWindow", 0L, 0L))).get(), null, this.surface = memAllocLong(1)));
         BasicObj.globalHandleMap.put$(handle.get(), this);
     }
 

@@ -13,6 +13,7 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 
 //
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
@@ -125,7 +126,7 @@ public class InstanceObj extends BasicObj {
                 // validator is BROKEN!
                 .ppEnabledLayerNames(this.layers)
                 .get();
-        VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr());
+        vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr()));
 
         //
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
@@ -133,7 +134,7 @@ public class InstanceObj extends BasicObj {
         System.out.println("Something wrong with Instance? " + Long.toHexString(this.handle.get()));
 
         //
-        vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
+        vkCheckStatus(vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
                 .sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
                 .messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
                 .messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT)
@@ -210,7 +211,7 @@ public class InstanceObj extends BasicObj {
                         }
                         return 0;
                     }
-                }), null, this.messagerEXT = memAllocLong(1));
+                }), null, this.messagerEXT = memAllocLong(1)));
     }
 
     //

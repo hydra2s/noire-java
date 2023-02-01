@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -101,9 +102,9 @@ public class SwapChainObj extends BasicObj  {
                     .oldSwapchain(0L);
 
             //
-            vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("SwapChain")).ptr(), 0), 1));
-            vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = memAllocInt(1), null);
-            vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0)));
+            vkCheckStatus(vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("SwapChain")).ptr(), 0), 1)));
+            vkCheckStatus(vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = memAllocInt(1), null));
+            vkCheckStatus(vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = memAllocLong(this.amountOfImagesInSwapchain.get(0))));
             this.imagesObj = new ArrayList<>();
             this.imageViews = new ArrayList<>();
 

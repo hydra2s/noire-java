@@ -15,6 +15,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.*;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
@@ -193,7 +194,7 @@ public class PipelineLayoutObj extends BasicObj  {
                     .maxSets(128);
 
             //
-            vkCreateDescriptorPool(deviceObj.device, this.descriptorPoolCreateInfo, null, this.descriptorPool = memAllocLong(1));
+            vkCheckStatus(vkCreateDescriptorPool(deviceObj.device, this.descriptorPoolCreateInfo, null, this.descriptorPool = memAllocLong(1)));
         }
 
         //
@@ -225,7 +226,7 @@ public class PipelineLayoutObj extends BasicObj  {
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
         this.samplers = new OutstandingArray<LongBuffer>();
         this.pConstRange = VkPushConstantRange.calloc(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
-        vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(this.descriptorSetLayouts).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1));
+        vkCheckStatus(vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(this.descriptorSetLayouts).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1)));
         deviceObj.handleMap.put$(this.handle, this);
 
         //
@@ -280,12 +281,12 @@ public class PipelineLayoutObj extends BasicObj  {
             this.descriptorSets = memAllocLong(3);
 
             //
-            vkAllocateDescriptorSets(deviceObj.device,
+            vkCheckStatus(vkAllocateDescriptorSets(deviceObj.device,
                 VkDescriptorSetAllocateInfo.calloc()
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO)
                     .pSetLayouts(this.descriptorSetLayouts)
                     .descriptorPool(this.descriptorPool.get(0))
-                , this.descriptorSets);
+                , this.descriptorSets));
 
             //
             this.uniformDescriptorSet.put(0, this.descriptorSets.get(2));
@@ -380,7 +381,7 @@ public class PipelineLayoutObj extends BasicObj  {
     //
     public PipelineLayoutObj deallocateDescriptorSets(LongBuffer descriptorSets) {
         if (useLegacyBindingSystem) {
-            vkFreeDescriptorSets(deviceObj.device, descriptorPool.get(0), descriptorSets);
+            vkCheckStatus(vkFreeDescriptorSets(deviceObj.device, descriptorPool.get(0), descriptorSets));
         }
         return this;
     };

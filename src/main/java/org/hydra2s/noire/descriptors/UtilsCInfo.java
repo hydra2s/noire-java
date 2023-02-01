@@ -690,4 +690,13 @@ public abstract class UtilsCInfo {
         }
     }
 
+    //
+    public static int vkCheckStatus(int result) {
+        if (result != VK_SUCCESS) {
+            System.out.println("Vulkan API Bad Status: " + result);
+            throw new RuntimeException("Vulkan API Bad Status: " + result);
+        }
+        return result;
+    }
+
 }

@@ -15,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 //
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTMemoryPriority.VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT;
 import static org.lwjgl.vulkan.KHRBufferDeviceAddress.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -81,7 +82,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             };
 
             //
-            vkAllocateMemory(deviceObj.device, this.allocInfo =
+            vkCheckStatus(vkAllocateMemory(deviceObj.device, this.allocInfo =
                 VkMemoryAllocateInfo.calloc()
                     .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                     .memoryTypeIndex(memoryTypeIndex)
@@ -98,7 +99,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                                 .sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO)
                                 .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
                             .sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
-                        .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1));
+                        .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1)));
 
             // TODO: Linux support
             //vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
@@ -122,7 +123,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             //if (mapped) { this.unmap(); };
             if (!mapped) {
                 //vkMapMemory(deviceObj.device, this.handle.get(), BO, BS, 0, dataPtr);
-                vkMapMemory(deviceObj.device, this.handle.get(), 0, VK_WHOLE_SIZE, 0, this.mappedPtr);
+                vkCheckStatus(vkMapMemory(deviceObj.device, this.handle.get(), 0, VK_WHOLE_SIZE, 0, this.mappedPtr));
                 mapped = true;
             }
 
@@ -132,22 +133,22 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public DeviceMemoryObj flushMapped(long size, long offset) {
-            vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+            vkCheckStatus(vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
                 .memory(this.handle.get())
                 .size(size)
-            );
+            ));
             return this;
         }
 
         public DeviceMemoryObj invalidateMapped(long size, long offset) {
-            vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+            vkCheckStatus(vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
                 .memory(this.handle.get())
                 .size(size)
-            );
+            ));
             return this;
         }
 

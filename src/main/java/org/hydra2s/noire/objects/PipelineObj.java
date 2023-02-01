@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 //
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
@@ -81,7 +82,7 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             //
-            vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
+            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
             deviceObj.handleMap.put$(this.handle, this);
 
             //
@@ -289,8 +290,8 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             // TODO: initial pipeline cache
-            vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1));
-            vkCreateGraphicsPipelines(deviceObj.device, this.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1));
+            vkCheckStatus(vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1)));
+            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, this.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
             deviceObj.handleMap.put$(this.handle, this);
 
             //

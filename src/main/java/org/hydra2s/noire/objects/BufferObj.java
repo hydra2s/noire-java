@@ -8,6 +8,7 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
@@ -59,8 +60,10 @@ public class BufferObj extends BasicObj {
         if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
             status = vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
         } else {
+            status = VK_SUCCESS;
             this.handle = new Handle("Buffer", cInfo.buffer.get(0));
         }
+        vkCheckStatus(status);
         deviceObj.handleMap.put$(this.handle, this);
 
         //

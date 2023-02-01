@@ -8,6 +8,7 @@ import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 //
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.VK10.*;
 
@@ -25,7 +26,7 @@ public class SamplerObj extends BasicObj  {
 
         //
         this.createInfo = cInfo.createInfo;
-        vkCreateSampler(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Sampler")).ptr(), 0), 1));
+        vkCheckStatus(vkCreateSampler(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Sampler")).ptr(), 0), 1)));
 
         // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {

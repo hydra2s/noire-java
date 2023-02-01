@@ -7,6 +7,7 @@ import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
+import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
@@ -64,8 +65,10 @@ public class ImageObj extends BasicObj {
         if (cInfo.image == null || cInfo.image.get(0) == 0) {
             status = vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
         } else {
+            status = VK_SUCCESS;
             this.handle = new Handle("Image", cInfo.image.get(0));
         }
+        vkCheckStatus(status);
         deviceObj.handleMap.put$(this.handle, this);
 
         //
