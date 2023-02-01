@@ -197,7 +197,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
-            if (this.bufferSize == 0 || this.blockSize == 0) {
+            if (this.bufferSize <= 0L || this.blockSize <= 0L) {
                 System.out.println("Bad Buffer Size of Virtual Mutable Buffer!");
                 throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!");
             };
