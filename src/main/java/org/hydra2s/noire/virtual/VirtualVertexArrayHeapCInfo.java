@@ -35,6 +35,16 @@ public class VirtualVertexArrayHeapCInfo extends VirtualGLRegistryCInfo {
         public int unknown = 0;
         public int location = 0;
 
+        public VertexBinding() {
+            this.bufferAddress = 0L;
+            this.bufferSize = 0L;
+            this.relativeOffset = 0;
+            this.stride = 0;
+            this.format = 0;
+            this.unknown = 0;
+            this.location = 0;
+        }
+
         //
         public VertexBinding writeData(ByteBuffer bindingsMapped, long offset) {
             memSlice(bindingsMapped, (int) (offset + 0), 8).putLong(0, bufferAddress);

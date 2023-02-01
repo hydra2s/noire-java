@@ -147,6 +147,10 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             IntStream.range(0, bindings.size()).forEach((I)->{
                 var index = keySet.get(I);
                 var binding = bindings.get(index);
+                if (index == 0 && (binding == null || binding.format == 0)) {
+                    System.out.println("VAO Error: Bad First Binding");
+                    throw new RuntimeException("VAO Error: Bad First Binding");
+                }
                 if (binding != null) {
                     binding.writeData(bindingsMapped,bindingOffset + vertexBindingStride * index);
                 }
@@ -166,6 +170,10 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             IntStream.range(0, bindings.size()).forEach((I)->{
                 var index = keySet.get(I);
                 var binding = bindings.get(index);
+                if (index == 0 && (binding == null || binding.format == 0)) {
+                    System.out.println("VAO Error: Bad First Binding");
+                    throw new RuntimeException("VAO Error: Bad First Binding");
+                }
                 if (binding != null && binding.format != 0) {
                     binding.bufferAddress = bufferAddress;
                     binding.bufferSize = bufferSize;
