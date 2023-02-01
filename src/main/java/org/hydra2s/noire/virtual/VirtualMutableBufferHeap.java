@@ -113,20 +113,18 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueGroupIndex) {
+    public VirtualMutableBufferObj createBuffer(int $heapId) {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
-            heapId = heapId_;
+            heapId = $heapId;
             registryHandle = handle.get();
-            queueGroupIndex = $queueGroupIndex;
         }});
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int heapId_, int $queueGroupIndex, long size) throws Exception {
+    public VirtualMutableBufferObj createBuffer(int $heapId, long size) throws Exception {
         return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
-            heapId = heapId_;
+            heapId = $heapId;
             registryHandle = handle.get();
-            queueGroupIndex = $queueGroupIndex;
         }}).allocate(size);
     }
 
@@ -173,6 +171,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.bufferOffset = memAllocLong(1).put(0, 0L);
             this.bufferSize = 0;
             this.blockSize = 0;
+            this.address = 0;
 
             // TODO: bound with memoryHeap
             var virtualBufferRegistry = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle)).orElse(null);
@@ -276,9 +275,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.blockSize = 0L;
             this.address = 0L;
             this.bufferOffset.put(0, 0L);
+            this.bufferOffset = null;
             this.allocId.put(0, 0L);
+            this.allocId = null;
             this.mapped = null;
             this.bound.registry.removeIndex(this.DSC_ID);
+            this.heap = null;
+            this.bound = null;
             return this;
         }
 
@@ -292,9 +295,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.blockSize = 0L;
             this.address = 0L;
             this.bufferOffset.put(0, 0L);
+            this.bufferOffset = null;
             this.allocId.put(0, 0L);
+            this.allocId = null;
             this.mapped = null;
             this.bound.registry.removeIndex(this.DSC_ID);
+            this.heap = null;
+            this.bound = null;
             return this;
         }
     }

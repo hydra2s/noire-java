@@ -48,8 +48,8 @@ public class PipelineObj extends BasicObj  {
     }
 
     //
-    public BufferObj uniformDescriptorBuffer = null;
-    public LongBuffer uniformDescriptorSet = null;
+    //public BufferObj uniformDescriptorBuffer = null;
+    //public LongBuffer uniformDescriptorSet = null;
 
 
     //
@@ -85,7 +85,7 @@ public class PipelineObj extends BasicObj  {
             deviceObj.handleMap.put$(this.handle, this);
 
             //
-            if (cInfo.memoryAllocator != 0) {
+            /*if (cInfo.memoryAllocator != 0) {
                 this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
                     size = cInfo.uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -99,7 +99,7 @@ public class PipelineObj extends BasicObj  {
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
                 $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
-            }
+            }*/
         }
     }
 
@@ -294,7 +294,7 @@ public class PipelineObj extends BasicObj  {
             deviceObj.handleMap.put$(this.handle, this);
 
             //
-            if (cInfo.memoryAllocator != 0) {
+            /*if (cInfo.memoryAllocator != 0) {
                 this.uniformDescriptorBuffer = new BufferObj(this.base, new BufferCInfo() {{
                     size = cInfo.uniformBufferSize;
                     usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -308,7 +308,7 @@ public class PipelineObj extends BasicObj  {
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
                 $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
-            }
+            }*/
         }
     }
 

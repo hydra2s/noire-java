@@ -166,23 +166,23 @@ public class PipelineLayoutObj extends BasicObj  {
             this.descriptorPoolSizes = VkDescriptorPoolSize.calloc(5);
             this.descriptorPoolSizes.get(0)
                 .type(VK_DESCRIPTOR_TYPE_MUTABLE_EXT)
-                .descriptorCount(4096);
+                .descriptorCount(resourceCount);
 
             this.descriptorPoolSizes.get(1)
                 .type(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-                .descriptorCount(4096);
+                .descriptorCount(resourceCount);
 
             this.descriptorPoolSizes.get(2)
                 .type(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
-                .descriptorCount(4096);
+                .descriptorCount(resourceCount);
 
             this.descriptorPoolSizes.get(3)
                 .type(VK_DESCRIPTOR_TYPE_SAMPLER)
-                .descriptorCount(1024);
+                .descriptorCount(samplerCount);
 
             this.descriptorPoolSizes.get(4)
                 .type(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-                .descriptorCount(1024);
+                .descriptorCount(64);
 
             this.descriptorPoolCreateInfo =
                 VkDescriptorPoolCreateInfo.calloc()
@@ -190,7 +190,7 @@ public class PipelineLayoutObj extends BasicObj  {
                     .flags(VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT)
                     .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO)
                     .pPoolSizes(this.descriptorPoolSizes)
-                    .maxSets(1024);
+                    .maxSets(128);
 
             //
             vkCreateDescriptorPool(deviceObj.device, this.descriptorPoolCreateInfo, null, this.descriptorPool = memAllocLong(1));
@@ -199,20 +199,20 @@ public class PipelineLayoutObj extends BasicObj  {
         //
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
         this.samplers = new OutstandingArray<LongBuffer>();
-        this.descriptorSetLayouts = memAllocLong(4);
+        this.descriptorSetLayouts = memAllocLong(3);
 
         //
         var resourceDescriptorSetLayout = new DescriptorSetLayoutInfo(VK_DESCRIPTOR_TYPE_MUTABLE_EXT, resourceCount, this.resourceMutableTypes);
         var samplerDescriptorSetLayout = new DescriptorSetLayoutInfo(VK_DESCRIPTOR_TYPE_SAMPLER, samplerCount);
         var uniformDescriptorSetLayout = new DescriptorSetLayoutInfo(useLegacyBindingSystem ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 512);
-        var pipelineDescriptorSetLayout = new DescriptorSetLayoutInfo(useLegacyBindingSystem ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 512);
+        //var pipelineDescriptorSetLayout = new DescriptorSetLayoutInfo(useLegacyBindingSystem ? VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, 512);
 
         //
         this.descriptorSetLayoutsInfo = new ArrayList<>(){{
             add(resourceDescriptorSetLayout);
             add(samplerDescriptorSetLayout);
             add(uniformDescriptorSetLayout);
-            add(pipelineDescriptorSetLayout);
+            //add(pipelineDescriptorSetLayout);
         }};
 
         //
@@ -247,8 +247,8 @@ public class PipelineLayoutObj extends BasicObj  {
             this.uniformDescriptorSet.put(0, this.uniformDescriptorBuffer.getDeviceAddress());
 
             //
-            this.offsets = memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
-            this.sizes = memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
+            this.offsets = memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
+            this.sizes = memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
 
             //
             for (var I = 0; I < dS; I++) {
@@ -277,7 +277,7 @@ public class PipelineLayoutObj extends BasicObj  {
             }});
 
         } else {
-            this.descriptorSets = memAllocLong(4);
+            this.descriptorSets = memAllocLong(3);
 
             //
             vkAllocateDescriptorSets(deviceObj.device,
@@ -295,6 +295,7 @@ public class PipelineLayoutObj extends BasicObj  {
         this.writeDescriptors();
     }
 
+    /*
     //
     public PipelineLayoutObj createDescriptorSetForUniformBuffer(BufferObj uniformBufferObj, LongBuffer descriptorSet) {
         if (useLegacyBindingSystem) {
@@ -365,7 +366,7 @@ public class PipelineLayoutObj extends BasicObj  {
         }
 
         return this;
-    }
+    }*/
 
     //
     public PipelineLayoutObj deallocateDescriptorSets(ArrayList<Long> descriptorSets) {
@@ -490,26 +491,27 @@ public class PipelineLayoutObj extends BasicObj  {
     public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, LongBuffer uniformBufferAddress) {
         if (!useLegacyBindingSystem) {
             // TODO: better binding system
-            var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBufferAddress != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
+            //var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBufferAddress != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
+            var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
             bufferBindings.get(0).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.resourceDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
             bufferBindings.get(1).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.samplerDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT);
             bufferBindings.get(2).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.uniformDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
 
             //
-            if (uniformBufferAddress != null) {
-                bufferBindings.get(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(uniformBufferAddress.get(0)).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
-            }
+            //if (uniformBufferAddress != null) {
+                //bufferBindings.get(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(uniformBufferAddress.get(0)).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
+            //}
 
             //
-            IntBuffer bufferIndices = memAllocInt(4).put(0, 0).put(1, 1).put(2, 2).put(3, uniformBufferAddress != null ? 3 : 2);
-            LongBuffer offsets = memAllocLong(4).put(0, 0).put(1, 0).put(2, 0).put(3, 0);
+            IntBuffer bufferIndices = memAllocInt(3).put(0, 0).put(1, 1).put(2, 2);//.put(3, uniformBufferAddress != null ? 3 : 2);
+            LongBuffer offsets = memAllocLong(3).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
 
             //
             vkCmdBindDescriptorBuffersEXT(cmdBuf, bufferBindings);
             vkCmdSetDescriptorBufferOffsetsEXT(cmdBuf, pipelineBindPoint, this.handle.get(), 0, bufferIndices, offsets);
         } else {
             // TODO: test descriptor set bound
-            this.descriptorSets.put(3, uniformBufferAddress != null ? uniformBufferAddress.get(0) : this.uniformDescriptorSet.get(0));
+            //this.descriptorSets.put(3, uniformBufferAddress != null ? uniformBufferAddress.get(0) : this.uniformDescriptorSet.get(0));
             vkCmdBindDescriptorSets(cmdBuf, pipelineBindPoint, this.handle.get(), 0, this.descriptorSets, null);
         }
 

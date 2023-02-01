@@ -67,7 +67,7 @@ public class DeviceObj extends BasicObj {
     public static class SubmitCmd extends BasicCInfo {
         public VkCommandBuffer cmdBuf = null;
         public Promise<Integer> onDone = null;
-        public int queueGroupIndex = 0;
+        public int queueGroupIndex = -1;
         public int commandPoolIndex = 0;
 
         //
@@ -488,7 +488,7 @@ public class DeviceObj extends BasicObj {
          var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
 
          //
-         final int maxSemaphoreQueue = 1;
+         final int maxSemaphoreQueue = 16;
          if (queueInfo.querySemaphoreObj == null) {
              queueInfo.querySemaphoreObj = new ArrayList<>();
              for (var I=0;I<maxSemaphoreQueue;I++) {
@@ -600,7 +600,9 @@ public class DeviceObj extends BasicObj {
 
     //
     public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, Integer> fn) throws Exception {
-        // TODO: allocate command buffer with fence
+        if (submitCmd.queueGroupIndex < 0) { throw new Exception("Cmd Submission Error - Bad Queue Group Index!"); };
+
+         // TODO: allocate command buffer with fence
         var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);
         var commandPoolInfo = queueGroup.commandPoolInfo.get(submitCmd.commandPoolIndex);
 

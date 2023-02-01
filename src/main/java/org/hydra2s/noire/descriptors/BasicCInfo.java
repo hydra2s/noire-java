@@ -33,7 +33,7 @@ import static org.lwjgl.vulkan.VK13.*;
 //
 public class BasicCInfo {
     //
-    public int queueGroupIndex = 0;
+    public int queueGroupIndex = -1;
     public boolean doRegister = true;
 
 
