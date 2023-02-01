@@ -98,7 +98,9 @@ public class CommandManagerObj extends BasicObj {
 
         // TODO: correct naming
         public CommandWriter cmdAdd(Function<VkCommandBuffer, VkCommandBuffer> caller) {
-            this.callers.add(this.callers.size(), caller);
+            if (caller != null) {
+                this.callers.add(this.callers.size(), caller);
+            }
             return this;
         }
 

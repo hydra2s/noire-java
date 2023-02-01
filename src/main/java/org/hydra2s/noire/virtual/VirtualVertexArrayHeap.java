@@ -13,7 +13,10 @@ import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 //
 import java.nio.ByteBuffer;
+import java.security.cert.Extension;
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 //
@@ -100,6 +103,9 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         protected long address = 0L;
 
         //
+        protected Function<VkCommandBuffer, VkCommandBuffer> delayed = null;
+
+        //
         public VirtualVertexArrayObj(Handle base, Handle handle) {
             super(base, handle);
         }
@@ -150,6 +156,8 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         // for such games, as Minecraft with VulkanMod or Vanilla
         // TODO: multiple buffer bindings support
         public VirtualVertexArrayObj vertexBufferForAll(long bufferAddress, long bufferSize) {
+            if (bufferAddress == 0 || bufferSize == 0) { throw new RuntimeException("VAO Error: Zero Device Buffer Address Or Size"); };
+
             var keySet = bindings.keySet().stream().toList();
             IntStream.range(0, bindings.size()).forEach((I)->{
                 var index = keySet.get(I);
@@ -159,6 +167,39 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
                     binding.bufferSize = bufferSize;
                 }
             });
+            return this;
+        }
+
+        public VirtualVertexArrayObj vertexBufferForAll(Callable<Long> $bufferAddress, Callable<Long> $bufferSize) {
+            var keySet = bindings.keySet().stream().toList();
+            this.delayed = (cmdBuf)-> {
+                Long bufferAddress = null;
+                try {
+                    bufferAddress = $bufferAddress.call();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                Long bufferSize = null;
+                try {
+                    bufferSize = $bufferSize.call();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                Long finalBufferAddress = bufferAddress;
+                Long finalBufferSize = bufferSize;
+
+                if (finalBufferAddress == 0 || finalBufferSize == 0) { throw new RuntimeException("VAO Error: Zero Device Buffer Address Or Size"); };
+
+                IntStream.range(0, bindings.size()).forEach((I) -> {
+                    var index = keySet.get(I);
+                    var binding = bindings.get(index);
+                    if (binding != null && binding.format != 0) {
+                        binding.bufferAddress = finalBufferAddress;
+                        binding.bufferSize = finalBufferSize;
+                    }
+                });
+                return cmdBuf;
+            };
             return this;
         }
 
@@ -197,6 +238,15 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         // de-bloat a re-production of VAO
         public VirtualVertexArrayObj deleteDirectly() {
             this.bound.registry.removeIndex(this.DSC_ID);
+            return this;
+        }
+
+        public Function<VkCommandBuffer, VkCommandBuffer> getDelayed() {
+            return this.delayed;
+        }
+
+        public VirtualVertexArrayObj resetDelayed() {
+            this.delayed = null;
             return this;
         }
     }
