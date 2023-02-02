@@ -170,10 +170,14 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy) throws Exception {
+            return this.cmdCopyFromHostToBuffer(data, bufferRangeLazy, lazy, false);
+        }
+
+        //
+        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<VkDescriptorBufferInfo> bufferRange_ = new AtomicReference<>();
-            var payloadBackup = memAlloc(data.remaining());
-            memCopy(data, payloadBackup);
+            var payloadBackup = directly ? data : memAlloc(data.remaining()); if (!directly) { memCopy(data, payloadBackup); };
 
             Callable<Integer> tempOp = ()-> {
                 bufferRange_.set(bufferRangeLazy.call()); var bufferRange = min(data.remaining(), bufferRange_.get().range());
