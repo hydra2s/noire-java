@@ -231,13 +231,31 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0L) {
                 srcBufferRange = this.getBufferRange();
-                heap.toFree.add(oldAlloc);
+            }
+
+            //
+            if (bufferSize <= 0L) {
+                System.out.println("Allocation Failed, zero or less sized, not supported...");
+                throw new Exception("Allocation Failed, zero or less sized, not supported...");
             }
 
             //
             this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
+
+            //
+            if (bufferSize <= 0L) {
+                System.out.println("Allocation Failed, zero or less sized, not supported...");
+                throw new Exception("Allocation Failed, zero or less sized, not supported...");
+            }
+
+            //
             if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
             {
+                //  add to black list
+                if (oldAlloc != 0L) {
+                    heap.toFree.add(oldAlloc);
+                }
+
                 //
                 boolean earlyMapped = this.mapped != null;
                 this.mapped = null;

@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import static java.lang.Math.min;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.hydra2s.noire.virtual.VirtualMutableBufferHeap.VirtualMutableBufferObj.roundUp;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -53,6 +54,24 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public VirtualAllocation(long virtualBlock, long range) {
+
+            //
+            if (range <= 0L) {
+                System.out.println("Command Writer Resource Allocation Failed, zero or less sized, not supported...");
+                throw new RuntimeException("Command Writer Resource Allocation Failed, zero or less sized, not supported...");
+            }
+
+            //
+            final var MEM_BLOCK = 16;
+            range = roundUp(range, MEM_BLOCK) * MEM_BLOCK;
+
+            //
+            if (range <= 0L) {
+                System.out.println("Command Writer Resource Allocation Failed, zero or less sized, not supported...");
+                throw new RuntimeException("Command Writer Resource Allocation Failed, zero or less sized, not supported...");
+            }
+
+            //
             this.virtualBlock = virtualBlock;
             this.allocId = memAllocPointer(1).put(0, 0L);
             this.offset = memAllocLong(1).put(0, 0L);
@@ -67,7 +86,10 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public VirtualAllocation free() {
-            vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
+            if (this.allocId.get(0) != 0L) {
+                vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
+            }
+            this.allocId.put(0, 0L);
             return this;
         }
     }
