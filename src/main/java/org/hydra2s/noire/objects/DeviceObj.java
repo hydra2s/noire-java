@@ -493,6 +493,7 @@ public class DeviceObj extends BasicObj {
          var lessBusy = queueGroup.queueBusy.indexOf(lessBusyCount);
          var lessBusyQ = queueGroup.queueIndices.get(lessBusy);
          var queueInfo = queueFamily.queueInfos.get(lessBusyQ);
+         queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
          //
          final int maxSemaphoreQueue = 16;
@@ -572,7 +573,6 @@ public class DeviceObj extends BasicObj {
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
-        queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
         //
          var timeline = querySignalSemaphore.getTimeline();
