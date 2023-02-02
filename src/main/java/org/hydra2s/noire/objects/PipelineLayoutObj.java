@@ -22,6 +22,7 @@ import static org.lwjgl.vulkan.EXTMutableDescriptorType.VK_STRUCTURE_TYPE_MUTABL
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
+import static org.lwjgl.vulkan.VK13.VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT;
 
 // TODO: fallback into traditional binding model!
 public class PipelineLayoutObj extends BasicObj  {
@@ -101,6 +102,7 @@ public class PipelineLayoutObj extends BasicObj  {
     protected LongBuffer uniformDescriptorSet = null;
 
     //
+    public LongBuffer pipelineCache = null;
     public LongBuffer descriptorPool = null;
     public VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = null;
     public VkDescriptorPoolSize.Buffer descriptorPoolSizes = null;
@@ -224,6 +226,7 @@ public class PipelineLayoutObj extends BasicObj  {
         this.resources = new OutstandingArray<VkDescriptorImageInfo>();
         this.samplers = new OutstandingArray<LongBuffer>();
         this.pConstRange = VkPushConstantRange.calloc(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
+        vkCheckStatus(vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1)));
         vkCheckStatus(vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.calloc().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(this.descriptorSetLayouts).pPushConstantRanges(this.pConstRange), null, memLongBuffer(memAddress((this.handle = new Handle("PipelineLayout")).ptr()), 1)));
         deviceObj.handleMap.put$(this.handle, this);
 

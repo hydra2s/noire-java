@@ -24,7 +24,7 @@ import static org.lwjgl.vulkan.VK13.*;
 
 //
 public class PipelineObj extends BasicObj  {
-    public LongBuffer pipelineCache;
+
 
     public PipelineObj(Handle base, Handle handle) {
         super(base, handle);
@@ -72,7 +72,8 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             //
-            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, 0L, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
+            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, pipelineLayoutObj.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
             deviceObj.handleMap.put$(this.handle, this);
 
             //
@@ -280,8 +281,7 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             // TODO: initial pipeline cache
-            vkCheckStatus(vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = memAllocLong(1)));
-            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, this.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
+            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
             deviceObj.handleMap.put$(this.handle, this);
 
             //
