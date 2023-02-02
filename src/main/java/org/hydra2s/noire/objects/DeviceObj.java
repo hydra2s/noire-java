@@ -324,7 +324,7 @@ public class DeviceObj extends BasicObj {
         var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
 
         // impossible to free command buffers, even sent once
-        commandPoolInfo.onceCmdBuffers = new ArrayList(commandPoolInfo.onceCmdBuffers.stream().filter((pair)->{
+        commandPoolInfo.onceCmdBuffers = new ArrayList<>(commandPoolInfo.onceCmdBuffers.stream().filter((pair)->{
             var status = pair.first.get(0) != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
             if (status != VK_NOT_READY) {
                 if (status != VK_SUCCESS) { vkCheckStatus(status); };
