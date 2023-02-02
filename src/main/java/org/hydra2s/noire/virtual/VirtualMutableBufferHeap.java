@@ -1,24 +1,23 @@
 package org.hydra2s.noire.virtual;
 
 //
+
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.objects.*;
-import org.hydra2s.utils.Promise;
+import org.hydra2s.noire.objects.BufferObj;
+import org.hydra2s.noire.objects.CommandUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
-import org.lwjgl.vulkan.*;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
 import static java.lang.Math.abs;
-import static java.lang.Math.min;
-import static java.lang.System.currentTimeMillis;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
@@ -294,7 +293,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             return this.allocate(bufferSize, null);
         }
 
-        @Override
+        /*@Override
         public VirtualMutableBufferObj delete() throws Exception {
             var oldAlloc = this.allocId.get(0);
             if (oldAlloc != 0L) {
@@ -312,7 +311,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.heap = null;
             this.bound = null;
             return this;
-        }
+        }*/
 
         @Override
         public VirtualMutableBufferObj deleteDirectly() /*throws Exception*/ {

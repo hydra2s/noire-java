@@ -1,11 +1,7 @@
 package org.hydra2s.noire.virtual;
 
-import org.lwjgl.vulkan.VkDescriptorBufferInfo;
-
 import java.nio.ByteBuffer;
 
-import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.vertexArrayStride;
-import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_INDEX_TYPE_NONE_KHR;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 
 public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {

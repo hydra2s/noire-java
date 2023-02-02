@@ -1,18 +1,19 @@
 package org.hydra2s.noire.virtual;
 
 //
+
 import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.objects.*;
+import org.hydra2s.noire.objects.AccelerationStructureObj;
+import org.hydra2s.noire.objects.BufferObj;
+import org.hydra2s.noire.objects.CommandUtils;
+import org.hydra2s.noire.objects.MemoryAllocatorObj;
 import org.lwjgl.vulkan.*;
 
-//
 import java.util.ArrayList;
 
-//
-import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;

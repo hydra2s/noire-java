@@ -1,13 +1,11 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
+
 import org.hydra2s.noire.descriptors.SemaphoreCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.LongBuffer;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -77,7 +75,7 @@ public class SemaphoreObj extends BasicObj {
         return this;
     }
 
-    @Override // TODO: multiple queue family support
+    /*@Override // TODO: multiple queue family support
     public SemaphoreObj delete() throws Exception {
         super.delete();
         var handle = this.handle;
@@ -109,7 +107,7 @@ public class SemaphoreObj extends BasicObj {
             return cmdBuf;
         });
         return this;
-    }
+    }*/
 
     //
     public VkSemaphoreSubmitInfo makeSubmissionTimeline(long stageMask, boolean forWait) throws Exception {

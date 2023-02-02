@@ -1,8 +1,8 @@
 package org.hydra2s.noire.descriptors;
 
 //
+
 import org.lwjgl.vulkan.VkExtent2D;
-import java.nio.IntBuffer;
 
 import static org.lwjgl.vulkan.VK10.VK_FORMAT_R8G8B8A8_UNORM;
 

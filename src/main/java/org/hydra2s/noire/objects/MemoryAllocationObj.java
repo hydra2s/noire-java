@@ -1,23 +1,16 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
+
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
-import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.stream.IntStream;
 
 import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
-import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
-import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
-import static org.lwjgl.vulkan.VK13.*;
 
 // currently, is a part of device memory object
 // TODO: planned indirect copy support (for NVIDIA)
@@ -88,7 +81,7 @@ public class MemoryAllocationObj extends BasicObj {
 
 
 
-    @Override // TODO: multiple queue family support
+    /*@Override // TODO: multiple queue family support
     public MemoryAllocationObj delete() throws Exception {
         var handle = this.handle;
         
@@ -96,7 +89,7 @@ public class MemoryAllocationObj extends BasicObj {
         // TODO: Use Shared PTR (alike C++)
         deviceMemoryObj.delete();
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support
     public MemoryAllocationObj deleteDirectly() {

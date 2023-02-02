@@ -1,20 +1,19 @@
 package org.hydra2s.noire.objects;
 
 
-import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.ImageCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
-import org.lwjgl.vulkan.*;
+import org.lwjgl.vulkan.VkExternalMemoryImageCreateInfo;
+import org.lwjgl.vulkan.VkImageCreateInfo;
+import org.lwjgl.vulkan.VkImageMemoryRequirementsInfo2;
+import org.lwjgl.vulkan.VkMemoryRequirements2;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
-import static org.lwjgl.vulkan.KHRSwapchain.vkDestroySwapchainKHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
-import static org.lwjgl.vulkan.VK13.*;
 
 //
 public class ImageObj extends BasicObj {
@@ -99,7 +98,7 @@ public class ImageObj extends BasicObj {
         }
     }
 
-    @Override // TODO: multiple queue family support (and Promise.all)
+    /*@Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj delete() throws Exception {
         var handle = this.handle;
 
@@ -119,7 +118,7 @@ public class ImageObj extends BasicObj {
         });
 
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageObj deleteDirectly() {

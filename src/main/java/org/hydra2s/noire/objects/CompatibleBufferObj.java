@@ -2,12 +2,9 @@ package org.hydra2s.noire.objects;
 
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.lwjgl.vulkan.VkBufferCopy2;
 import org.lwjgl.vulkan.VkCommandBuffer;
 
 import java.nio.ByteBuffer;
-
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_BUFFER_COPY_2;
 
 // TODO: add copy operations with auto-synchronization
 public class CompatibleBufferObj extends BufferObj {

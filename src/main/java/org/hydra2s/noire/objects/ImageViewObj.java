@@ -1,11 +1,14 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.utils.Promise;
-import org.lwjgl.vulkan.*;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkDescriptorImageInfo;
+import org.lwjgl.vulkan.VkImageSubresourceLayers;
+import org.lwjgl.vulkan.VkImageViewCreateInfo;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 import static org.lwjgl.system.MemoryUtil.memLongBuffer;
@@ -100,7 +103,7 @@ public class ImageViewObj extends BasicObj {
         return this;
     }
 
-    @Override // TODO: multiple queue family support (and Promise.all)
+    /*@Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj delete() throws Exception {
         
         var handle = this.handle;
@@ -126,7 +129,7 @@ public class ImageViewObj extends BasicObj {
             return cmdBuf;
         });
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public ImageViewObj deleteDirectly() {

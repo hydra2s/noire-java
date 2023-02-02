@@ -1,15 +1,14 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import org.hydra2s.noire.descriptors.WindowCInfo;
 import org.lwjgl.vulkan.VkExtent2D;
 
-//
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;

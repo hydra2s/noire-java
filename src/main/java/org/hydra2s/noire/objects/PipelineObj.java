@@ -1,36 +1,26 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.*;
-import org.hydra2s.utils.Promise;
+
+import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.lwjgl.vulkan.*;
 
-//
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.Collections;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
-import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_DYNAMIC_STATE_LOGIC_OP_EXT;
-import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.*;
-import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTPipelineRobustness.*;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
-import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
-import static org.lwjgl.vulkan.VK13.vkCmdSetDepthWriteEnable;
 
 //
 public class PipelineObj extends BasicObj  {

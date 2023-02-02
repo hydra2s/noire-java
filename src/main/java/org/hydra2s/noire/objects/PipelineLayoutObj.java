@@ -6,8 +6,6 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
-import org.hydra2s.noire.virtual.VirtualMutableBufferHeap;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;

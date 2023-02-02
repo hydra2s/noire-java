@@ -1,14 +1,12 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
+
 import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.IntBuffer;
 
-//
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;

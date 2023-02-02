@@ -1,7 +1,8 @@
 package com.lodborg.intervaltree;
 
+import com.lodborg.intervaltree.TreeNode.TreeNodeIterator;
+
 import java.util.*;
-import com.lodborg.intervaltree.TreeNode.*;
 
 /**
  * An implementation of a Centered Interval Tree for efficient search in a set of intervals. See

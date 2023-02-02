@@ -3,13 +3,12 @@ package org.hydra2s.noire.objects;
 //
 
 import com.lodborg.intervaltree.IntervalTree;
-import com.perapoch.cache.lru.NativeLRUCache;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Optional;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
@@ -248,9 +247,9 @@ public class BasicObj {
 
     // TODO: add destructors support
     // TODO: add parameters support
-    public BasicObj delete() throws Exception {
+    /*public BasicObj delete() throws Exception {
         return this;
-    }
+    }*/
 
     public BasicObj deleteDirectly() /*throws Exception*/ {
         if (sharedPtr > 0) { sharedPtr--; }

@@ -145,7 +145,7 @@ public class BufferObj extends BasicObj {
         return this;
     }
 
-    @Override // TODO: multiple queue family support (and Promise.all)
+    /*@Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj delete() throws Exception {
         var handle = this.handle;
 
@@ -167,7 +167,7 @@ public class BufferObj extends BasicObj {
 
 
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public BufferObj deleteDirectly() {

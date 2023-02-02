@@ -1,16 +1,15 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
-import org.hydra2s.noire.descriptors.ImageViewCInfo;
+
 import org.hydra2s.noire.descriptors.SamplerCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK10.vkCreateSampler;
+import static org.lwjgl.vulkan.VK10.vkDestroySampler;
 
 //
 public class SamplerObj extends BasicObj  {
@@ -36,7 +35,7 @@ public class SamplerObj extends BasicObj  {
         }
     }
 
-    @Override // TODO: multiple queue family support (and Promise.all)
+    /*@Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj delete() throws Exception {
         super.delete();
         
@@ -59,7 +58,7 @@ public class SamplerObj extends BasicObj  {
             return cmdBuf;
         });
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public SamplerObj deleteDirectly() /*throws Exception*/ {

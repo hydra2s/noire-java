@@ -5,7 +5,10 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.vulkan.*;
+import org.lwjgl.vulkan.VkExtent3D;
+import org.lwjgl.vulkan.VkImageSubresourceRange;
+import org.lwjgl.vulkan.VkImageViewCreateInfo;
+import org.lwjgl.vulkan.VkSwapchainCreateInfoKHR;
 
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
@@ -243,7 +246,7 @@ public class SwapChainObj extends BasicObj  {
 
     }
 
-    @Override // TODO: multiple queue family support (and Promise.all)
+    /*@Override // TODO: multiple queue family support (and Promise.all)
     public SwapChainObj delete() throws Exception {
         var Is = this.imageViews.size();
         for (var i=0;i<Is;i++) {
@@ -265,7 +268,7 @@ public class SwapChainObj extends BasicObj  {
 
         //
         return this;
-    }
+    }*/
 
     @Override // TODO: multiple queue family support (and Promise.all)
     public SwapChainObj deleteDirectly() /*throws Exception*/ {

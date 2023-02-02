@@ -1,23 +1,21 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import org.hydra2s.noire.descriptors.InstanceCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 

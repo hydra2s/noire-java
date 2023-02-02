@@ -1,25 +1,18 @@
 package org.hydra2s.noire.virtual;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
+
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
-import org.hydra2s.noire.objects.*;
-import org.hydra2s.utils.Promise;
+import org.hydra2s.noire.objects.BufferObj;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 
-//
 import java.nio.ByteBuffer;
-import java.security.cert.Extension;
 import java.util.HashMap;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
-//
 import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -116,6 +109,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             this.bound = virtualVertexArrayHeap;
 
             //
+            assert this.bound != null;
             this.DSC_ID = this.bound.registry.push(this);
             this.virtualGL = this.DSC_ID+1;
 

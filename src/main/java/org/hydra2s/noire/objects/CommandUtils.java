@@ -1,23 +1,21 @@
 package org.hydra2s.noire.objects;
 
-import org.hydra2s.noire.descriptors.*;
+import org.hydra2s.noire.descriptors.ImageSetCInfo;
+import org.hydra2s.noire.descriptors.PipelineCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
-import java.util.stream.IntStream;
 
 import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
-import static org.lwjgl.vulkan.EXTExtendedDynamicState3.vkCmdSetLogicOpEnableEXT;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
-import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 import static org.lwjgl.vulkan.VK13.*;
-import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
 
 // GRIB!
 // TODO: support for queue families

@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
@@ -11,15 +12,15 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 
-//
-import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -614,6 +615,7 @@ public class DeviceObj extends BasicObj {
 
     //
     public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, VkCommandBuffer> fn) throws Exception {
+        if (submitCmd.queueGroupIndex < 0) { throw new Exception("Cmd Submission Error - Bad Queue Group Index!"); };
 
          // TODO: allocate command buffer with fence
         var queueGroup = this.queueGroups.get(submitCmd.queueGroupIndex);

@@ -1,6 +1,7 @@
 package org.hydra2s.noire.objects;
 
 //
+
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.CommandManagerCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -10,7 +11,9 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
-import org.lwjgl.vulkan.*;
+import org.lwjgl.vulkan.VkCommandBuffer;
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
+import org.lwjgl.vulkan.VkExtent3D;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -268,15 +271,15 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public DeviceObj.FenceProcess submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
-            if (this.callers.size() < 0) { return null; };
+            if (this.callers.size() == 0) { return null; };
 
             //
-            var toFreeFn = new ArrayList<Runnable>();
-            toFreeFn.addAll(this.toFree); this.toFree.clear();
+            var toFreeFn = new ArrayList<Runnable>(this.toFree);
+            this.toFree.clear();
 
             //
-            var toFreeAlloc = new ArrayList<VirtualAllocation>();
-            toFreeAlloc.addAll(this.allocations); this.allocations.clear();
+            var toFreeAlloc = new ArrayList<VirtualAllocation>(this.allocations);
+            this.allocations.clear();
 
             //
             cmd.onDone = cmd.onDone != null ? cmd.onDone : new Promise();

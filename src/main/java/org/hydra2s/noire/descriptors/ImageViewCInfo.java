@@ -1,10 +1,10 @@
 package org.hydra2s.noire.descriptors;
 
 //
+
 import org.lwjgl.vulkan.VkComponentMapping;
 import org.lwjgl.vulkan.VkImageSubresourceRange;
 
-//
 import static org.lwjgl.vulkan.VK10.*;
 
 //

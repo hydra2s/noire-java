@@ -1,26 +1,21 @@
 package org.hydra2s.noire.objects;
 
 //
-import org.hydra2s.noire.descriptors.BasicCInfo;
+
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
-import org.hydra2s.noire.descriptors.SwapChainCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
-//
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-//
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTMemoryPriority.VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT;
 import static org.lwjgl.vulkan.KHRBufferDeviceAddress.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-import static org.lwjgl.vulkan.KHRExternalMemoryWin32.VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
-import static org.lwjgl.vulkan.KHRExternalMemoryWin32.vkGetMemoryWin32HandleKHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
 
@@ -158,7 +153,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             return this;
         }
 
-        @Override // TODO: multiple queue family support
+        /*@Override // TODO: multiple queue family support
         public DeviceMemoryObj delete() throws Exception {
             var handle = this.handle;
             
@@ -173,7 +168,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                 return cmdBuf;
             });
             return this;
-        }
+        }*/
 
         @Override // TODO: multiple queue family support
         public DeviceMemoryObj deleteDirectly() {
