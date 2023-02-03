@@ -41,7 +41,7 @@ public class PipelineLayoutObj extends BasicObj  {
     }
 
     //
-    public static final boolean useLegacyBindingSystem = false;
+    public static final boolean useLegacyBindingSystem = true;
 
     //
     public static class DescriptorSetLayoutInfo {
