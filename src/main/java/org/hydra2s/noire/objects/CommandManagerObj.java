@@ -14,12 +14,14 @@ import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
 import org.lwjgl.vulkan.VkExtent3D;
+import org.lwjgl.vulkan.VkQueryPoolCreateInfo;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -108,11 +110,56 @@ public class CommandManagerObj extends BasicObj {
     }
 
     //
+    public static class CommandProfiler {
+        public LongBuffer queryPool = null;
+        public CommandManagerObj manager = null;
+        public CommandWriter commandWriter = null;
+        public long timeDiff = 0L;
+
+        public CommandProfiler(CommandManagerObj manager, CommandWriter commandWriter) {
+            this.queryPool = memAllocLong(1);
+
+            //
+            VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.calloc();
+            queryPoolCreateInfo.sType(VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO);
+            queryPoolCreateInfo.queryType(VK_QUERY_TYPE_TIMESTAMP);
+            queryPoolCreateInfo.queryCount(2);
+
+            //
+            this.manager = manager;
+            this.commandWriter = commandWriter;
+            vkCreateQueryPool(manager.deviceObj.device, queryPoolCreateInfo, null, this.queryPool);
+        }
+
+        public CommandProfiler cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
+            commandWriter.cmdAdd$("Command Profiler Begin Record", (cmdBuf)->{
+                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool.get(0), 0);
+                return cmdBuf;
+            });
+            commandWriter.cmdAdd$(typeName, caller);
+            commandWriter.cmdAdd$("Command Profiler End Record", (cmdBuf)->{
+                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool.get(0), 1);
+                return cmdBuf;
+            });
+            commandWriter.addToFree(()->{
+                LongBuffer timestamps = memAllocLong(2);
+                vkGetQueryPoolResults(manager.deviceObj.device, queryPool.get(0), 0, 2, timestamps, 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+                vkDestroyQueryPool(manager.deviceObj.device, queryPool.get(0), null);
+
+                timeDiff = (timestamps.get(1) - timestamps.get(0));
+                System.out.println(typeName + " - command time stamp diff: " + ((double)timeDiff/(double)(1000*1000)) + " in milliseconds.");
+            });
+            return this;
+        }
+    }
+
+    //
     public static class CommandWriter {
         public CommandManagerObj manager = null;
         public ArrayList<UtilsCInfo.Pair<String, Function<VkCommandBuffer, VkCommandBuffer>>> callers = null;
         public ArrayList<VirtualAllocation> allocations = null;
         public ArrayList<Runnable> toFree = null;
+        public ArrayList<CommandProfiler> profilers = null;
 
         //
         public CommandWriter(CommandManagerObj manager, CommandWriterCInfo cInfo) {
@@ -120,14 +167,24 @@ public class CommandManagerObj extends BasicObj {
             this.callers = new ArrayList<>();
             this.allocations = new ArrayList<>();
             this.toFree = new ArrayList<>();
+            this.profilers = new ArrayList<>();
         }
 
         // TODO: correct naming
-        public CommandWriter cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
+        protected CommandWriter cmdAdd$(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
             if (caller != null) {
                 this.callers.add(this.callers.size(), new UtilsCInfo.Pair<>(typeName, caller));
             }
             return this;
+        }
+
+        // TODO: correct naming
+        public CommandWriter cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
+            return this.cmdAdd$(typeName, caller);
+            //var profilerObj = new CommandProfiler(this.manager, this);
+            //profilerObj.cmdAdd(typeName, caller);
+            //profilers.add(profilerObj);
+            //return this;
         }
 
         //
@@ -287,18 +344,35 @@ public class CommandManagerObj extends BasicObj {
             if (this.callers.size() == 0) { return null; };
 
             //
-            var toFreeFn = new ArrayList<Runnable>(this.toFree);
-            this.toFree.clear();
-
-            //
-            var toFreeAlloc = new ArrayList<VirtualAllocation>(this.allocations);
-            this.allocations.clear();
+            var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
+            var toFreeAlloc = new ArrayList<>(this.allocations);this.allocations.clear();
+            var toFreeProfilers = new ArrayList<>(this.profilers); this.profilers.clear();
+            var callerCount = this.callers.size();
 
             //
             cmd.onDone = cmd.onDone != null ? cmd.onDone : new Promise();
             cmd.onDone.thenApply((status)->{
+                // debug and profiling info
+                //System.out.println("Begin collect data and free command resources.");
+                //System.out.println("Command writes: " + callerCount);
+                //System.out.println("Command free resources: " + toFreeAlloc.size());
+                //System.out.println("Command free commands (include profiling): " + toFreeFn.size());
+
+                // free resources and collect profiling data
                 toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
                 toFreeFn.forEach(Runnable::run); toFreeFn.clear();
+
+                // collect timings of commands
+                //AtomicLong fullCommandTime = new AtomicLong(0L);
+                //toFreeProfilers.forEach((profiler)->{
+                    //fullCommandTime.addAndGet(profiler.timeDiff);
+                //}); toFreeProfilers.clear();
+
+                // debug and profiling info
+                //System.out.println("Full commands time: " + ((double)fullCommandTime.get())/(double)(1000*1000) + "in milliseconds.");
+                //System.out.println("End collect data and free command resources.");
+
+                //
                 return status;
             });
 
@@ -311,7 +385,7 @@ public class CommandManagerObj extends BasicObj {
             manager.deviceObj.doPolling();
             return fence;
 
-
+            // DEBUG MODE!
             /*AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
             this.callers.forEach((fn)->{
                 DeviceObj.FenceProcess fence = null;
