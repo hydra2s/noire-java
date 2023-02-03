@@ -522,7 +522,7 @@ abstract public class CommandUtils {
             vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
 
             //
-            vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
+            vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
             vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
             vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
             vkCmdSetStencilTestEnable(cmdBuf, false);
