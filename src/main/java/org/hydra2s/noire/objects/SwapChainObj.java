@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.joml.Math.clamp;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
@@ -90,7 +91,7 @@ public class SwapChainObj extends BasicObj  {
             this.createInfo = VkSwapchainCreateInfoKHR.calloc()
                     .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                     .surface(cInfo.surface)
-                    .minImageCount(surfaceInfo.capabilities2.surfaceCapabilities().minImageCount())
+                    .minImageCount(clamp(cInfo.imageCount, surfaceInfo.capabilities2.surfaceCapabilities().minImageCount(), surfaceInfo.capabilities2.surfaceCapabilities().maxImageCount()))
                     .imageFormat(format)
                     .imageColorSpace(colorSpace)
                     .imageExtent(cInfo.extent)

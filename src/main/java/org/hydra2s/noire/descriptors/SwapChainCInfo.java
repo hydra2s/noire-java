@@ -14,7 +14,7 @@ public class SwapChainCInfo extends BasicCInfo  {
 
     public VkExtent2D extent = null;
 
-    public int imageCount = 4;
+    public int imageCount = 8;
     public int layerCount = 1;
     public int format = VK_FORMAT_R8G8B8A8_UNORM;
     public int queueFamilyIndex = 0;

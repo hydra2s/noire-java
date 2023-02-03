@@ -131,16 +131,20 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, Callable<HostImageStage> imageInfoLazy, boolean lazy) throws Exception {
+        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data,  Callable<HostImageStage> imageInfoLazy, boolean lazy) throws Exception {
+            return this.cmdCopyFromHostToImage(data, imageInfoLazy, lazy, false);
+        }
+
+        //
+        public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, Callable<HostImageStage> imageInfoLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<HostImageStage> imageInfo_ = new AtomicReference<>();
-            var payloadBackup = memAlloc(data.remaining());
+            var payloadBackup = (directly || !lazy) ? data : memAlloc(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
             memCopy(data, payloadBackup);
 
-
+            //
             Callable<Integer> tempOp = ()-> {
-                imageInfo_.set(imageInfoLazy.call());
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
+                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), payloadBackup.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
@@ -165,6 +169,11 @@ public class CommandManagerObj extends BasicObj {
                 };
                 var allocation = allocation_.get();
                 if (status.get() == 0) {
+                    try {
+                        imageInfo_.set(imageInfoLazy.call());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                     var allocOffset = allocation.offset.get(0);
                     var imageInfo = imageInfo_.get();
 
@@ -202,16 +211,15 @@ public class CommandManagerObj extends BasicObj {
         public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<VkDescriptorBufferInfo> bufferRange_ = new AtomicReference<>();
-            var payloadBackup = directly ? data : memAlloc(data.remaining()); if (!directly) { memCopy(data, payloadBackup); };
+            var payloadBackup = (directly || !lazy) ? data : memAlloc(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
 
             Callable<Integer> tempOp = ()-> {
-                bufferRange_.set(bufferRangeLazy.call()); var bufferRange = min(data.remaining(), bufferRange_.get().range());
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), bufferRange));
+                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), payloadBackup.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 this.allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
-                    memCopy(payloadBackup, manager.bufferHeap.map(bufferRange, allocOffset));
+                    memCopy(payloadBackup, manager.bufferHeap.map(payloadBackup.remaining(), allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -230,6 +238,11 @@ public class CommandManagerObj extends BasicObj {
                     }
                 };
                 if (status.get() == 0) {
+                    try {
+                        bufferRange_.set(bufferRangeLazy.call());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                     var bufferRange = bufferRange_.get();
                     var allocation = allocation_.get();
                     var allocOffset = allocation.offset.get(0);

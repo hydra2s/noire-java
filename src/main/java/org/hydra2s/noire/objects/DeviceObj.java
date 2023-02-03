@@ -627,7 +627,10 @@ public class DeviceObj extends BasicObj {
         vkCheckStatus(vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc()
             .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
             .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)));
+        var profiling = new ProfilingUtilsObj();
+        //profiling.recordBeginTime();
         fn.apply(submitCmd.cmdBuf);
+        //profiling.recordDiffTime("Profiler: Writing Command Time: ");
         vkCheckStatus(vkEndCommandBuffer(submitCmd.cmdBuf));
 
         //
