@@ -26,7 +26,7 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 - Multiple command pools (per queue group).
 - Mass refactoring, refinements.
 
-#### Currently, WIP part IV, in next stage part V (probably, finale).
+#### Currently, WIP part VI (profiling and debug update), in next stage (part VII) will finally fixing issues (I hope).
 
 ## ~~Part of [manhack](https://github.com/hydra2s/manhack) project~~
 ## Planned for [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) project
