@@ -1,7 +1,10 @@
 package org.hydra2s.noire.virtual;
 
+import org.lwjgl.vulkan.VkDescriptorBufferInfo;
+
 import java.nio.ByteBuffer;
 
+import static org.lwjgl.vulkan.VK10.VK_INDEX_TYPE_UINT16;
 import static org.lwjgl.vulkan.VK10.VK_WHOLE_SIZE;
 
 public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
@@ -11,7 +14,7 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
     public int vertexAverageCount = 512;
 
     // uniform data + VAO bindings + inbound payload
-    public int drawCallUniformStride = 512 + VirtualVertexArrayHeapCInfo.vertexArrayStride;
+    public int drawCallUniformStride = 64;
 
     //
     public long maxDrawCalls = 1024L;
@@ -28,17 +31,17 @@ public class VirtualDrawCallCollectorCInfo extends VirtualGLRegistryCInfo {
 
     //
     static public class VirtualDrawCallCInfo extends VirtualGLObjCInfo {
-        // use vkCmdUpdateBuffer
-        public ByteBuffer uniformData;
+        // i.e. push constant
+        public ByteBuffer uniformData = null;
 
         // 0 = temporary, 1 = direct
         // in temp mode => copy, in direct mode just use it
-        public int vertexMode = 0; public VirtualMutableBufferHeap.VirtualMutableBufferObj vertexBuffer;
-        public int indexMode = 1; public VirtualMutableBufferHeap.VirtualMutableBufferObj indexBuffer;
+        public int vertexCount = 0; public long vertexAddress = 0L; public VkDescriptorBufferInfo vertexRange = null;
+        public int indexCount = 0; public long indexAddress = 0L; public VkDescriptorBufferInfo indexRange = null;
+        public int indexType = VK_INDEX_TYPE_UINT16;
 
-        // just copy their into registry
-        public int vertexCount = 0; public VirtualVertexArrayHeap.VirtualVertexArrayObj vertexArray;
-
+        //
+        public VirtualVertexArrayHeap.VirtualVertexArrayObj vertexArray = null;
     }
 
 
