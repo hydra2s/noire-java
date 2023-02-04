@@ -37,6 +37,7 @@ import static org.lwjgl.vulkan.KHRRayQuery.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY
 import static org.lwjgl.vulkan.KHRRayTracingMaintenance1.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_MAINTENANCE_1_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRShaderClock.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR;
 import static org.lwjgl.vulkan.KHRWorkgroupMemoryExplicitLayout.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR;
+import static org.lwjgl.vulkan.NVRepresentativeFragmentTest.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.*;
@@ -45,6 +46,7 @@ import static org.lwjgl.vulkan.VK13.*;
 public class PhysicalDeviceObj extends BasicObj {
 
     public static class PhysicalDeviceFeatures {
+        public VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representativeFragmentTestNV = null;
         public VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentInterlocking = null;
         public VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR globalPriority = null;
         public VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT pageableMemory = null;
@@ -78,7 +80,8 @@ public class PhysicalDeviceObj extends BasicObj {
 
         public PhysicalDeviceFeatures() {
             // TODO: unify into one object
-            this.fragmentInterlocking = VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT);
+            this.representativeFragmentTestNV = VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV);
+            this.fragmentInterlocking = VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT).pNext(this.representativeFragmentTestNV.address());
             this.globalPriority = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR).pNext(this.fragmentInterlocking.address());
             this.pageableMemory = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT).pNext(this.globalPriority.address());
             this.memoryPriority = VkPhysicalDeviceMemoryPriorityFeaturesEXT.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT).pNext(this.pageableMemory.address());

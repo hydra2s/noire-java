@@ -154,7 +154,9 @@ public class DeviceObj extends BasicObj {
             "VK_KHR_external_semaphore_fd",
             "VK_KHR_external_memory",
             "VK_KHR_external_memory_win32",
-            "VK_KHR_external_memory_fd"
+            "VK_KHR_external_memory_fd",
+
+            "VK_NV_representative_fragment_test"
         );
 
         //
@@ -497,7 +499,7 @@ public class DeviceObj extends BasicObj {
          queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
          //
-         final int maxSemaphoreQueue = 16;
+         final int maxSemaphoreQueue = 64;
          if (queueInfo.querySemaphoreObj == null) {
              queueInfo.querySemaphoreObj = new ArrayList<>();
              for (var I=0;I<maxSemaphoreQueue;I++) {

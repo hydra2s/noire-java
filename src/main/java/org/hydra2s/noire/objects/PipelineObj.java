@@ -19,6 +19,7 @@ import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.*;
 import static org.lwjgl.vulkan.EXTPipelineRobustness.*;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.VK_DYNAMIC_STATE_VERTEX_INPUT_EXT;
+import static org.lwjgl.vulkan.NVRepresentativeFragmentTest.VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
 
@@ -97,6 +98,7 @@ public class PipelineObj extends BasicObj  {
 
     //
     public static class GraphicsPipelineObj extends PipelineObj {
+        public VkPipelineRepresentativeFragmentTestStateCreateInfoNV representativeFragmentTestNV = null;
         public VkPipelineShaderStageCreateInfo.Buffer shaderStageInfo = null;
         public VkPipelineVertexInputStateCreateInfo vertexInputInfo = null;
         public VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateInfo = null;
@@ -140,6 +142,7 @@ public class PipelineObj extends BasicObj  {
             });
 
             //
+            this.representativeFragmentTestNV = VkPipelineRepresentativeFragmentTestStateCreateInfoNV.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV);
             this.library = VkGraphicsPipelineLibraryCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT);
             this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
             this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
@@ -213,7 +216,9 @@ public class PipelineObj extends BasicObj  {
 
             //
             this.robustness
-                .pNext(this.library.flags(
+                .pNext(this.library
+                    .pNext(this.representativeFragmentTestNV.representativeFragmentTestEnable(true).address())
+                    .flags(
                     VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
                         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
                         VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
