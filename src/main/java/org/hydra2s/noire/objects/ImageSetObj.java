@@ -153,6 +153,7 @@ public class ImageSetObj extends BasicObj  {
         public ImageViewObj currentDepthStencilImageView = null;
         public ImageViewObj writingDepthStencilImageView = null;
         public ImageViewObj previousDepthStencilImageView = null;
+        public ImageViewObj readingDepthStencilImageView = null;
 
         //
         public FramebufferObj(Handle base, Handle handle) {
@@ -207,6 +208,21 @@ public class ImageSetObj extends BasicObj  {
                         pipelineLayout = cInfo.pipelineLayout;
                         image = depthStencilImage.handle.get();
                         type = "storage";
+                        subresourceRange = VkImageSubresourceRange.calloc()
+                            .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
+                            .levelCount(1)
+                            .baseArrayLayer(layerCount * 1)
+                            .layerCount(layerCount);
+                    }
+                });
+
+                //
+                this.readingDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
+                    {
+                        imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+                        pipelineLayout = cInfo.pipelineLayout;
+                        image = depthStencilImage.handle.get();
+                        type = "sampled";
                         subresourceRange = VkImageSubresourceRange.calloc()
                             .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
                             .levelCount(1)
