@@ -223,7 +223,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         // TODO: morton coding support
         // TODO: support for memory type when allocation, not when create
         public VirtualMutableBufferObj allocate(long bufferSize, VkCommandBuffer cmdBuf) throws Exception {
-            final long MEM_BLOCK = 512L;
+            final long MEM_BLOCK = 64L;
 
             //
             VkDescriptorBufferInfo srcBufferRange = null;
