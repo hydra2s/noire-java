@@ -6,7 +6,7 @@ import org.lwjgl.vulkan.VkExtent3D;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class ImageCInfo extends BasicCInfo {
-    public VkExtent3D extent3D = VkExtent3D.calloc().width(1).height(1).depth(1);
+    public VkExtent3D extent3D = VkExtent3D.create().width(1).height(1).depth(1);
     public int usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     public int mipLevels = 1;
     public int arrayLayers = 1;

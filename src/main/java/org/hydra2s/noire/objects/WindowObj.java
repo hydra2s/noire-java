@@ -52,7 +52,7 @@ public class WindowObj extends BasicObj  {
     public VkExtent2D getWindowSize() {
         IntBuffer size = createIntBuffer(2);
         glfwGetWindowSize(this.handle.get(), size.slice(0, 1), size.slice(1, 1));
-        var extent = VkExtent2D.calloc().width(size.get(0)).height(size.get(1));
+        var extent = VkExtent2D.create().width(size.get(0)).height(size.get(1));
         if (this.cInfo != null) { ((WindowCInfo)this.cInfo).size = extent; };
         return extent;
     }

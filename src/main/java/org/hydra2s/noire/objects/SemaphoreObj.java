@@ -41,9 +41,9 @@ public class SemaphoreObj extends BasicObj {
         this.lastTimeline = cInfo.initialValue;
         this.deleted = false;
         this.timeline = new long[]{cInfo.initialValue};
-        this.timelineInfo = VkSemaphoreTypeCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR).semaphoreType(cInfo.isTimeline ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY).initialValue(lastTimeline);
-        vkCheckStatus(vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, (this.handle = new Handle("Semaphore")).ptr()));
-        vkCheckStatus(vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = createPointerBuffer(1)));
+        this.timelineInfo = VkSemaphoreTypeCreateInfo.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR).semaphoreType(cInfo.isTimeline ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY).initialValue(lastTimeline);
+        vkCheckStatus(vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.create().pNext(VkExportSemaphoreCreateInfoKHR.create().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, (this.handle = new Handle("Semaphore")).ptr()));
+        vkCheckStatus(vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = createPointerBuffer(1)));
 
         if (cInfo.doRegister) {
             deviceObj.handleMap.put$(this.handle, this);
@@ -112,7 +112,7 @@ public class SemaphoreObj extends BasicObj {
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
         prevTimeline = lastTimeline; if (!forWait) { lastTimeline++; };
-        return VkSemaphoreSubmitInfo.calloc()
+        return VkSemaphoreSubmitInfo.create()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
             .value(lastTimeline)
@@ -125,7 +125,7 @@ public class SemaphoreObj extends BasicObj {
             System.out.println("Invalid or destroyed semaphore making info.");
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
-        return VkSemaphoreSubmitInfo.calloc()
+        return VkSemaphoreSubmitInfo.create()
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
             .value(lastTimeline)
@@ -154,7 +154,7 @@ public class SemaphoreObj extends BasicObj {
                 throw new Exception("Trying to signal timeline by destroyed or invalid semaphore.");
             }
             prevTimeline = lastTimeline; lastTimeline++;
-            vkCheckStatus(vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc()
+            vkCheckStatus(vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.create()
                 .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
                 .semaphore(this.handle.get())
                 .value(lastTimeline)));
@@ -169,7 +169,7 @@ public class SemaphoreObj extends BasicObj {
                 System.out.println("Trying to wait timeline a destroyed or invalid semaphore.");
                 throw new Exception("Trying to wait timeline a destroyed or invalid semaphore.");
             }
-            vkCheckStatus(vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc()
+            vkCheckStatus(vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.create()
                 .sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO)
                 .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
                 .pSemaphores(createLongBuffer(1).put(0, this.handle.get()))

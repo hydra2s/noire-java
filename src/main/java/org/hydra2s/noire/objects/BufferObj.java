@@ -40,8 +40,8 @@ public class BufferObj extends BasicObj {
 
         //
         var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
-        this.createInfo = VkBufferCreateInfo.calloc()
-            .pNext(VkExternalMemoryBufferCreateInfo.calloc()
+        this.createInfo = VkBufferCreateInfo.create()
+            .pNext(VkExternalMemoryBufferCreateInfo.create()
                     .pNext(0L)
                     .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO)
                     .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address()
@@ -67,11 +67,11 @@ public class BufferObj extends BasicObj {
         //
         vkGetBufferMemoryRequirements2(
                 deviceObj.device,
-                VkBufferMemoryRequirementsInfo2.calloc()
+                VkBufferMemoryRequirementsInfo2.create()
                         .pNext(0L)
                         .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2)
                         .buffer(this.handle.get()),
-                this.memoryRequirements2 = VkMemoryRequirements2.calloc()
+                this.memoryRequirements2 = VkMemoryRequirements2.create()
                         .sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2)
                         .pNext(0L)
         );
@@ -115,7 +115,7 @@ public class BufferObj extends BasicObj {
     public long getDeviceAddress() {
         if (this.deviceAddress == 0) {
             
-            this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.calloc().pNext(0L).sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
+            this.deviceAddress = vkGetBufferDeviceAddress(deviceObj.device, VkBufferDeviceAddressInfo.create().pNext(0L).sType(VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO).buffer(this.handle.get()));
             deviceObj.addressMap.add(new LongInterval(this.deviceAddress, this.deviceAddress + this.createInfo.size(), Interval.Bounded.CLOSED));
             deviceObj.rootMap.put$(this.deviceAddress, this.handle.get());
         }
@@ -139,7 +139,7 @@ public class BufferObj extends BasicObj {
     // necessary after `unmap()` op
     // Resizable BAR!
     public BufferObj cmdSynchronizeFromHost(VkCommandBuffer cmdBuf) {
-        CommandUtils.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, VK_WHOLE_SIZE));
+        CommandUtils.cmdSynchronizeFromHost(cmdBuf, VkDescriptorBufferInfo.create().set(this.handle.get(), 0, VK_WHOLE_SIZE));
         return this;
     }
 
@@ -183,6 +183,6 @@ public class BufferObj extends BasicObj {
 
     //
     public VkDescriptorBufferInfo getBufferRange() {
-        return VkDescriptorBufferInfo.calloc().set(this.handle.get(), 0, this.createInfo.size());
+        return VkDescriptorBufferInfo.create().set(this.handle.get(), 0, this.createInfo.size());
     }
 }

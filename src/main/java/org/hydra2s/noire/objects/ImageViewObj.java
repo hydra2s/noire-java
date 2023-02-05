@@ -38,13 +38,13 @@ public class ImageViewObj extends BasicObj {
         if (cInfo.isCubemap)            { imageViewType = (cInfo.subresourceRange.layerCount() > 6 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE); };
 
         //
-        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new Handle("ImageView")).ptr()));
+        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.create().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new Handle("ImageView")).ptr()));
         deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
-            this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.calloc().imageView(this.handle.get()).imageLayout(cInfo.type == "storage" ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+            this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.type == "storage" ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
             descriptorsObj.writeDescriptors();
         }
     }
@@ -68,7 +68,7 @@ public class ImageViewObj extends BasicObj {
         var subresourceRange = ((ImageViewCInfo)cInfo).subresourceRange;
         var $DSC_ID = DSC_ID;
         return new CommandUtils.SubresourceLayers() {{
-            subresource = VkImageSubresourceLayers.calloc()
+            subresource = VkImageSubresourceLayers.create()
                 .aspectMask(subresourceRange.aspectMask())
                 .mipLevel(subresourceRange.baseMipLevel() + mipLevel)
                 .baseArrayLayer(subresourceRange.baseArrayLayer())

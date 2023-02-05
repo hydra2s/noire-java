@@ -86,7 +86,7 @@ public class SwapChainObj extends BasicObj  {
 
             //
             var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
-            this.createInfo = VkSwapchainCreateInfoKHR.calloc()
+            this.createInfo = VkSwapchainCreateInfoKHR.create()
                     .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                     .surface(cInfo.surface)
                     .minImageCount(Math.min(Math.max(cInfo.imageCount, surfaceInfo.capabilities2.surfaceCapabilities().minImageCount()), surfaceInfo.capabilities2.surfaceCapabilities().maxImageCount()))
@@ -118,7 +118,7 @@ public class SwapChainObj extends BasicObj  {
                     arrayLayers = createInfo.imageArrayLayers();
                     format = createInfo.imageFormat();
                     mipLevels = 1;
-                    extent3D = VkExtent3D.calloc().width(createInfo.imageExtent().width()).height(createInfo.imageExtent().height()).depth(1);
+                    extent3D = VkExtent3D.create().width(createInfo.imageExtent().width()).height(createInfo.imageExtent().height()).depth(1);
                     tiling = VK_IMAGE_TILING_OPTIMAL;
                     samples = VK_SAMPLE_COUNT_1_BIT;
                     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -128,7 +128,7 @@ public class SwapChainObj extends BasicObj  {
                 //
                 this.imageViews.add(new ImageViewObj(this.base, new ImageViewCInfo() {{
                     image = images[finalI];
-                    subresourceRange = VkImageSubresourceRange.calloc().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
                     pipelineLayout = cInfo.pipelineLayout;
                     imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     type = "storage";
@@ -147,7 +147,7 @@ public class SwapChainObj extends BasicObj  {
                     arrayLayers = cInfo.layerCount;
                     format = cInfo.format;
                     mipLevels = 1;
-                    extent3D = VkExtent3D.calloc().width(cInfo.extent.width()).height(cInfo.extent.height()).depth(1);;
+                    extent3D = VkExtent3D.create().width(cInfo.extent.width()).height(cInfo.extent.height()).depth(1);;
                     tiling = VK_IMAGE_TILING_OPTIMAL;
                     samples = VK_SAMPLE_COUNT_1_BIT;
                     usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -160,7 +160,7 @@ public class SwapChainObj extends BasicObj  {
                 this.images[finalI] = this.imagesObj.get(finalI).getHandle().get();
                 this.imageViews.add(new ImageViewObj(this.base, new ImageViewCInfo(){{
                     image = images[finalI];
-                    subresourceRange = VkImageSubresourceRange.calloc().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
+                    subresourceRange = VkImageSubresourceRange.create().layerCount(1).baseArrayLayer(0).levelCount(1).baseMipLevel(0).aspectMask(VK_IMAGE_ASPECT_COLOR_BIT);
                     pipelineLayout = cInfo.pipelineLayout;
                     imageLayout = VK_IMAGE_LAYOUT_GENERAL;
                     type = "storage";

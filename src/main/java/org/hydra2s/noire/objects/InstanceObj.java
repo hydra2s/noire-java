@@ -92,7 +92,7 @@ public class InstanceObj extends BasicObj {
         //
         this.layersAmount = new int[]{1};
         VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, null);
-        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.calloc(this.layersAmount[0]));
+        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.create(this.layersAmount[0]));
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
@@ -106,17 +106,17 @@ public class InstanceObj extends BasicObj {
         //
         this.extensionAmount = new int[]{0};
         VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, null);
-        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.calloc(this.extensionAmount[0]));
+        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.create(this.extensionAmount[0]));
 
         // TODO: Handle VkResult!!
-        this.appInfo = VkApplicationInfo.calloc(1)
+        this.appInfo = VkApplicationInfo.create(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_APPLICATION_INFO)
                 .pApplicationName(MemoryUtil.memUTF8("NoireTest"))
                 .pEngineName(MemoryUtil.memUTF8("Noire"))
                 .apiVersion(VK13.VK_API_VERSION_1_3)
                 .engineVersion(VK10.VK_MAKE_VERSION(1, 0, 0))
                 .applicationVersion(VK10.VK_MAKE_VERSION(1, 0, 0));
-        this.instanceInfo = VkInstanceCreateInfo.calloc(1)
+        this.instanceInfo = VkInstanceCreateInfo.create(1)
                 .sType(VK10.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)
                 .pApplicationInfo(this.appInfo.get(0))
                 .ppEnabledExtensionNames(this.extensions)
@@ -132,7 +132,7 @@ public class InstanceObj extends BasicObj {
         System.out.println("Something wrong with Instance? " + Long.toHexString(this.handle.get()));
 
         //
-        /*vkCheckStatus(vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.calloc()
+        /*vkCheckStatus(vkCreateDebugUtilsMessengerEXT(this.instance, VkDebugUtilsMessengerCreateInfoEXT.create()
                 .sType(VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT)
                 .messageSeverity(VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT )
                 .messageType(VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT)

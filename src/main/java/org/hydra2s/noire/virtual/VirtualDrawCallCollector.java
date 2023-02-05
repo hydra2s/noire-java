@@ -122,7 +122,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
 
             // will be changed into camera position shifting
-            this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(createFloatBuffer(12).put(0, new float[]{
+            this.instanceInfo.transform(VkTransformMatrixKHR.create().matrix(createFloatBuffer(12).put(0, new float[]{
                 1.0F, 0.0F, 0.0F, 0.0F,
                 0.0F, 1.0F, 0.0F, 0.0F,
                 0.0F, 0.0F, 1.0F, 0.0F
@@ -162,7 +162,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.bottomLvl.recallGeometryInfo();
             this.bottomLvl.cmdBuild(cmdBuf, this.ranges, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
             this.instanceBuffer.cmdSynchronizeFromHost(cmdBuf);
-            this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.calloc(1)
+            this.topLvl.cmdBuild(cmdBuf, VkAccelerationStructureBuildRangeInfoKHR.create(1)
                     .primitiveCount(1)
                     .firstVertex(0)
                     .primitiveOffset(0)
@@ -179,8 +179,8 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
         //
         this.geometries = new ArrayList<>();
-        this.ranges = VkAccelerationStructureBuildRangeInfoKHR.calloc(this.registry.size());
-        this.multiDraw = VkMultiDrawInfoEXT.calloc(this.registry.size());
+        this.ranges = VkAccelerationStructureBuildRangeInfoKHR.create(this.registry.size());
+        this.multiDraw = VkMultiDrawInfoEXT.create(this.registry.size());
 
         // use sorted data for draw (and possible, culling)
         var Rs = this.registry.size();
@@ -291,7 +291,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             // TODO: using new and better methods
             // copy uniform based information from memories
             vkCmdUpdateBuffer(cmdBuf, uniformBuffer.handle, uniformBuffer.offset, cInfo.uniformData);
-            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(1)
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.create(1)
                 .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
                 .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT)
                 .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_WRITE_BIT)

@@ -37,7 +37,7 @@ public class PipelineObj extends BasicObj  {
 
     //
     public VkPipelineShaderStageCreateInfo createShaderModuleInfo(long module, int stage, CharSequence pName){
-        return VkPipelineShaderStageCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO).flags(0).module(module).stage(stage).pName(memUTF8(pName)).pSpecializationInfo(null);
+        return VkPipelineShaderStageCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO).flags(0).module(module).stage(stage).pName(memUTF8(pName)).pSpecializationInfo(null);
     }
 
     //
@@ -58,7 +58,7 @@ public class PipelineObj extends BasicObj  {
             super(base, cInfo);
 
             //
-            this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
+            this.robustness = VkPipelineRobustnessCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
             this.robustness
                 .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
                 .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
@@ -66,7 +66,7 @@ public class PipelineObj extends BasicObj  {
                 .images(VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT);
 
             //
-            this.createInfo = VkComputePipelineCreateInfo.calloc(1)
+            this.createInfo = VkComputePipelineCreateInfo.create(1)
                 .pNext(this.robustness.address())
                 .sType(VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO)
                 .flags((PipelineLayoutObj.useLegacyBindingSystem ? 0 : VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
@@ -137,26 +137,26 @@ public class PipelineObj extends BasicObj  {
             boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
 
             //
-            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.calloc(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
+            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
             cInfo.sourceMap.forEach((stage, source)->{
                 this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
             });
 
             //
-            this.representativeFragmentTestNV = VkPipelineRepresentativeFragmentTestStateCreateInfoNV.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV);
-            this.library = VkGraphicsPipelineLibraryCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT);
-            this.robustness = VkPipelineRobustnessCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
-            this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
-            this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
-            this.viewportStateInfo = VkPipelineViewportStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
-            this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
-            this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
-            this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
-            this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
-            this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
-            this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
-            this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
-            this.createInfo = VkGraphicsPipelineCreateInfo.calloc(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
+            this.representativeFragmentTestNV = VkPipelineRepresentativeFragmentTestStateCreateInfoNV.create().sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV);
+            this.library = VkGraphicsPipelineLibraryCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT);
+            this.robustness = VkPipelineRobustnessCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_ROBUSTNESS_CREATE_INFO_EXT);
+            this.vertexInputInfo = VkPipelineVertexInputStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO);
+            this.inputAssemblyStateInfo = VkPipelineInputAssemblyStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO);
+            this.viewportStateInfo = VkPipelineViewportStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO);
+            this.conservativeRasterInfo = VkPipelineRasterizationConservativeStateCreateInfoEXT.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT);
+            this.rasterizationInfo = VkPipelineRasterizationStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO);
+            this.multisampleInfo = VkPipelineMultisampleStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO);
+            this.colorBlendInfo = VkPipelineColorBlendStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO);
+            this.dynamicRenderingPipelineInfo = VkPipelineRenderingCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO);
+            this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
+            this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
+            this.createInfo = VkGraphicsPipelineCreateInfo.create(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
             this.dynamicStates = createIntBuffer(18); // HARDCORE!
 
             //
@@ -190,7 +190,7 @@ public class PipelineObj extends BasicObj  {
                 .alphaToOneEnable(false);
 
             //
-            var blendAttachments = VkPipelineColorBlendAttachmentState.calloc(fbLayout.blendStates.size());
+            var blendAttachments = VkPipelineColorBlendAttachmentState.create(fbLayout.blendStates.size());
             for (var I=0;I<fbLayout.blendStates.size();I++) {
                 var blendState = fbLayout.blendStates.get(I);
                 blendAttachments.get(I).set(

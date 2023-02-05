@@ -81,7 +81,7 @@ public class CommandManagerObj extends BasicObj {
             this.allocId = createPointerBuffer(1).put(0, 0L);
             this.offset = createLongBuffer(1).put(0, 0L);
             this.range = range;
-            this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L).size(range), this.allocId, this.offset));
+            this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.create().alignment(16L).size(range), this.allocId, this.offset));
         }
 
         //
@@ -95,7 +95,6 @@ public class CommandManagerObj extends BasicObj {
                 vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
             }
             this.allocId.put(0, 0L);
-            this.createInfo.free();
             this.allocId = null;
             return this;
         }
@@ -106,7 +105,7 @@ public class CommandManagerObj extends BasicObj {
         // specific
         public CommandUtils.SubresourceLayers image = null;
         public VkExtent3D extent3D = null;
-        //public VkOffset3D offset3D = VkOffset3D.calloc().set(0, 0, 0);
+        //public VkOffset3D offset3D = VkOffset3D.create().set(0, 0, 0);
         public int rowLength = 0;
         public int imageHeight = 0;
     }
@@ -286,7 +285,7 @@ public class CommandManagerObj extends BasicObj {
             this.queryPool = new long[]{0L};
 
             //
-            VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.calloc();
+            VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.create();
             queryPoolCreateInfo.sType(VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO);
             queryPoolCreateInfo.queryType(VK_QUERY_TYPE_TIMESTAMP);
             queryPoolCreateInfo.queryCount(2);
@@ -466,7 +465,7 @@ public class CommandManagerObj extends BasicObj {
                         imageHeight = imageInfo.imageHeight;
                     }}, imageInfo.image, imageInfo.extent3D);
 
-                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
+                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1)
                         .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
                         .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
                         .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
@@ -528,9 +527,9 @@ public class CommandManagerObj extends BasicObj {
                         throw new RuntimeException("Command Writer Error (Host To Buffer): Bad Src or Dst Range");
                     };
 
-                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
+                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.create().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
 
-                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1)
+                    /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1)
                         .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
                         .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
                         .srcAccessMask(VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
@@ -576,7 +575,7 @@ public class CommandManagerObj extends BasicObj {
         }});
 
         //
-        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
+        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.create().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
 
         //
         this.handle = new Handle("CommandManager", MemoryUtil.memAddress(createLongBuffer(1)));

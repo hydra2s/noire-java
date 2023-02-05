@@ -36,8 +36,8 @@ public class ImageObj extends BasicObj {
 
         //
         var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
-        this.createInfo = VkImageCreateInfo.calloc()
-            .pNext(VkExternalMemoryImageCreateInfo.calloc()
+        this.createInfo = VkImageCreateInfo.create()
+            .pNext(VkExternalMemoryImageCreateInfo.create()
                     .pNext(0L)
                     .sType(VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO)
                     .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT )
@@ -72,11 +72,11 @@ public class ImageObj extends BasicObj {
         //
         vkGetImageMemoryRequirements2(
                 deviceObj.device,
-                VkImageMemoryRequirementsInfo2.calloc()
+                VkImageMemoryRequirementsInfo2.create()
                         .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2)
                         .pNext(0L)
                         .image(this.handle.get()),
-                this.memoryRequirements2 = VkMemoryRequirements2.calloc()
+                this.memoryRequirements2 = VkMemoryRequirements2.create()
                         .sType(VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2)
                         .pNext(0L)
         );

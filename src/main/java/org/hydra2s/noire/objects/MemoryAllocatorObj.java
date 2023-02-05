@@ -82,16 +82,16 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             vkCheckStatus(vkAllocateMemory(deviceObj.device, this.allocInfo =
-                VkMemoryAllocateInfo.calloc()
+                VkMemoryAllocateInfo.create()
                     .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO)
                     .memoryTypeIndex(memoryTypeIndex)
                     .allocationSize(cInfo.memoryRequirements.size())
-                    .pNext(VkMemoryAllocateFlagsInfo.calloc()
+                    .pNext(VkMemoryAllocateFlagsInfo.create()
                         .sType(VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO)
                         .flags(cInfo.buffer != null ? VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR : 0)
-                        .pNext(VkMemoryDedicatedAllocateInfo.calloc()
-                            .pNext(VkExportMemoryAllocateInfo.calloc()
-                                .pNext(VkMemoryPriorityAllocateInfoEXT.calloc()
+                        .pNext(VkMemoryDedicatedAllocateInfo.create()
+                            .pNext(VkExportMemoryAllocateInfo.create()
+                                .pNext(VkMemoryPriorityAllocateInfoEXT.create()
                                     .sType(VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT)
                                     .priority(1.F)
                                     .address())
@@ -101,7 +101,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                         .address()), null, (this.handle = new Handle("DeviceMemory")).ptr()));
 
             // TODO: Linux support
-            //vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
+            //vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
 
             //
             deviceObj.handleMap.put$(this.handle, this);
@@ -132,7 +132,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public DeviceMemoryObj flushMapped(long size, long offset) {
-            vkCheckStatus(vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+            vkCheckStatus(vkFlushMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.create()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
                 .memory(this.handle.get())
@@ -142,7 +142,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         public DeviceMemoryObj invalidateMapped(long size, long offset) {
-            vkCheckStatus(vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.calloc()
+            vkCheckStatus(vkInvalidateMappedMemoryRanges(deviceObj.device, VkMappedMemoryRange.create()
                 .sType(VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE)
                 .offset(offset)
                 .memory(this.handle.get())

@@ -313,16 +313,16 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.logicOp = new LogicOpState(original.logicOp);
             this.depthBias = new DepthBias(original.depthBias);
             this.depthState = new DepthState(original.depthState);
-            this.attachmentInfos = VkRenderingAttachmentInfo.calloc(original.attachmentInfos.remaining());
+            this.attachmentInfos = VkRenderingAttachmentInfo.create(original.attachmentInfos.remaining());
             for (var I=0;I<original.attachmentInfos.remaining();I++) {
                 this.attachmentInfos.put(I, original.attachmentInfos.get(I));
             }
             this.depthStencilFormat = original.depthStencilFormat;
-            this.depthStencilAttachmentInfo = VkRenderingAttachmentInfo.calloc().set(original.depthStencilAttachmentInfo);
+            this.depthStencilAttachmentInfo = VkRenderingAttachmentInfo.create().set(original.depthStencilAttachmentInfo);
 
             //
-            if (original.scissor != null) this.scissor = VkRect2D.calloc().set(original.scissor);
-            if (original.viewport != null) this.viewport = VkViewport.calloc().set(original.viewport);
+            if (original.scissor != null) this.scissor = VkRect2D.create().set(original.scissor);
+            if (original.viewport != null) this.viewport = VkViewport.create().set(original.viewport);
 
         }
 

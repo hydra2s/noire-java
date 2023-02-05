@@ -59,7 +59,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             }});
 
             //
-            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
+            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.create().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
         }
 
         //
@@ -84,7 +84,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         //
         public VkDescriptorBufferInfo getBufferRange() {
-            return VkDescriptorBufferInfo.calloc().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
+            return VkDescriptorBufferInfo.create().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
         }
     }
 
@@ -167,7 +167,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             super(base, cInfo);
 
             //
-            this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
+            this.allocCreateInfo = VmaVirtualAllocationCreateInfo.create().alignment(16L);
             this.allocId = createPointerBuffer(1).put(0, 0L);
             this.bufferOffset = createLongBuffer(1).put(0, 0L);
             this.bufferSize = 0;
@@ -201,7 +201,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 System.out.println("Bad Buffer Size of Virtual Mutable Buffer!");
                 throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!");
             };
-            return VkDescriptorBufferInfo.calloc().set(this.heap.getBufferRange().buffer(), this.bufferOffset.get(0), this.bufferSize);
+            return VkDescriptorBufferInfo.create().set(this.heap.getBufferRange().buffer(), this.bufferOffset.get(0), this.bufferSize);
         }
 
         //
@@ -323,7 +323,6 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
             this.allocId.put(0, 0L); this.allocId = null;
             this.bufferOffset.put(0, 0L); this.bufferOffset = null;
-            this.allocCreateInfo.free();
 
             this.bufferSize = 0L;
             this.blockSize = 0L;
