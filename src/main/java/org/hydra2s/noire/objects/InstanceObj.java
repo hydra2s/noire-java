@@ -16,6 +16,7 @@ import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 
@@ -86,7 +87,7 @@ public class InstanceObj extends BasicObj {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         // Layers
-        this.layers = PointerBuffer.allocateDirect(2);
+        this.layers = memAllocPointer(2);
         this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_validation")));
         this.layers.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_synchronization2")));
 
@@ -97,7 +98,7 @@ public class InstanceObj extends BasicObj {
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
-        this.extensions = PointerBuffer.allocateDirect(this.glfwExt.limit() + 1);
+        this.extensions = memAllocPointer(this.glfwExt.limit() + 1);
         this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_get_surface_capabilities2")));
         //this.extensions.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_debug_utils")));
         for (int i=0;i<this.glfwExt.limit();i++) {
@@ -212,7 +213,7 @@ public class InstanceObj extends BasicObj {
     public ArrayList<PhysicalDeviceObj> enumeratePhysicalDevicesObj() {
         if (this.physicalDeviceAmount == null || this.physicalDeviceAmount.get(0) <= 0) {
             VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount = memAllocInt(1), null);
-            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = PointerBuffer.allocateDirect(1));
+            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = memAllocPointer(1));
 
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
             var Ps = this.physicalDeviceAmount.remaining();

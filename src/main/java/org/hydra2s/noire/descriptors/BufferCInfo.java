@@ -15,6 +15,6 @@ public class BufferCInfo extends BasicCInfo {
     public MemoryAllocationCInfo memoryAllocationInfo = null;
 
     public BufferCInfo() {
-        this.buffer = memAllocPointer(1).put(0, 0);
+        this.buffer = null;//memAllocPointer(1).put(0, 0);
     }
 }

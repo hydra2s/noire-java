@@ -117,6 +117,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
             this.bindings = new HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>(maxBindings);
             this.bindingsMapped = memSlice(virtualVertexArrayHeap.hostPayload, (int) (this.bufferOffset = this.DSC_ID*vertexArrayStride), vertexArrayStride);//virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
             this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
+            memSet(this.bindingsMapped, 0);
         }
 
         //
@@ -136,6 +137,7 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
         //
         public VirtualVertexArrayObj writeData() {
+            memSet(this.bindingsMapped, 0);
             var bindingOffset = 0L;
             var keySet = bindings.keySet().stream().toList();
             IntStream.range(0, bindings.size()).forEach((I)->{
@@ -179,9 +181,9 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         // oh my jesus...
         public VirtualVertexArrayObj clear() {
             this.bindings.clear();
-            for (int i=0;i<8;i++) {
-                this.bindings.put(i, new VirtualVertexArrayHeapCInfo.VertexBinding());
-            }
+            //for (int i=0;i<8;i++) {
+                //this.bindings.put(i, new VirtualVertexArrayHeapCInfo.VertexBinding());
+            //}
             return this;
         }
 

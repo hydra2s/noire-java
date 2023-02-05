@@ -22,16 +22,6 @@ public class ImageSetCInfo extends BasicCInfo  {
     public ArrayList<Integer> layerCounts = new ArrayList<Integer>();
     public ArrayList<VkExtent3D> extents = new ArrayList<VkExtent3D>();
 
-    //
-    public VkImageMemoryBarrier2 attachmentBarrier = VkImageMemoryBarrier2.calloc()
-        .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-        .srcStageMask(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
-        .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-        .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-        .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-        .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-        .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-
     public static class DepthBias {
         //
         public boolean enabled = false;

@@ -52,8 +52,8 @@ public class CommandManagerObj extends BasicObj {
     public static class VirtualAllocation {
         public long virtualBlock = 0L;
         public long range = 0L;
-        public PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
-        public LongBuffer offset = memAllocLong(1).put(0, 0L);
+        public PointerBuffer allocId = null;//memAllocPointer(1).put(0, 0L);
+        public LongBuffer offset = null;//memAllocLong(1).put(0, 0L);
         protected VmaVirtualAllocationCreateInfo createInfo = null;
         protected int status = -2;
 
@@ -95,6 +95,7 @@ public class CommandManagerObj extends BasicObj {
                 vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
             }
             this.allocId.put(0, 0L);
+            this.allocId = null;
             return this;
         }
     }
@@ -332,9 +333,9 @@ public class CommandManagerObj extends BasicObj {
 
             //
             Callable<Integer> tempOp = ()-> {
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), data.remaining()));
+                allocation_.set(new VirtualAllocation(manager.virtualBlock.get(0), data.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
-                this.allocations.add(allocation);
+                allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                 } else {
@@ -419,9 +420,9 @@ public class CommandManagerObj extends BasicObj {
 
             //
             Callable<Integer> tempOp = ()-> {
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), payloadBackup.remaining()));
+                allocation_.set(new VirtualAllocation(manager.virtualBlock.get(0), payloadBackup.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
-                this.allocations.add(allocation);
+                allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
@@ -489,9 +490,9 @@ public class CommandManagerObj extends BasicObj {
             var payloadBackup = (directly || !lazy) ? data : memAlloc(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
 
             Callable<Integer> tempOp = ()-> {
-                allocation_.set(new VirtualAllocation(this.manager.virtualBlock.get(0), payloadBackup.remaining()));
+                allocation_.set(new VirtualAllocation(manager.virtualBlock.get(0), payloadBackup.remaining()));
                 var allocation = allocation_.get(); var status = allocation.getStatus();
-                this.allocations.add(allocation);
+                allocations.add(allocation);
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(payloadBackup.remaining(), allocOffset));

@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import com.lodborg.intervaltree.IntervalTree;
 import org.hydra2s.noire.descriptors.BasicCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo;
 import org.hydra2s.noire.descriptors.DeviceCInfo.QueueFamilyCInfo;
@@ -77,7 +78,7 @@ public class DeviceObj extends BasicObj {
         public ArrayList<VkSemaphoreSubmitInfo> signalSemaphoreSubmitInfo = null;
 
         //
-        public int[] whatQueueGroupWillWait = {-1};
+        public int[] whatQueueGroupWillWait = {};
         public long whatWaitBySemaphore = VK_PIPELINE_STAGE_2_NONE;
         public LongBuffer fence = memAllocLong(1).put(0, 0L);
 
@@ -105,7 +106,7 @@ public class DeviceObj extends BasicObj {
     };
 
     //
-    public CombinedMap<Integer, QueueFamily> queueFamilies = new CombinedMap<Integer, QueueFamily>(16);
+    public UtilsCInfo.CombinedMap<Integer, QueueFamily> queueFamilies = new UtilsCInfo.CombinedMap<Integer, QueueFamily>(16);
     public ArrayList<DeviceCInfo.QueueGroup> queueGroups = null;
 
 
@@ -174,7 +175,7 @@ public class DeviceObj extends BasicObj {
         }).toList());
 
         // Extensions
-        this.extensions = PointerBuffer.allocateDirect(deviceExtensions.size());
+        this.extensions = memAllocPointer(deviceExtensions.size());
         var Es = this.extensions.remaining();
         for (int I = 0; I < Es; I++) {
             this.extensions.put(I, memUTF8(deviceExtensions.get(I)));
@@ -250,6 +251,9 @@ public class DeviceObj extends BasicObj {
                 .ppEnabledLayerNames(this.layers)
                 , null, (this.handle = new Handle("Device")).ptr()));
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
+        handleMap = new UtilsCInfo.CombinedMap<Handle, BasicObj>();
+        rootMap = new UtilsCInfo.CombinedMap<Long, Long>();
+        addressMap = new IntervalTree<>();
 
         //
         this.device = new VkDevice(this.handle.get(), physicalDeviceObj.physicalDevice, this.deviceInfo);
@@ -303,7 +307,7 @@ public class DeviceObj extends BasicObj {
 
     // TODO: pre-compute queues in families
     private VkQueue getQueue(int queueFamilyIndex, int queueIndex) {
-        var queue = PointerBuffer.allocateDirect(1);
+        var queue = memAllocPointer(1);
         VK10.vkGetDeviceQueue(this.device, queueFamilyIndex, queueIndex, queue);
         return new VkQueue(queue.get(0), this.device);
     }
@@ -345,7 +349,7 @@ public class DeviceObj extends BasicObj {
 
     // use it when a polling
      public boolean doPolling() {
-        this.whenDone = new ArrayList(this.whenDone.stream().filter((F)->{ return F.apply(null) == VK_NOT_READY; }).toList());
+        this.whenDone = new ArrayList<>(this.whenDone.stream().filter((F)->{ return F.apply(null) == VK_NOT_READY; }).toList());
         return this.whenDone.isEmpty();
     }
 

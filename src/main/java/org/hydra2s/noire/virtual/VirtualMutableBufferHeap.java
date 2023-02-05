@@ -34,8 +34,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     // TODO: make as an OBJ
     public static class VirtualMemoryHeap extends VirtualGLObj {
         public VirtualMutableBufferHeap bound = null;
-        public PointerBuffer virtualBlock = memAllocPointer(1).put(0, 0L);
-        public VmaVirtualBlockCreateInfo vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT);
+        public PointerBuffer virtualBlock = null;//memAllocPointer(1).put(0, 0L);
+        public VmaVirtualBlockCreateInfo vbInfo = null;
         public BufferObj bufferHeap = null;
 
         //
@@ -58,7 +58,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             }});
 
             //
-            vkCheckStatus(vmaCreateVirtualBlock(vbInfo.size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
+            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
         }
 
         //
@@ -143,8 +143,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     // TODO: support for TRIM and trimming...
     public static class VirtualMutableBufferObj extends VirtualGLObj {
         protected VirtualMemoryHeap heap = null;
-        protected PointerBuffer allocId = memAllocPointer(1).put(0, 0L);
-        protected LongBuffer bufferOffset = memAllocLong(1).put(0, 0L);
+        protected PointerBuffer allocId = null;//memAllocPointer(1).put(0, 0L);
+        protected LongBuffer bufferOffset = null;//memAllocLong(1).put(0, 0L);
         protected long bufferSize = 0L;
         protected long blockSize = 0L;
         protected long address = 0L;
@@ -174,10 +174,10 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             this.address = 0;
 
             // TODO: bound with memoryHeap
-            var virtualBufferRegistry = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle)).orElse(null);
 
             //
-            this.bound = virtualBufferRegistry;
+            this.bound = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle)).orElse(null);
+            assert this.bound != null;
             this.heap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
 
             //

@@ -11,6 +11,7 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTConditionalRendering.VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
@@ -30,6 +31,62 @@ import static org.lwjgl.vulkan.VK12.*;
 import static org.lwjgl.vulkan.VK13.*;
 
 public abstract class UtilsCInfo {
+
+    public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
+        //public NativeLRUCache<K, V> cache = null;
+
+        public CombinedMap() {
+            super();
+            //this.cache = new NativeLRUCache<K, V>(capacity);
+        }
+
+        public CombinedMap(int capacity) {
+            super(capacity);
+            //this.cache = new NativeLRUCache<K, V>(capacity);
+        }
+
+        //
+        public void put$(K key, V value) {
+            //cache.put(key, value);
+            super.put(key, Optional.ofNullable(value));
+        }
+
+        /*@Override
+        public Optional<V> get(Object key) {
+            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+        }*/
+
+        @Override
+        public Optional<V> get(Object key) {
+            //return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+        }
+
+        //@Override
+        //public Optional<V> put(K key, Optional<V> value) {
+        //cache.put(key, value.orElse(null));
+        //super.put(key, value);
+        //return value;
+        //}
+
+        @Override
+        public Optional<V> remove(Object key) {
+            //var a = cache.remove((K) key);
+            //var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
+            //return Optional.ofNullable(a.orElse(b.orElse(null)));
+            return Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
+        }
+
+        //@Override
+        //public boolean containsKey(Object key) {
+        //return (cache.containsKey((K) key) || super.containsKey(key));
+        //}
+
+        //@Override
+        //public int size() {
+        //return super.size();
+        //}
+    }
 
     static public int
         VK_FORMAT_COMPATIBILITY_CLASS_NONE_BIT = 0,
@@ -653,9 +710,9 @@ public abstract class UtilsCInfo {
 
     //
     public static class SurfaceCapability extends BasicCInfo  {
-        public IntBuffer surfaceSupport = memAllocInt(1);
-        public IntBuffer presentModeCount = memAllocInt(1);
-        public IntBuffer formatCount = memAllocInt(1);
+        public IntBuffer surfaceSupport = null;//memAllocInt(1);
+        public IntBuffer presentModeCount = null;//memAllocInt(1);
+        public IntBuffer formatCount = null;//memAllocInt(1);
         public IntBuffer presentModes = null;
         public VkSurfaceCapabilities2KHR capabilities2 = null;
         public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;

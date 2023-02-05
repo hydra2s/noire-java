@@ -177,7 +177,7 @@ public class PhysicalDeviceObj extends BasicObj {
         UtilsCInfo.SurfaceCapability capability = new UtilsCInfo.SurfaceCapability();
 
         //
-        org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport);
+        org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport = memAllocInt(1));
         if (capability.surfaceSupport.get(0) != 0) {
             var surfaceInfo = VkPhysicalDeviceSurfaceInfo2KHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR).surface(surface);
 

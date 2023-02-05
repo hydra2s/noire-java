@@ -22,6 +22,6 @@ public class ImageCInfo extends BasicCInfo {
 
     //
     public ImageCInfo() {
-        this.image = memAllocPointer(1).put(0, 0);
+        this.image = null;//memAllocPointer(1).put(0, 0);
     }
 }

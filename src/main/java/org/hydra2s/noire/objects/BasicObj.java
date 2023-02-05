@@ -4,6 +4,7 @@ package org.hydra2s.noire.objects;
 
 import com.lodborg.intervaltree.IntervalTree;
 import org.hydra2s.noire.descriptors.BasicCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
@@ -29,81 +30,29 @@ public class BasicObj {
     public boolean deleted = false;
     public long sharedPtr = 0;
 
-
-    public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
-        //public NativeLRUCache<K, V> cache = null;
-
-        public CombinedMap(int capacity) {
-            super(1024);
-            //this.cache = new NativeLRUCache<K, V>(capacity);
-        }
-
-        //
-        public void put$(K key, V value) {
-            //cache.put(key, value);
-            super.put(key, Optional.ofNullable(value));
-        }
-
-        /*@Override
-        public Optional<V> get(Object key) {
-            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
-        }*/
-
-        @Override
-        public Optional<V> get(Object key) {
-            //return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
-            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
-        }
-
-        //@Override
-        //public Optional<V> put(K key, Optional<V> value) {
-            //cache.put(key, value.orElse(null));
-            //super.put(key, value);
-            //return value;
-        //}
-
-        @Override
-        public Optional<V> remove(Object key) {
-            //var a = cache.remove((K) key);
-            //var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
-            //return Optional.ofNullable(a.orElse(b.orElse(null)));
-            return Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
-        }
-
-        //@Override
-        //public boolean containsKey(Object key) {
-            //return (cache.containsKey((K) key) || super.containsKey(key));
-        //}
-
-        //@Override
-        //public int size() {
-            //return super.size();
-        //}
-    }
-
     //
     public Handle getHandle() {
         return handle;
     }
 
     //
-    public PointerBuffer Win32Handle = memAllocPointer(1).put(0, 0);
-    public IntBuffer FdHandle = memAllocInt(1).put(0, 0);
+    public PointerBuffer Win32Handle = null;//memAllocPointer(1).put(0, 0);
+    public IntBuffer FdHandle = null;//memAllocInt(1).put(0, 0);
 
     //
-    protected Handle base = new Handle("Unknown", 0);
-    protected Handle handle = new Handle("Unknown", 0);
+    protected Handle base = null;//new Handle("Unknown", 0);
+    protected Handle handle = null;//new Handle("Unknown", 0);
     public BasicCInfo cInfo = null;
 
     //
-    public static CombinedMap<Long, BasicObj> globalHandleMap = new CombinedMap<Long, BasicObj>(16);
+    public static UtilsCInfo.CombinedMap<Long, BasicObj> globalHandleMap = new UtilsCInfo.CombinedMap<Long, BasicObj>();
 
     // TODO: make correct hashmap
-    public CombinedMap<Handle, BasicObj> handleMap = new CombinedMap<Handle, BasicObj>(16);
+    public UtilsCInfo.CombinedMap<Handle, BasicObj> handleMap = null;
 
     // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
-    public IntervalTree<Long> addressMap = new IntervalTree<>();
-    public CombinedMap<Long, Long> rootMap = new CombinedMap<Long, Long>(16);
+    public IntervalTree<Long> addressMap = null;
+    public UtilsCInfo.CombinedMap<Long, Long> rootMap = null;
 
     // WARNING! May fail up to null
     public Optional<Long> getHandleByAddress(long deviceAddress) {
@@ -192,7 +141,7 @@ public class BasicObj {
         private int cached = 0;
 
         public Handle(String type) {
-            this.handle = PointerBuffer.allocateDirect(1);
+            this.handle = memAllocPointer(1);
             this.handle.put(0, 0);
             this.type = type;
             this.cached = 0;
@@ -205,7 +154,7 @@ public class BasicObj {
         }
 
         public Handle(String type, long handle) {
-            this.handle = PointerBuffer.allocateDirect(1);
+            this.handle = memAllocPointer(1);
             this.handle.put(0, handle);
             this.type = type;
             this.cached = 0;

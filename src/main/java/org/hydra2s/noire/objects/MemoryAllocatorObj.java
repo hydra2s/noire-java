@@ -2,8 +2,10 @@ package org.hydra2s.noire.objects;
 
 //
 
+import com.lodborg.intervaltree.IntervalTree;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocatorCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
@@ -184,6 +186,9 @@ public class MemoryAllocatorObj extends BasicObj  {
     public MemoryAllocatorObj(Handle base, Handle handle) {
         super(base, handle);
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
+        handleMap = new UtilsCInfo.CombinedMap<Handle, BasicObj>();
+        rootMap = new UtilsCInfo.CombinedMap<Long, Long>();
+        addressMap = new IntervalTree<>();
     }
 
     //

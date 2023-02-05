@@ -24,7 +24,7 @@ public class DeviceCInfo extends BasicCInfo {
         public ArrayList<Integer> commandPoolIndices = null;
 
         //
-        public LongBuffer cmdPool = memAllocLong(10).put(0, 0);
+        public LongBuffer cmdPool = null;//memAllocLong(10).put(0, 0);
         public ArrayList<DeviceObj.CommandPoolInfo> commandPoolInfo = null;
     };
 

@@ -27,7 +27,7 @@ public class MemoryAllocationCInfo extends BasicCInfo {
 
     //
     public MemoryAllocationCInfo() {
-        this.buffer = memAllocPointer(1).put(0, 0);
-        this.image = memAllocPointer(1).put(0, 0);
+        this.buffer = null;//memAllocPointer(1).put(0, 0);
+        this.image = null;//memAllocPointer(1).put(0, 0);
     }
 }
