@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.ImageSetCInfo;
 import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -10,6 +11,7 @@ import java.util.Collections;
 
 import static java.lang.Math.min;
 import static org.lwjgl.BufferUtils.createIntBuffer;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
 import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
@@ -119,248 +121,263 @@ abstract public class CommandUtils {
 
     //
     static public void cmdCopyImageToImage(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, SubresourceLayers dstImage, VkExtent3D extent3D) {
-        //
-        var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(srcImage.imageViewInfo.imageLayout);
+        try ( MemoryStack stack = stackPush() ) {
+            //
+            var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(srcImage.imageViewInfo.imageLayout);
 
-        //
-        var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(dstImage.imageViewInfo.imageLayout);
+            //
+            var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(dstImage.imageViewInfo.imageLayout);
 
-        //
-        var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            //
+            var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-        //
-        var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            //
+            var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(2);
-        imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
-        imageMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
+            //
+            var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(2, stack);
+            imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+            imageMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
 
-        //
-        var preImageMemoryBarrier = VkImageMemoryBarrier2.create(2);
-        preImageMemoryBarrier.get(0).set(preReadMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
-        preImageMemoryBarrier.get(1).set(preWriteMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
+            //
+            var preImageMemoryBarrier = VkImageMemoryBarrier2.calloc(2, stack);
+            preImageMemoryBarrier.get(0).set(preReadMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+            preImageMemoryBarrier.get(1).set(preWriteMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
 
-        //
-        var imageCopyRegion = VkImageCopy2.create(1).sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2).dstSubresource(dstImage.subresource).srcSubresource(srcImage.subresource).srcOffset(srcImage.offset3D).dstOffset(dstImage.offset3D).extent(extent3D);
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
-        vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage.imageViewInfo.image).dstImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).srcImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).srcImage(srcImage.imageViewInfo.image).pRegions(imageCopyRegion));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(imageMemoryBarrier));
+            //
+            var imageCopyRegion = VkImageCopy2.calloc(1, stack).sType(VK_STRUCTURE_TYPE_IMAGE_COPY_2).dstSubresource(dstImage.subresource).srcSubresource(srcImage.subresource).srcOffset(srcImage.offset3D).dstOffset(dstImage.offset3D).extent(extent3D);
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
+            vkCmdCopyImage2(cmdBuf, VkCopyImageInfo2.calloc(stack).sType(VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2).dstImage(dstImage.imageViewInfo.image).dstImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).srcImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).srcImage(srcImage.imageViewInfo.image).pRegions(imageCopyRegion));
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(imageMemoryBarrier));
+        }
     }
 
     //
     static public void cmdCopyImageToBuffer(VkCommandBuffer cmdBuf, SubresourceLayers srcImage, BufferCopyInfo dstBuffer, VkExtent3D extent3D) {
-        //
-        var readMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(srcImage.imageViewInfo.imageLayout);
+        try ( MemoryStack stack = stackPush() ) {
+            //
+            var readMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(srcImage.imageViewInfo.imageLayout);
 
-        //
-        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            //
+            var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
-        var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            //
+            var preReadMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-        //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(1);
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(1);
+            //
+            var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1, stack);
 
-        //
-        imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
-        bufferMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
+            //
+            imageMemoryBarrier.get(0).set(readMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+            bufferMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
 
-        //
-        var preImageMemoryBarrier = VkImageMemoryBarrier2.create(1);
-        preImageMemoryBarrier.get(0).set(preReadMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
+            //
+            var preImageMemoryBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+            preImageMemoryBarrier.get(0).set(preReadMemoryBarrierTemplate).image(srcImage.imageViewInfo.image).subresourceRange(srcImage.getSubresourceRange());
 
-        //
-        var imageBufferCopyRegion = VkBufferImageCopy2.create(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(srcImage.subresource).imageOffset(srcImage.offset3D).imageSubresource(srcImage.subresource).bufferOffset(dstBuffer.offset).bufferRowLength(dstBuffer.rowLength).bufferImageHeight(dstBuffer.imageHeight).imageExtent(extent3D);
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
-        vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).srcImage(srcImage.imageViewInfo.image).dstBuffer(dstBuffer.buffer).pRegions(imageBufferCopyRegion));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+            //
+            var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1, stack).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageSubresource(srcImage.subresource).imageOffset(srcImage.offset3D).imageSubresource(srcImage.subresource).bufferOffset(dstBuffer.offset).bufferRowLength(dstBuffer.rowLength).bufferImageHeight(dstBuffer.imageHeight).imageExtent(extent3D);
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
+            vkCmdCopyImageToBuffer2(cmdBuf, VkCopyImageToBufferInfo2.calloc(stack).sType(VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2).srcImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL).srcImage(srcImage.imageViewInfo.image).dstBuffer(dstBuffer.buffer).pRegions(imageBufferCopyRegion));
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+        }
     }
 
     //
     static public void cmdCopyBufferToImage(VkCommandBuffer cmdBuf, BufferCopyInfo srcBuffer, SubresourceLayers dstImage,VkExtent3D extent3D) {
-        //
-        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+        try ( MemoryStack stack = stackPush() ) {
+            //
+            var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
-        var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(dstImage.imageViewInfo.imageLayout);
+            //
+            var writeMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(dstImage.imageViewInfo.imageLayout);
 
-        //
-        var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            //
+            var preWriteMemoryBarrierTemplate = VkImageMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-        //
-        var imageMemoryBarrier = VkImageMemoryBarrier2.create(1);
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(1);
+            //
+            var imageMemoryBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1, stack);
 
-        //
-        imageMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
-        bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
+            //
+            imageMemoryBarrier.get(0).set(writeMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
+            bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
 
-        //
-        var preImageMemoryBarrier = VkImageMemoryBarrier2.create(1);
-        preImageMemoryBarrier.get(0).set(preWriteMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
+            //
+            var preImageMemoryBarrier = VkImageMemoryBarrier2.calloc(1, stack);
+            preImageMemoryBarrier.get(0).set(preWriteMemoryBarrierTemplate).image(dstImage.imageViewInfo.image).subresourceRange(dstImage.getSubresourceRange());
 
-        //
-        var imageBufferCopyRegion = VkBufferImageCopy2.create(1).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageOffset(dstImage.offset3D).imageSubresource(dstImage.subresource).imageSubresource(dstImage.subresource).bufferOffset(srcBuffer.offset).bufferRowLength(srcBuffer.rowLength).bufferImageHeight(srcBuffer.imageHeight).imageExtent(extent3D);
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
-        vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).dstImage(dstImage.imageViewInfo.image).srcBuffer(srcBuffer.buffer).pRegions(imageBufferCopyRegion));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+            //
+            var imageBufferCopyRegion = VkBufferImageCopy2.calloc(1, stack).sType(VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2).imageOffset(dstImage.offset3D).imageSubresource(dstImage.subresource).imageSubresource(dstImage.subresource).bufferOffset(srcBuffer.offset).bufferRowLength(srcBuffer.rowLength).bufferImageHeight(srcBuffer.imageHeight).imageExtent(extent3D);
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(preImageMemoryBarrier));
+            vkCmdCopyBufferToImage2(cmdBuf, VkCopyBufferToImageInfo2.calloc(stack).sType(VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2).dstImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL).dstImage(dstImage.imageViewInfo.image).srcBuffer(srcBuffer.buffer).pRegions(imageBufferCopyRegion));
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier).pImageMemoryBarriers(imageMemoryBarrier));
+        }
     }
 
     //
     static public void cmdCopyBufferToBuffer(VkCommandBuffer cmdBuf, BufferCopyInfo srcBuffer, BufferCopyInfo dstBuffer) {
-        var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+        try ( MemoryStack stack = stackPush() ) {
+            var readMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
-        var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.create()
-            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
+            //
+            var writeMemoryBarrierTemplate = VkBufferMemoryBarrier2.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
 
-        //
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(2);
-        bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
-        bufferMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
+            //
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(2, stack);
+            ;
+            bufferMemoryBarrier.get(0).set(readMemoryBarrierTemplate).buffer(srcBuffer.buffer).offset(srcBuffer.offset).size(srcBuffer.range);
+            bufferMemoryBarrier.get(1).set(writeMemoryBarrierTemplate).buffer(dstBuffer.buffer).offset(dstBuffer.offset).size(dstBuffer.range);
 
-        //
-        var bufferCopyRegion = VkBufferCopy2.create(1).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(srcBuffer.offset).dstOffset(dstBuffer.offset).size(min(dstBuffer.range, srcBuffer.range));
-        vkCmdCopyBuffer2(cmdBuf, VkCopyBufferInfo2.create().sType(VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2).srcBuffer(srcBuffer.buffer).dstBuffer(dstBuffer.buffer).pRegions(bufferCopyRegion));
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+            //
+            var bufferCopyRegion = VkBufferCopy2.calloc(1, stack).sType(VK_STRUCTURE_TYPE_BUFFER_COPY_2).srcOffset(srcBuffer.offset).dstOffset(dstBuffer.offset).size(min(dstBuffer.range, srcBuffer.range));
+            vkCmdCopyBuffer2(cmdBuf, VkCopyBufferInfo2.calloc(stack).sType(VK_STRUCTURE_TYPE_COPY_BUFFER_INFO_2).srcBuffer(srcBuffer.buffer).dstBuffer(dstBuffer.buffer).pRegions(bufferCopyRegion));
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+        }
     }
 
     // TODO: support for queue families
     public static void cmdTransitionBarrier(VkCommandBuffer cmdBuf, SubresourceRange image) {
-        // get correct access mask by image layouts
-        var dstAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(image.imageViewInfo.imageLayout);
-        var srcAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+        try ( MemoryStack stack = stackPush() ) {
+            // get correct access mask by image layouts
+            var dstAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(image.imageViewInfo.imageLayout);
+            var srcAccessMask = UtilsCInfo.getCorrectAccessMaskByImageLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 
-        // if undefined, use memory mask
-        if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
-        if (srcAccessMask == 0) { srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; };
+            // if undefined, use memory mask
+            if (dstAccessMask == 0) { dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; }
+            ;
+            if (srcAccessMask == 0) { srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT; }
+            ;
 
-        //
-        var srcStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask);
-        var dstStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask);
+            //
+            var srcStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(srcAccessMask);
+            var dstStageMask = UtilsCInfo.getCorrectPipelineStagesByAccessMask(dstAccessMask);
 
-        //
-        if (srcStageMask == 0) { srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; };
-        if (dstStageMask == 0) { dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; };
+            //
+            if (srcStageMask == 0) { srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; }
+            ;
+            if (dstStageMask == 0) { dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT; }
+            ;
 
-        // barrier by image layout
-        // TODO: support for queue families
-        var memoryBarrier = VkImageMemoryBarrier2.create(1)
-            .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-            .srcStageMask(srcStageMask)
-            .srcAccessMask(srcAccessMask)
-            .dstStageMask(dstStageMask)
-            .dstAccessMask(dstAccessMask)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
-            .newLayout(image.imageViewInfo.imageLayout)
-            .subresourceRange(image.subresource)
-            .image(image.imageViewInfo.image);
+            // barrier by image layout
+            // TODO: support for queue families
+            var memoryBarrier = VkImageMemoryBarrier2.calloc(1, stack)
+                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
+                .srcStageMask(srcStageMask)
+                .srcAccessMask(srcAccessMask)
+                .dstStageMask(dstStageMask)
+                .dstAccessMask(dstAccessMask)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .oldLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+                .newLayout(image.imageViewInfo.imageLayout)
+                .subresourceRange(image.subresource)
+                .image(image.imageViewInfo.image);
 
-        //
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
+            //
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pImageMemoryBarriers(memoryBarrier));
+        }
     }
 
     // virtual buffer copying version
@@ -380,20 +397,22 @@ abstract public class CommandUtils {
     public static void cmdSynchronizeFromHost(VkCommandBuffer cmdBuf, VkDescriptorBufferInfo range) {
         // for `map()` or copy operations
         // TODO: support for queue families
-        var bufferMemoryBarrier = VkBufferMemoryBarrier2.create(1)
-            .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
-            .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
-            .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
-            .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-            .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
-            .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-            .buffer(range.buffer())
-            .offset(range.offset())
-            .size(range.range()); // TODO: support partial synchronization
+        try ( MemoryStack stack = stackPush() ) {
+            var bufferMemoryBarrier = VkBufferMemoryBarrier2.calloc(1, stack)
+                .sType(VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2)
+                .srcStageMask(VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT | VK_PIPELINE_STAGE_2_HOST_BIT | VK_PIPELINE_STAGE_2_COPY_BIT)
+                .srcAccessMask(VK_ACCESS_2_TRANSFER_WRITE_BIT | VK_ACCESS_2_HOST_WRITE_BIT)
+                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
+                .dstAccessMask(VK_ACCESS_2_MEMORY_READ_BIT)
+                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+                .buffer(range.buffer())
+                .offset(range.offset())
+                .size(range.range()); // TODO: support partial synchronization
 
-        //
-        vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+            //
+            vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(bufferMemoryBarrier));
+        }
     }
 
     //
@@ -425,7 +444,7 @@ abstract public class CommandUtils {
         //
         vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_COMPUTE, cmdInfo.pipeline);
         vkCmdDispatch(cmdBuf, cmdInfo.dispatch.width(), cmdInfo.dispatch.height(), cmdInfo.dispatch.depth());
-        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1)
+        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.calloc(1, stack)
             .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT)
             .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
@@ -484,117 +503,119 @@ abstract public class CommandUtils {
 
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo, DirectAccessInfo directInfo) {
-        // corrupted
-        if (cmdInfo.multiDraw != null && cmdInfo.multiDraw.remaining() <= 0) { return; };
-
-        //
-        var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo)directInfo.pipelineObj.cInfo).fbLayout;
-        int layerCount = Collections.min(fbLayout.layerCounts);
-
-        //
-        boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-        boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-        boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-
-        //
-        vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.create()
-            .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
-            .pColorAttachments(fbLayout.attachmentInfos)
-            .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
-            .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
-            .viewMask(0x0)
-            .layerCount(layerCount)
-            .renderArea(fbLayout.scissor)
-        );
-
-        //
-        if (cmdInfo.pushConstRaw != null && directInfo.pipelineLayout != 0) {
-            vkCmdPushConstants(cmdBuf, directInfo.pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
-        }
-
-        //
-        if (directInfo.pipelineLayoutObj != null && directInfo.pipelineObj != null) {
-            directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, /*directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet :*/ null);
-        }
-
-        //
-        if (cmdInfo.pipeline != 0) {
-            vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+        try ( MemoryStack stack = stackPush() ) {
+            // corrupted
+            if (cmdInfo.multiDraw != null && cmdInfo.multiDraw.remaining() <= 0) { return; }
 
             //
-            vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
-            vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
-            vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
-            vkCmdSetStencilTestEnable(cmdBuf, false);
-            vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
-            vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
-            vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
-            vkCmdSetScissorWithCount(cmdBuf, VkRect2D.create(1).put(0, fbLayout.scissor));
-            vkCmdSetViewportWithCount(cmdBuf, VkViewport.create(1).put(0, fbLayout.viewport));
+            var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo) directInfo.pipelineObj.cInfo).fbLayout;
+            int layerCount = Collections.min(fbLayout.layerCounts);
 
             //
-            var Bs = fbLayout.blendStates.size();
-            var blendEquation = VkColorBlendEquationEXT.create(Bs);
-            var blendAttachment = createIntBuffer(Bs);
-            var colorMask = createIntBuffer(Bs);
-            for (var I = 0; I < Bs; I++) {
-                blendAttachment.put(I, fbLayout.blendStates.get(I).enabled?1:0);
-                colorMask.put(I, fbLayout.colorMask.get(I).colorMask);
-                blendEquation.get(I).set(
-                    fbLayout.blendStates.get(I).srcRgbFactor,
-                    fbLayout.blendStates.get(I).dstRgbFactor,
-                    fbLayout.blendStates.get(I).blendOp, // TODO: support for RGB and alpha blend op
-                    fbLayout.blendStates.get(I).srcAlphaFactor,
-                    fbLayout.blendStates.get(I).dstAlphaFactor,
-                    fbLayout.blendStates.get(I).blendOp  // TODO: support for RGB and alpha blend op
-                );
+            boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+            boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+
+            //
+            vkCmdBeginRendering(cmdBuf, VkRenderingInfoKHR.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_RENDERING_INFO)
+                .pColorAttachments(fbLayout.attachmentInfos)
+                .pDepthAttachment(hasDepth ? fbLayout.depthStencilAttachmentInfo : null)
+                .pStencilAttachment(hasStencil ? fbLayout.depthStencilAttachmentInfo : null)
+                .viewMask(0x0)
+                .layerCount(layerCount)
+                .renderArea(fbLayout.scissor)
+            );
+
+            //
+            if (cmdInfo.pushConstRaw != null && directInfo.pipelineLayout != 0) {
+                vkCmdPushConstants(cmdBuf, directInfo.pipelineLayout, VK_SHADER_STAGE_ALL, cmdInfo.pushConstByteOffset, cmdInfo.pushConstRaw);
             }
 
-            // not supported by RenderDoc
-            // requires dynamic state 3 or Vulkan API 1.4
-            vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
-            vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
-            vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
-            vkCmdSetVertexInputEXT(cmdBuf, null, null);
-            vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
-            vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
-        }
+            //
+            if (directInfo.pipelineLayoutObj != null && directInfo.pipelineObj != null) {
+                directInfo.pipelineLayoutObj.cmdBindBuffers(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, /*directInfo.pipelineObj != null && directInfo.pipelineObj.uniformDescriptorSet != null ? directInfo.pipelineObj.uniformDescriptorSet :*/ null);
+            }
 
-        if (cmdInfo.multiDraw != null && cmdInfo.pipeline != 0) {
-            // use classic draw if one instance
-            if (cmdInfo.multiDraw.remaining() <= 1) {
-                vkCmdDraw(cmdBuf, cmdInfo.multiDraw.vertexCount(), 1, cmdInfo.multiDraw.firstVertex(), 0);
+            //
+            if (cmdInfo.pipeline != 0) {
+                vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+
+                //
+                vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
+                vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
+                vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
+                vkCmdSetStencilTestEnable(cmdBuf, false);
+                vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
+                vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
+                vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
+                vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1, stack).put(0, fbLayout.scissor));
+                vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1, stack).put(0, fbLayout.viewport));
+
+                //
+                var Bs = fbLayout.blendStates.size();
+                var blendEquation = VkColorBlendEquationEXT.calloc(Bs, stack);
+                var blendAttachment = createIntBuffer(Bs);
+                var colorMask = createIntBuffer(Bs);
+                for (var I = 0; I < Bs; I++) {
+                    blendAttachment.put(I, fbLayout.blendStates.get(I).enabled ? 1 : 0);
+                    colorMask.put(I, fbLayout.colorMask.get(I).colorMask);
+                    blendEquation.get(I).set(
+                        fbLayout.blendStates.get(I).srcRgbFactor,
+                        fbLayout.blendStates.get(I).dstRgbFactor,
+                        fbLayout.blendStates.get(I).blendOp, // TODO: support for RGB and alpha blend op
+                        fbLayout.blendStates.get(I).srcAlphaFactor,
+                        fbLayout.blendStates.get(I).dstAlphaFactor,
+                        fbLayout.blendStates.get(I).blendOp  // TODO: support for RGB and alpha blend op
+                    );
+                }
+
+                // not supported by RenderDoc
+                // requires dynamic state 3 or Vulkan API 1.4
+                vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
+                vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
+                vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
+                vkCmdSetVertexInputEXT(cmdBuf, null, null);
+                vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
+                vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
+            }
+
+            if (cmdInfo.multiDraw != null && cmdInfo.pipeline != 0) {
+                // use classic draw if one instance
+                if (cmdInfo.multiDraw.remaining() <= 1) {
+                    vkCmdDraw(cmdBuf, cmdInfo.multiDraw.vertexCount(), 1, cmdInfo.multiDraw.firstVertex(), 0);
+                } else {
+                    vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
+                }
             } else {
-                vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
-            }
-        } else {
-            var fbClearC = VkClearAttachment.create(fbLayout.formats.length);
-            var Fs = fbLayout.formats.length;
-            for (var I=0;I<Fs;I++) {
-                fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
-                fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).subresource.aspectMask());
-                fbClearC.get(I).colorAttachment(I);
+                var fbClearC = VkClearAttachment.calloc(fbLayout.formats.length, stack);
+                var Fs = fbLayout.formats.length;
+                for (var I = 0; I < Fs; I++) {
+                    fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
+                    fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).subresource.aspectMask());
+                    fbClearC.get(I).colorAttachment(I);
+                }
+
+                if (cmdInfo.clearColor) {
+                    vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.calloc(1, stack).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc(stack).set(fbLayout.scissor)));
+                }
+                if (hasDepthStencil && cmdInfo.clearDepthStencil) {
+                    vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1, stack)
+                        .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
+                        .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).subresource.aspectMask())
+                        .colorAttachment(0), VkClearRect.calloc(1, stack).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc(stack).set(fbLayout.scissor)));
+                }
             }
 
-            if (cmdInfo.clearColor) {
-                vkCmdClearAttachments(cmdBuf, fbClearC, VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
-            }
-            if (hasDepthStencil && cmdInfo.clearDepthStencil) {
-                vkCmdClearAttachments(cmdBuf, VkClearAttachment.create(1)
-                    .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                    .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).subresource.aspectMask())
-                    .colorAttachment(0), VkClearRect.create(1).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.create().set(fbLayout.scissor)));
-            }
-        }
-
-        //
-        vkCmdEndRendering(cmdBuf);
-        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1)
+            //
+            vkCmdEndRendering(cmdBuf);
+        /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc(stack).sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1, stack)
             .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)
             .srcStageMask(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
             .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
             .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
             .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)));*/
+        }
     }
 
 
