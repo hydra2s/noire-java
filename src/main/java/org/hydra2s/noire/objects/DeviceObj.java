@@ -52,17 +52,16 @@ public class DeviceObj extends BasicObj {
     public VkDeviceQueueCreateInfo.Buffer queueFamiliesCInfo = null;
     protected int[] extensionAmount = new int[]{0};
 
-
     //
     public ArrayList<SemaphoreObj> reusableSemaphoreStack = null;
     public long lastSubmit = 0;
 
     //
     public static class QueueInfo {
-        public ArrayList<VkSemaphoreSubmitInfo> waitSemaphoresInfo = null;
-        public ArrayList<SemaphoreObj> waitSemaphores = null;
+        public ArrayList<UtilsCInfo.Pair<SemaphoreObj, VkSemaphoreSubmitInfo>> waitSemaphores = null;
         public ArrayList<SemaphoreObj> querySemaphoreObj = null;
         public int semaphoreId = 0;
+        public VkQueue queue = null;
     };
 
     //
@@ -199,7 +198,6 @@ public class DeviceObj extends BasicObj {
             for (var I=0;I<Qp;I++) {
                 queuePriorities.put(I, cQF.priorities[I]);
                 qf.queueInfos.add(new QueueInfo(){{
-                    waitSemaphoresInfo = new ArrayList<>();
                     waitSemaphores = new ArrayList<>();
                     semaphoreId = 0;
                 }});
@@ -275,6 +273,15 @@ public class DeviceObj extends BasicObj {
             }
         });
 
+        //
+        this.queueFamilies.forEach((QF, QFI)->{
+            for (var I=0;I<QFI.get().queueInfos.size();I++) {
+                var queue = memAllocPointer(1);
+                VK10.vkGetDeviceQueue(this.device, QF, I, queue);
+                QFI.get().queueInfos.get(I).queue = new VkQueue(queue.get(0), this.device);
+            }
+        });
+
     }
 
     //
@@ -312,11 +319,9 @@ public class DeviceObj extends BasicObj {
         return this;
     }
 
-    // TODO: pre-compute queues in families
+    //
     private VkQueue getQueue(int queueFamilyIndex, int queueIndex) {
-        var queue = memAllocPointer(1);
-        VK10.vkGetDeviceQueue(this.device, queueFamilyIndex, queueIndex, queue);
-        return new VkQueue(queue.get(0), this.device);
+        return this.queueFamilies.get(queueFamilyIndex).get().queueInfos.get(queueIndex).queue;
     }
 
     //
@@ -333,6 +338,7 @@ public class DeviceObj extends BasicObj {
         var commandPoolInfo = queueGroup.commandPoolInfo.get(commandPoolIndex);
         commandPoolInfo.cmdBufIndex = 0;
         commandPoolInfo.cmdBufCache.clear();
+        if (commandPoolInfo.cmdBufBlock != null) memFree(commandPoolInfo.cmdBufBlock);
         commandPoolInfo.cmdBufBlock = null;
         var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
 
@@ -358,6 +364,22 @@ public class DeviceObj extends BasicObj {
     // use it when a polling
      public boolean doPolling() {
         this.whenDone = new ArrayList<Function<Integer, Integer>>(this.whenDone.stream().filter((F)->{ return F.apply(null) == VK_NOT_READY; }).toList());
+
+         // get rid of outdated semaphores
+         this.queueFamilies.forEach((QF, QFI)->{
+             QFI.get().queueInfos.forEach((QI)->{
+                 QI.waitSemaphores = new ArrayList<>(QI.waitSemaphores.stream().filter((semaphore)->{
+                     var timeline = semaphore.first.getTimeline();
+                     var prevTimeline = semaphore.second.value();//semaphore.first.prevTimeline;
+                     if (timeline < 0L || timeline == -1L || timeline == 0xffffffffffffffffL) { throw new RuntimeException("Device Lost when tried to get rid of outdated waiting semaphores!"); };
+                     boolean ready = timeline >= prevTimeline;
+                     if (ready) { semaphore.second.free(); };
+                     return !ready;
+                 }).toList());
+             });
+         });
+
+         //
         return this.whenDone.isEmpty();
     }
 
@@ -446,6 +468,7 @@ public class DeviceObj extends BasicObj {
 
     // TODO: fence registry, and correctly wait by fence
      public int waitFence(FenceProcess process, long maxMilliseconds) {
+         if (process == null) { return VK_SUCCESS; };
          var beginTiming = currentTimeMillis();
         while (process.status == VK_NOT_READY && (currentTimeMillis() - beginTiming) < maxMilliseconds) {
             this.doPolling();
@@ -512,7 +535,7 @@ public class DeviceObj extends BasicObj {
          queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)+1);
 
          //
-         final int maxSemaphoreQueue = 64;
+         final int maxSemaphoreQueue = 8;
          if (queueInfo.querySemaphoreObj == null) {
              queueInfo.querySemaphoreObj = new ArrayList<>();
              for (var I=0;I<maxSemaphoreQueue;I++) {
@@ -550,8 +573,7 @@ public class DeviceObj extends BasicObj {
                  var whatQueueGroup = queueGroups.get(W);
                  whatQueueGroup.queueIndices.forEach((idx)->{
                      var whatQueueInfo = queueFamilies.get(whatQueueGroup.queueFamilyIndex).get().queueInfos.get(idx);
-                     whatQueueInfo.waitSemaphores.add(directionalSemaphore);
-                     whatQueueInfo.waitSemaphoresInfo.add(directionalSubmitInfo);
+                     whatQueueInfo.waitSemaphores.add(new UtilsCInfo.Pair<>(directionalSemaphore, directionalSubmitInfo));
                      //directionalSemaphore.incrementShared(); // don't delete too early
                  });
              }
@@ -568,13 +590,12 @@ public class DeviceObj extends BasicObj {
         }
 
         //
-        waitSemaphoreSubmitInfo.addAll(queueInfo.waitSemaphoresInfo);
+         queueInfo.waitSemaphores.forEach((pair)->{ waitSemaphoreSubmitInfo.add(pair.second); pair.second.free(); }); queueInfo.waitSemaphores.clear();
         var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size());
         for (var I=0;I<waitSemaphoreSubmitInfo.size();I++) {
             waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
         }
-        queueInfo.waitSemaphoresInfo.clear();
-         queueInfo.waitSemaphores.clear();
+
 
         //
         var cmdInfo = VkCommandBufferSubmitInfo.calloc(1);
