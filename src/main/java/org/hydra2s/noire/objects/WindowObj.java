@@ -9,9 +9,9 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwCreateWindowSurface;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
 
 //
 public class WindowObj extends BasicObj  {
@@ -50,7 +50,7 @@ public class WindowObj extends BasicObj  {
     }
 
     public VkExtent2D getWindowSize() {
-        IntBuffer size = memAllocInt(2);
+        IntBuffer size = createIntBuffer(2);
         glfwGetWindowSize(this.handle.get(), size.slice(0, 1), size.slice(1, 1));
         var extent = VkExtent2D.calloc().width(size.get(0)).height(size.get(1));
         if (this.cInfo != null) { ((WindowCInfo)this.cInfo).size = extent; };

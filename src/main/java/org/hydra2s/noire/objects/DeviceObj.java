@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import static java.lang.System.currentTimeMillis;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
@@ -173,7 +174,7 @@ public class DeviceObj extends BasicObj {
         }).toList());
 
         // Extensions
-        this.extensions = memAllocPointer(deviceExtensions.size());
+        this.extensions = createPointerBuffer(deviceExtensions.size());
         var Es = this.extensions.remaining();
         for (int I = 0; I < Es; I++) {
             this.extensions.put(I, memUTF8(deviceExtensions.get(I)));
@@ -193,7 +194,7 @@ public class DeviceObj extends BasicObj {
             qf.queueInfos = new ArrayList<>();
 
             //
-            var queuePriorities = memAllocFloat(cQF.priorities.length);
+            var queuePriorities = createFloatBuffer(cQF.priorities.length);
             var Qp = queuePriorities.remaining();
             for (var I=0;I<Qp;I++) {
                 queuePriorities.put(I, cQF.priorities[I]);
@@ -276,7 +277,7 @@ public class DeviceObj extends BasicObj {
         //
         this.queueFamilies.forEach((QF, QFI)->{
             for (var I=0;I<QFI.get().queueInfos.size();I++) {
-                var queue = memAllocPointer(1);
+                var queue = createPointerBuffer(1);
                 VK10.vkGetDeviceQueue(this.device, QF, I, queue);
                 QFI.get().queueInfos.get(I).queue = new VkQueue(queue.get(0), this.device);
             }
@@ -292,7 +293,7 @@ public class DeviceObj extends BasicObj {
     //
     public long createShaderModule(ByteBuffer shaderSrc){
         var shaderModuleInfo = VkShaderModuleCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO).pCode(shaderSrc);
-        var shaderModule = memAllocLong(1);
+        var shaderModule = createLongBuffer(1);
         vkCheckStatus(vkCreateShaderModule(device, shaderModuleInfo, null, shaderModule));
         return shaderModule.get(0);
     }
@@ -309,13 +310,12 @@ public class DeviceObj extends BasicObj {
     //
     public DeviceObj present(int queueGroupIndex, long SwapChain, long waitSemaphore, int[] imageIndex) {
         var queueGroup = this.queueGroups.get(queueGroupIndex);
-        var intBuf = memAllocInt(1); intBuf.put(0, imageIndex[0]);
+        var intBuf = createIntBuffer(1); intBuf.put(0, imageIndex[0]);
         vkCheckStatus(vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.calloc()
             .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-            .pWaitSemaphores(waitSemaphore != 0 ? memAllocLong(1).put(0, waitSemaphore) : null)
-            .pSwapchains(memAllocLong(1).put(0, SwapChain)).swapchainCount(1)
+            .pWaitSemaphores(waitSemaphore != 0 ? createLongBuffer(1).put(0, waitSemaphore) : null)
+            .pSwapchains(createLongBuffer(1).put(0, SwapChain)).swapchainCount(1)
             .pImageIndices(intBuf)));
-        memFree(intBuf);
         return this;
     }
 
@@ -338,7 +338,6 @@ public class DeviceObj extends BasicObj {
         var commandPoolInfo = queueGroup.commandPoolInfo.get(commandPoolIndex);
         commandPoolInfo.cmdBufIndex = 0;
         commandPoolInfo.cmdBufCache.clear();
-        if (commandPoolInfo.cmdBufBlock != null) memFree(commandPoolInfo.cmdBufBlock);
         commandPoolInfo.cmdBufBlock = null;
         var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
 
@@ -490,8 +489,7 @@ public class DeviceObj extends BasicObj {
             if (commandPoolInfo.cmdBufCache == null) {
                 commandPoolInfo.cmdBufCache = new ArrayList<>(maxCommandBufferCache);
             }
-            if (commandPoolInfo.cmdBufBlock != null) { memFree(commandPoolInfo.cmdBufBlock); };
-            var commandBufferBlock = memAllocPointer(maxCommandBufferCache);
+            var commandBufferBlock = createPointerBuffer(maxCommandBufferCache);
             //commandPoolInfo.cmdBufferBlocks.add(commandBufferBlock);
             commandPoolInfo.cmdBufBlock = commandBufferBlock;
             vkAllocateCommandBuffers(this.device, VkCommandBufferAllocateInfo.calloc()

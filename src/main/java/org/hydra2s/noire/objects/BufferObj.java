@@ -8,7 +8,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
@@ -39,7 +39,7 @@ public class BufferObj extends BasicObj {
         super(base, cInfo);
 
         //
-        var pQueueFamilyIndices = memAllocInt(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
+        var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
         this.createInfo = VkBufferCreateInfo.calloc()
             .pNext(VkExternalMemoryBufferCreateInfo.calloc()
                     .pNext(0L)

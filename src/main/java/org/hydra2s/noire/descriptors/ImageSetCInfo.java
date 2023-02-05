@@ -8,7 +8,6 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Objects;
 
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK13.*;
 

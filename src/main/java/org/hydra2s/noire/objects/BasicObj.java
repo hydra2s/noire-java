@@ -10,6 +10,7 @@ import org.lwjgl.PointerBuffer;
 import java.nio.IntBuffer;
 import java.util.Optional;
 
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
@@ -35,7 +36,7 @@ public class BasicObj {
 
     //
     public PointerBuffer Win32Handle = null;//memAllocPointer(1).put(0, 0);
-    public int[] FdHandle = {};//memAllocInt(1).put(0, 0);
+    public int[] FdHandle = {};//createIntBuffer(1).put(0, 0);
 
     //
     protected PointerBuffer ptr = null;
@@ -64,7 +65,7 @@ public class BasicObj {
     public BasicObj(Handle base, Handle handle) {
         this.base = base;
         this.handle = handle;
-        this.ptr = memAllocPointer(1);
+        this.ptr = createPointerBuffer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
@@ -99,7 +100,7 @@ public class BasicObj {
     public BasicObj(Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
-        this.ptr = memAllocPointer(1);//memAllocPointer(1);
+        this.ptr = createPointerBuffer(1);//memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {

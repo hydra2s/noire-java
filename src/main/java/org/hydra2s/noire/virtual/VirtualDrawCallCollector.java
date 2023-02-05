@@ -14,6 +14,8 @@ import org.lwjgl.vulkan.*;
 import java.util.ArrayList;
 
 import static java.lang.Math.min;
+import static org.lwjgl.BufferUtils.createFloatBuffer;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
@@ -66,7 +68,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualDrawCallCollector", memAddress(memAllocLong(1)));
+        this.handle = new Handle("VirtualDrawCallCollector", memAddress(createLongBuffer(1)));
         this.memoryAllocatorObj = (MemoryAllocatorObj) globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
         deviceObj.handleMap.put$(this.handle, this);
 
@@ -120,7 +122,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
             this.instanceInfo.mask(0xFF).accelerationStructureReference(bottomLvl.getDeviceAddress()).flags(0);
 
             // will be changed into camera position shifting
-            this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(memAllocFloat(12).put(0, new float[]{
+            this.instanceInfo.transform(VkTransformMatrixKHR.calloc().matrix(createFloatBuffer(12).put(0, new float[]{
                 1.0F, 0.0F, 0.0F, 0.0F,
                 0.0F, 1.0F, 0.0F, 0.0F,
                 0.0F, 0.0F, 1.0F, 0.0F

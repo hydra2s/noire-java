@@ -8,7 +8,7 @@ import org.lwjgl.vulkan.VkImageMemoryRequirementsInfo2;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
+import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
@@ -35,7 +35,7 @@ public class ImageObj extends BasicObj {
         var arrayLayers = Math.max(cInfo.arrayLayers, 1);
 
         //
-        var pQueueFamilyIndices = memAllocInt(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
+        var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
         this.createInfo = VkImageCreateInfo.calloc()
             .pNext(VkExternalMemoryImageCreateInfo.calloc()
                     .pNext(0L)

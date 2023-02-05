@@ -709,9 +709,9 @@ public abstract class UtilsCInfo {
 
     //
     public static class SurfaceCapability extends BasicCInfo  {
-        public int[] surfaceSupport = null;//memAllocInt(1);
-        public int[] presentModeCount = null;//memAllocInt(1);
-        public int[] formatCount = null;//memAllocInt(1);
+        public int[] surfaceSupport = null;//createIntBuffer(1);
+        public int[] presentModeCount = null;//createIntBuffer(1);
+        public int[] formatCount = null;//createIntBuffer(1);
         public int[] presentModes = null;
         public VkSurfaceCapabilities2KHR capabilities2 = null;
         public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;

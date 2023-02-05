@@ -14,6 +14,8 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createIntBuffer;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.*;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
@@ -30,11 +32,11 @@ public class PipelineLayoutObj extends BasicObj  {
     public static class MutableTypeInfo {
         public VkMutableDescriptorTypeCreateInfoEXT createInfo = null;
         public VkMutableDescriptorTypeListEXT.Buffer descriptorTypeLists = null;
-        public IntBuffer descriptorTypes = memAllocInt(1).put(0, 0);
+        public IntBuffer descriptorTypes = createIntBuffer(1).put(0, 0);
 
         //
         public MutableTypeInfo() {
-            this.descriptorTypes = memAllocInt(2).put(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE).put(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+            this.descriptorTypes = createIntBuffer(2).put(0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE).put(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
             this.descriptorTypeLists = VkMutableDescriptorTypeListEXT.calloc(1).pDescriptorTypes(this.descriptorTypes);
             this.createInfo = VkMutableDescriptorTypeCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT).pMutableDescriptorTypeLists(this.descriptorTypeLists);
         }
@@ -51,12 +53,12 @@ public class PipelineLayoutObj extends BasicObj  {
         public VkDescriptorSetLayoutCreateInfo createInfo = null;
         public VkDescriptorSetLayoutBindingFlagsCreateInfoEXT createInfoBindingFlags = null;
         public VkDescriptorSetLayoutBinding.Buffer bindings = null;
-        public IntBuffer bindingFlags = memAllocInt(1).put(0, 0);
+        public IntBuffer bindingFlags = createIntBuffer(1).put(0, 0);
 
         //
         public DescriptorSetLayoutInfo(int descriptorType, int bindingCount) {
             this.bindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(descriptorType).descriptorCount(bindingCount);
-            this.bindingFlags = memAllocInt(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
+            this.bindingFlags = createIntBuffer(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
             this.createInfoBindingFlags = VkDescriptorSetLayoutBindingFlagsCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO).pBindingFlags(this.bindingFlags);
             this.createInfo = VkDescriptorSetLayoutCreateInfo.calloc().flags((useLegacyBindingSystem?VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT:VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT)).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO).pNext(this.createInfoBindingFlags.address()).pBindings(this.bindings);
         }
@@ -65,7 +67,7 @@ public class PipelineLayoutObj extends BasicObj  {
         public DescriptorSetLayoutInfo(int descriptorType, int bindingCount, MutableTypeInfo mutableType) {
             this.mutableType = mutableType;
             this.bindings = VkDescriptorSetLayoutBinding.calloc(1).binding(0).stageFlags(VK_SHADER_STAGE_ALL).descriptorType(descriptorType).descriptorCount(bindingCount);
-            this.bindingFlags = memAllocInt(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
+            this.bindingFlags = createIntBuffer(1).put(0, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT);
             this.createInfoBindingFlags = VkDescriptorSetLayoutBindingFlagsCreateInfoEXT.calloc().sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO).pNext(mutableType.createInfo.address()).pBindingFlags(this.bindingFlags);
             this.createInfo = VkDescriptorSetLayoutCreateInfo.calloc().flags(useLegacyBindingSystem?VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT:VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO).pNext(this.createInfoBindingFlags.address()).pBindings(this.bindings);
         }
@@ -218,7 +220,7 @@ public class PipelineLayoutObj extends BasicObj  {
 
         //
         var dS = this.descriptorSetLayoutsInfo.size();
-        LongBuffer pLayouts = memAllocLong(dS);
+        LongBuffer pLayouts = createLongBuffer(dS);
         for (var I=0;I<dS;I++) {
             long[] layout = new long[]{0L};
             this.descriptorSetLayoutsInfo.get(I).createDescriptorSetLayout(deviceObj.device, layout);
@@ -253,8 +255,8 @@ public class PipelineLayoutObj extends BasicObj  {
             this.uniformDescriptorSet[0] = this.uniformDescriptorBuffer.getDeviceAddress();
 
             //
-            this.offsets = new long[3];//memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
-            this.sizes = new long[3];//memAllocLong(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
+            this.offsets = new long[3];//createLongBuffer(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
+            this.sizes = new long[3];//createLongBuffer(dS).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
 
             //
             for (var I = 0; I < dS; I++) {
@@ -296,9 +298,6 @@ public class PipelineLayoutObj extends BasicObj  {
             //
             this.uniformDescriptorSet[0] = this.descriptorSets[2];
         }
-
-        //
-        memFree(pLayouts);
 
         //
         this.writeDescriptors();
@@ -379,7 +378,7 @@ public class PipelineLayoutObj extends BasicObj  {
 
     //
     /*public PipelineLayoutObj deallocateDescriptorSets(ArrayList<Long> descriptorSets) {
-        LongBuffer descriptorSetsBuf = memAllocLong(descriptorSets.size());
+        LongBuffer descriptorSetsBuf = createLongBuffer(descriptorSets.size());
         for (var I=0;I<descriptorSets.size();I++) {
             descriptorSetsBuf.put(I, descriptorSets.get(I));
         }
@@ -512,8 +511,8 @@ public class PipelineLayoutObj extends BasicObj  {
             //}
 
             //
-            //IntBuffer bufferIndices = memAllocInt(3).put(0, 0).put(1, 1).put(2, 2);//.put(3, uniformBufferAddress != null ? 3 : 2);
-            //LongBuffer offsets = memAllocLong(3).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
+            //IntBuffer bufferIndices = createIntBuffer(3).put(0, 0).put(1, 1).put(2, 2);//.put(3, uniformBufferAddress != null ? 3 : 2);
+            //LongBuffer offsets = createLongBuffer(3).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
             int[] bufferIndices = new int[]{0, 1, 2};
             long[] offsets = new long[]{0L, 0L, 0L};
 

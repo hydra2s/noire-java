@@ -7,10 +7,8 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 
 // currently, is a part of device memory object
 // TODO: planned indirect copy support (for NVIDIA)
@@ -34,7 +32,7 @@ public class MemoryAllocationObj extends BasicObj {
         //deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
-        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 
@@ -46,7 +44,7 @@ public class MemoryAllocationObj extends BasicObj {
         //deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
-        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 

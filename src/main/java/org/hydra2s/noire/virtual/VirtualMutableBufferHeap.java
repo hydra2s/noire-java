@@ -19,6 +19,8 @@ import java.util.ArrayList;
 
 import static java.lang.Math.abs;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createLongBuffer;
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
@@ -57,7 +59,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             }});
 
             //
-            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
+            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
         }
 
         //
@@ -99,7 +101,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple heaps, one registry
@@ -143,7 +145,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public static class VirtualMutableBufferObj extends VirtualGLObj {
         protected VirtualMemoryHeap heap = null;
         protected PointerBuffer allocId = null;//memAllocPointer(1).put(0, 0L);
-        protected LongBuffer bufferOffset = null;//memAllocLong(1).put(0, 0L);
+        protected LongBuffer bufferOffset = null;//createLongBuffer(1).put(0, 0L);
         protected long bufferSize = 0L;
         protected long blockSize = 0L;
         protected long address = 0L;
@@ -166,8 +168,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
             //
             this.allocCreateInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L);
-            this.allocId = memAllocPointer(1).put(0, 0L);
-            this.bufferOffset = memAllocLong(1).put(0, 0L);
+            this.allocId = createPointerBuffer(1).put(0, 0L);
+            this.bufferOffset = createLongBuffer(1).put(0, 0L);
             this.bufferSize = 0;
             this.blockSize = 0;
             this.address = 0;
@@ -319,8 +321,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 this.heap.toFree.add(oldAlloc);
             }
 
-            this.allocId.put(0, 0L); memFree(this.allocId); this.allocId = null;
-            this.bufferOffset.put(0, 0L); memFree(this.bufferOffset); this.bufferOffset = null;
+            this.allocId.put(0, 0L); this.allocId = null;
+            this.bufferOffset.put(0, 0L); this.bufferOffset = null;
             this.allocCreateInfo.free();
 
             this.bufferSize = 0L;

@@ -7,12 +7,14 @@ import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
 import java.util.stream.IntStream;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
 import static org.lwjgl.vulkan.KHRSynchronization2.*;
@@ -201,7 +203,7 @@ public class AccelerationStructureObj extends BasicObj {
         this.geometryBuildInfo.srcAccelerationStructure(mode == VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR ? this.handle.get() : 0);
 
         //
-        vkCmdBuildAccelerationStructuresKHR(cmdBuf, this.geometryBuildInfo, memAllocPointer(1).put(0, buildRanges.address()));
+        vkCmdBuildAccelerationStructuresKHR(cmdBuf, this.geometryBuildInfo, createPointerBuffer(1).put(0, buildRanges.address()));
         vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pBufferMemoryBarriers(VkBufferMemoryBarrier2.calloc(2)
             .put(0, this.ASStorageBarrier)
             .put(1, this.ASScratchBarrier)

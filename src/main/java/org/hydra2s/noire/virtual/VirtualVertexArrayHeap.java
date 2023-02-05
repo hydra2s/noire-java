@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.stream.IntStream;
 
 import static org.hydra2s.noire.virtual.VirtualVertexArrayHeapCInfo.*;
+import static org.lwjgl.BufferUtils.createByteBuffer;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
@@ -36,11 +38,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
-        this.hostPayload = memAlloc((int) (cInfo.maxVertexArrayCount * vertexArrayStride));
+        this.hostPayload = createByteBuffer((int) (cInfo.maxVertexArrayCount * vertexArrayStride));
         this.bufferHeap = new BufferObj(this.base, new BufferCInfo() {{
             size = cInfo.maxVertexArrayCount * vertexArrayStride;
             usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;

@@ -9,6 +9,8 @@ import java.nio.IntBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createFloatBuffer;
+import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT;
 import static org.lwjgl.vulkan.EXTConservativeRasterization.VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_CONSERVATIVE_STATE_CREATE_INFO_EXT;
@@ -90,7 +92,7 @@ public class PipelineObj extends BasicObj  {
 
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
+                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = createLongBuffer(1).put(0, 0L));
             }*/
         }
     }
@@ -155,7 +157,7 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
             this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             this.createInfo = VkGraphicsPipelineCreateInfo.calloc(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            this.dynamicStates = memAllocInt(18); // HARDCORE!
+            this.dynamicStates = createIntBuffer(18); // HARDCORE!
 
             //
             this.inputAssemblyStateInfo
@@ -207,7 +209,7 @@ public class PipelineObj extends BasicObj  {
             this.colorBlendInfo.logicOpEnable(false)
                 .logicOp(VK_LOGIC_OP_NO_OP)
                 .pAttachments(blendAttachments)
-                .blendConstants(memAllocFloat(4)
+                .blendConstants(createFloatBuffer(4)
                     .put(0, 0.0F)
                     .put(1, 0.0F)
                     .put(2, 0.0F)
@@ -232,7 +234,7 @@ public class PipelineObj extends BasicObj  {
             //this.attachmentFormats.put();
             // TODO: depth only or stencil only support
             // TODO: dynamic depth and stencil state
-            var formats = memAllocInt(fbLayout.formats.length); for (int I=0;I<fbLayout.formats.length;I++) { formats.put(I, fbLayout.formats[I]); };
+            var formats = createIntBuffer(fbLayout.formats.length); for (int I=0;I<fbLayout.formats.length;I++) { formats.put(I, fbLayout.formats[I]); };
             this.dynamicRenderingPipelineInfo
                 .pNext(this.robustness.address())
                 .pColorAttachmentFormats(formats)
@@ -303,7 +305,7 @@ public class PipelineObj extends BasicObj  {
 
                 //
                 var $pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = memAllocLong(1).put(0, 0L));
+                $pipelineLayoutObj.createDescriptorSetForUniformBuffer(this.uniformDescriptorBuffer, this.uniformDescriptorSet = createLongBuffer(1).put(0, 0L));
             }*/
         }
     }

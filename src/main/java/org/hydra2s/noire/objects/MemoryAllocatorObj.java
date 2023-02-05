@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createLongBuffer;
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTMemoryPriority.VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT;
 import static org.lwjgl.vulkan.KHRBufferDeviceAddress.VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
@@ -36,7 +38,7 @@ public class MemoryAllocatorObj extends BasicObj  {
             super(base, handle);
 
             //
-            this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(memAllocLong(1)));
+            this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(createLongBuffer(1)));
             this.allocations = new ArrayList<MemoryAllocationObj>();
 
             deviceObj.handleMap.put$(this.handle, this);
@@ -103,7 +105,7 @@ public class MemoryAllocatorObj extends BasicObj  {
 
             //
             deviceObj.handleMap.put$(this.handle, this);
-            this.mappedPtr = memAllocPointer(1);
+            this.mappedPtr = createPointerBuffer(1);
             this.allocations = new ArrayList<MemoryAllocationObj>();
         }
 
@@ -194,7 +196,7 @@ public class MemoryAllocatorObj extends BasicObj  {
     //
     public MemoryAllocatorObj(Handle base, MemoryAllocatorCInfo cInfo) {
         super(base, cInfo);
-        this.handle = new Handle("MemoryAllocator", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("MemoryAllocator", MemoryUtil.memAddress(createLongBuffer(1)));
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
     };
 

@@ -6,7 +6,7 @@ import org.hydra2s.noire.descriptors.SamplerCInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.vulkan.VK10.vkCreateSampler;
 import static org.lwjgl.vulkan.VK10.vkDestroySampler;
 
@@ -29,7 +29,7 @@ public class SamplerObj extends BasicObj  {
         // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
-            this.DSC_ID = descriptorsObj.samplers.push(memAllocLong(1).put(0, this.handle.get()));
+            this.DSC_ID = descriptorsObj.samplers.push(createLongBuffer(1).put(0, this.handle.get()));
             descriptorsObj.writeDescriptors();
         }
     }

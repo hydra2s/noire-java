@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
 
 //
@@ -98,7 +98,7 @@ public class ImageSetObj extends BasicObj  {
         }
 
         //
-        this.handle = new Handle("ImageSet", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("ImageSet", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 

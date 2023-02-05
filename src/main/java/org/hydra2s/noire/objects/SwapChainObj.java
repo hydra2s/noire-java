@@ -14,8 +14,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+import static org.lwjgl.BufferUtils.createIntBuffer;
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
 import static org.lwjgl.vulkan.VK10.*;
@@ -41,8 +41,8 @@ public class SwapChainObj extends BasicObj  {
     public int[] imageIndex = {};
 
     //
-    public PointerBuffer SemImageWin32Handle = memAllocPointer(1).put(0, 0);
-    public PointerBuffer SemRenderWin32Handle = memAllocPointer(1).put(0, 0);
+    public PointerBuffer SemImageWin32Handle = createPointerBuffer(1).put(0, 0);
+    public PointerBuffer SemRenderWin32Handle = createPointerBuffer(1).put(0, 0);
 
     //
     public SwapChainObj(Handle base, Handle handle) {
@@ -85,7 +85,7 @@ public class SwapChainObj extends BasicObj  {
             }
 
             //
-            var pQueueFamilyIndices = memAllocInt(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
+            var pQueueFamilyIndices = createIntBuffer(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
             this.createInfo = VkSwapchainCreateInfoKHR.calloc()
                     .sType(VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR)
                     .surface(cInfo.surface)
@@ -114,7 +114,7 @@ public class SwapChainObj extends BasicObj  {
             for (var I = 0; I < this.amountOfImagesInSwapchain[0]; I++) {
                 var finalI = I;
                 this.imagesObj.add(new ImageObj(this.base, new ImageCInfo() {{
-                    image = memAllocPointer(1).put(0, images[finalI]);
+                    image = createPointerBuffer(1).put(0, images[finalI]);
                     arrayLayers = createInfo.imageArrayLayers();
                     format = createInfo.imageFormat();
                     mipLevels = 1;

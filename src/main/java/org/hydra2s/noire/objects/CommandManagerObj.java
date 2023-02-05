@@ -27,6 +27,7 @@ import java.util.function.Function;
 import static java.lang.Math.min;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.hydra2s.noire.virtual.VirtualMutableBufferHeap.VirtualMutableBufferObj.roundUp;
+import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -52,7 +53,7 @@ public class CommandManagerObj extends BasicObj {
         public long virtualBlock = 0L;
         public long range = 0L;
         public PointerBuffer allocId = null;//memAllocPointer(1).put(0, 0L);
-        public LongBuffer offset = null;//memAllocLong(1).put(0, 0L);
+        public LongBuffer offset = null;//createLongBuffer(1).put(0, 0L);
         protected VmaVirtualAllocationCreateInfo createInfo = null;
         protected int status = -2;
 
@@ -77,8 +78,8 @@ public class CommandManagerObj extends BasicObj {
 
             //
             this.virtualBlock = virtualBlock;
-            this.allocId = memAllocPointer(1).put(0, 0L);
-            this.offset = memAllocLong(1).put(0, 0L);
+            this.allocId = createPointerBuffer(1).put(0, 0L);
+            this.offset = createLongBuffer(1).put(0, 0L);
             this.range = range;
             this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc().alignment(16L).size(range), this.allocId, this.offset));
         }
@@ -94,8 +95,6 @@ public class CommandManagerObj extends BasicObj {
                 vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
             }
             this.allocId.put(0, 0L);
-            memFree(this.allocId);
-            memFree(this.offset);
             this.createInfo.free();
             this.allocId = null;
             return this;
@@ -417,7 +416,7 @@ public class CommandManagerObj extends BasicObj {
         public CommandWriter cmdCopyFromHostToImage(ByteBuffer data, Callable<HostImageStage> imageInfoLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<HostImageStage> imageInfo_ = new AtomicReference<>();
-            var payloadBackup = (directly || !lazy) ? data : memAlloc(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
+            var payloadBackup = (directly || !lazy) ? data : createByteBuffer(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
             memCopy(data, payloadBackup);
 
             //
@@ -428,7 +427,6 @@ public class CommandManagerObj extends BasicObj {
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
-                    if (!directly && lazy) { memFree(payloadBackup); };
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -490,7 +488,7 @@ public class CommandManagerObj extends BasicObj {
         public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<VkDescriptorBufferInfo> bufferRange_ = new AtomicReference<>();
-            var payloadBackup = (directly || !lazy) ? data : memAlloc(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
+            var payloadBackup = (directly || !lazy) ? data : createByteBuffer(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
 
             Callable<Integer> tempOp = ()-> {
                 allocation_.set(new VirtualAllocation(manager.virtualBlock.get(0), payloadBackup.remaining()));
@@ -499,7 +497,6 @@ public class CommandManagerObj extends BasicObj {
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(payloadBackup.remaining(), allocOffset));
-                    if (!directly && lazy) { memFree(payloadBackup); };
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -579,10 +576,10 @@ public class CommandManagerObj extends BasicObj {
         }});
 
         //
-        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = memAllocPointer(1).put(0, 0L)));
+        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.calloc().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
 
         //
-        this.handle = new Handle("CommandManager", MemoryUtil.memAddress(memAllocLong(1)));
+        this.handle = new Handle("CommandManager", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 

@@ -12,10 +12,9 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
+import static org.lwjgl.BufferUtils.createPointerBuffer;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFWVulkan.glfwVulkanSupported;
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.EXTDebugUtils.*;
 import static org.lwjgl.vulkan.EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
 
@@ -86,7 +85,7 @@ public class InstanceObj extends BasicObj {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         // Layers
-        this.layers = memAllocPointer(2);
+        this.layers = createPointerBuffer(2);
         this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_validation")));
         this.layers.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_synchronization2")));
 
@@ -97,7 +96,7 @@ public class InstanceObj extends BasicObj {
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
-        this.extensions = memAllocPointer(this.glfwExt.limit() + 1);
+        this.extensions = createPointerBuffer(this.glfwExt.limit() + 1);
         this.extensions.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_KHR_get_surface_capabilities2")));
         //this.extensions.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_EXT_debug_utils")));
         for (int i=0;i<this.glfwExt.limit();i++) {
@@ -206,14 +205,14 @@ public class InstanceObj extends BasicObj {
                         }
                         return 0;
                     }
-                }), null, this.messagerEXT = memAllocLong(1)));*/
+                }), null, this.messagerEXT = createLongBuffer(1)));*/
     }
 
     //
     public ArrayList<PhysicalDeviceObj> enumeratePhysicalDevicesObj() {
         if (this.physicalDeviceAmount == null || this.physicalDeviceAmount[0] <= 0) {
             VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount = new int[]{0}, null);
-            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = memAllocPointer(this.physicalDeviceAmount[0]));
+            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = createPointerBuffer(this.physicalDeviceAmount[0]));
 
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
             var Ps = this.physicalDeviceAmount.length;
