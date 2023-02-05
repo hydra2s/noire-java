@@ -10,6 +10,8 @@ import org.lwjgl.PointerBuffer;
 import java.nio.IntBuffer;
 import java.util.Optional;
 
+import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+
 //
 // DO NOT `wrap`! Use `memAlloc#Type()` with `put(pos, val)`!
 // DO NOT `allocate(N)`, use `memAlloc#Type()`
@@ -62,7 +64,7 @@ public class BasicObj {
     public BasicObj(Handle base, Handle handle) {
         this.base = base;
         this.handle = handle;
-        this.ptr = PointerBuffer.allocateDirect(1);//memAllocPointer(1);
+        this.ptr = memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
@@ -97,7 +99,7 @@ public class BasicObj {
     public BasicObj(Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
-        this.ptr = PointerBuffer.allocateDirect(1);//memAllocPointer(1);
+        this.ptr = memAllocPointer(1);//memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
