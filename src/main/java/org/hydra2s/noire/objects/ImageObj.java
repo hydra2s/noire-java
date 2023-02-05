@@ -2,15 +2,13 @@ package org.hydra2s.noire.objects;
 
 
 import org.hydra2s.noire.descriptors.ImageCInfo;
-import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.VkExternalMemoryImageCreateInfo;
 import org.lwjgl.vulkan.VkImageCreateInfo;
 import org.lwjgl.vulkan.VkImageMemoryRequirementsInfo2;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAddress;
-import static org.lwjgl.system.MemoryUtil.memLongBuffer;
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTImage2dViewOf3d.VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
@@ -37,6 +35,7 @@ public class ImageObj extends BasicObj {
         var arrayLayers = Math.max(cInfo.arrayLayers, 1);
 
         //
+        var pQueueFamilyIndices = memAllocInt(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
         this.createInfo = VkImageCreateInfo.calloc()
             .pNext(VkExternalMemoryImageCreateInfo.calloc()
                     .pNext(0L)
@@ -57,12 +56,12 @@ public class ImageObj extends BasicObj {
             .samples(cInfo.samples)
             .format(cInfo.format)
             .tiling(cInfo.tiling)
-            .pQueueFamilyIndices(deviceObj.queueFamilyIndices);
+            .pQueueFamilyIndices(pQueueFamilyIndices);
 
         //
         int status = VK_NOT_READY;
         if (cInfo.image == null || cInfo.image.get(0) == 0) {
-            status = vkCreateImage(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress(cInfo.image = (this.handle = new Handle("Image")).ptr()), 1));
+            status = vkCreateImage(deviceObj.device, this.createInfo, null, (this.handle = new Handle("Image")).ptr());
         } else {
             status = VK_SUCCESS;
             this.handle = new Handle("Image", cInfo.image.get(0));

@@ -34,7 +34,6 @@ public class RendererObj extends BasicObj {
     public SwapChainObj swapchain;
     public Generator<Integer> processor;
 
-    public LongBuffer fences;
     public ArrayList<DeviceObj.FenceProcess> promises = new ArrayList<DeviceObj.FenceProcess>();
     public ArrayList<VkCommandBuffer> commandBuffers = new ArrayList<VkCommandBuffer>();
     public Iterator<Integer> process;
@@ -297,13 +296,13 @@ public class RendererObj extends BasicObj {
                 //
                 var _queue = logicalDevice.getQueue(0, 0);
                 promises.set(imageIndex, logicalDevice.submitCommand(new BasicCInfo.SubmitCmd(){{
-                    waitSemaphores = memLongBuffer(memAddress(swapchain.semaphoreImageAvailable.getHandle().ptr(), 0), 1);
-                    signalSemaphores = memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1);
+                    waitSemaphores = swapchain.semaphoreImageAvailable.getHandle().ptr();
+                    signalSemaphores = swapchain.semaphoreRenderingAvailable.getHandle().ptr();
                     dstStageMask = memAllocInt(1).put(0, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
                     queue = _queue;
                     cmdBuf = commandBuffers.get(imageIndex);
                 }}));
-                swapchain.present(_queue, memLongBuffer(memAddress(swapchain.semaphoreRenderingAvailable.getHandle().ptr(), 0), 1));
+                swapchain.present(_queue, swapchain.semaphoreRenderingAvailable.getHandle().ptr());
             }
         });
     }

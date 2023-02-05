@@ -43,13 +43,13 @@ public class ImageSetObj extends BasicObj  {
         this.writingImageViews = new ArrayList<ImageViewObj>();
 
         //
-        var Rs = cInfo.formats.remaining();
+        var Rs = cInfo.formats.length;
         for (var I=0;I<Rs;I++) {
             var fI = I;
             var imageCInfo = new ImageCInfo(){{
                 memoryAllocator = cInfo.memoryAllocator;
                 arrayLayers = cInfo.layerCounts.get(fI)*2;//*3;
-                format = cInfo.formats.get(fI);
+                format = cInfo.formats[fI];
                 mipLevels = 1;
                 extent3D = cInfo.extents.get(fI);
                 tiling = VK_IMAGE_TILING_OPTIMAL;

@@ -3,14 +3,12 @@ package org.hydra2s.noire.objects;
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.BufferCInfo;
-import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAddress;
-import static org.lwjgl.system.MemoryUtil.memLongBuffer;
+import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
@@ -40,8 +38,8 @@ public class BufferObj extends BasicObj {
     public BufferObj(Handle base, BufferCInfo cInfo) {
         super(base, cInfo);
 
-        
         //
+        var pQueueFamilyIndices = memAllocInt(deviceObj.queueFamilyIndices.length); pQueueFamilyIndices.put(0, deviceObj.queueFamilyIndices);
         this.createInfo = VkBufferCreateInfo.calloc()
             .pNext(VkExternalMemoryBufferCreateInfo.calloc()
                     .pNext(0L)
@@ -53,12 +51,12 @@ public class BufferObj extends BasicObj {
             .size(Math.max(cInfo.size, 0L))
             .usage(cInfo.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT)
             .sharingMode(VK_SHARING_MODE_CONCURRENT)
-            .pQueueFamilyIndices(deviceObj.queueFamilyIndices);
+            .pQueueFamilyIndices(pQueueFamilyIndices);
 
         //
         int status = VK_NOT_READY;
         if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
-            status = vkCreateBuffer(deviceObj.device, this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Buffer")).ptr(), 0), 1));
+            status = vkCreateBuffer(deviceObj.device, this.createInfo, null, (this.handle = new Handle("Buffer")).ptr());
         } else {
             status = VK_SUCCESS;
             this.handle = new Handle("Buffer", cInfo.buffer.get(0));

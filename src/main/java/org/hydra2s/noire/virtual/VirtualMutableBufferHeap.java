@@ -19,8 +19,7 @@ import java.util.ArrayList;
 
 import static java.lang.Math.abs;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
+import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -319,13 +318,15 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             if (oldAlloc != 0L) {
                 this.heap.toFree.add(oldAlloc);
             }
+
+            this.allocId.put(0, 0L); memFree(this.allocId); this.allocId = null;
+            this.bufferOffset.put(0, 0L); memFree(this.bufferOffset); this.bufferOffset = null;
+            this.allocCreateInfo.free();
+
             this.bufferSize = 0L;
             this.blockSize = 0L;
             this.address = 0L;
-            this.bufferOffset.put(0, 0L);
-            this.bufferOffset = null;
-            this.allocId.put(0, 0L);
-            this.allocId = null;
+
             this.mapped = null;
             this.bound.registry.removeIndex(this.DSC_ID);
             this.heap = null;

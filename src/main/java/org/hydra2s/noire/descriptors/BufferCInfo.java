@@ -2,7 +2,6 @@ package org.hydra2s.noire.descriptors;
 
 import org.lwjgl.PointerBuffer;
 
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.VK10.VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 public class BufferCInfo extends BasicCInfo {

@@ -8,11 +8,7 @@ import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.PointerBuffer;
 
 import java.nio.IntBuffer;
-import java.util.HashMap;
 import java.util.Optional;
-
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
 // DO NOT `wrap`! Use `memAlloc#Type()` with `put(pos, val)`!
@@ -37,9 +33,10 @@ public class BasicObj {
 
     //
     public PointerBuffer Win32Handle = null;//memAllocPointer(1).put(0, 0);
-    public IntBuffer FdHandle = null;//memAllocInt(1).put(0, 0);
+    public int[] FdHandle = {};//memAllocInt(1).put(0, 0);
 
     //
+    protected PointerBuffer ptr = null;
     protected Handle base = null;//new Handle("Unknown", 0);
     protected Handle handle = null;//new Handle("Unknown", 0);
     public BasicCInfo cInfo = null;
@@ -65,6 +62,7 @@ public class BasicObj {
     public BasicObj(Handle base, Handle handle) {
         this.base = base;
         this.handle = handle;
+        this.ptr = PointerBuffer.allocateDirect(1);//memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
@@ -99,6 +97,7 @@ public class BasicObj {
     public BasicObj(Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
+        this.ptr = PointerBuffer.allocateDirect(1);//memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
@@ -136,26 +135,30 @@ public class BasicObj {
     }
 
     public static class Handle {
-        protected PointerBuffer handle = null;
+        protected long[] handle = {};
         protected String type = "unknown";
         private int cached = 0;
 
         public Handle(String type) {
-            this.handle = memAllocPointer(1);
-            this.handle.put(0, 0);
+            this.handle = new long[]{0L};
             this.type = type;
             this.cached = 0;
         }
 
-        public Handle(String type, PointerBuffer handle2) {
+        public Handle(String type, long[] handle2) {
             this.handle = handle2;
             this.type = type;
             this.cached = 0;
         }
 
         public Handle(String type, long handle) {
-            this.handle = memAllocPointer(1);
-            this.handle.put(0, handle);
+            this.handle = new long[]{handle};
+            this.type = type;
+            this.cached = 0;
+        }
+
+        public Handle(String type, PointerBuffer ptr) {
+            this.handle = new long[]{ptr.get(0)};
             this.type = type;
             this.cached = 0;
         }
@@ -165,16 +168,16 @@ public class BasicObj {
         }
 
         public long get() {
-            return this.handle.get(0);
+            return this.handle[0];
         }
 
-        public PointerBuffer ptr() {
+        public long[] ptr() {
             return handle;
         }
 
-        public long address() {
-            return this.handle.address(0);
-        }
+        //public long address() {
+            //return this.handle.address(0);
+        //}
 
         @Override
         public boolean equals(Object o) {
@@ -202,6 +205,7 @@ public class BasicObj {
 
     public BasicObj deleteDirectly() /*throws Exception*/ {
         if (sharedPtr > 0) { sharedPtr--; }
+        //if (sharedPtr <= 0) { memFree(this.ptr); };
         return this;
     }
 

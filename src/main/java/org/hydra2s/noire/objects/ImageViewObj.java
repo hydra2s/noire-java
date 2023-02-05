@@ -3,15 +3,12 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
-import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkImageSubresourceLayers;
 import org.lwjgl.vulkan.VkImageViewCreateInfo;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.memAddress;
-import static org.lwjgl.system.MemoryUtil.memLongBuffer;
 import static org.lwjgl.vulkan.VK10.*;
 
 // aka, known as ImageSubresourceRange
@@ -41,7 +38,7 @@ public class ImageViewObj extends BasicObj {
         if (cInfo.isCubemap)            { imageViewType = (cInfo.subresourceRange.layerCount() > 6 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE); };
 
         //
-        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, memLongBuffer(memAddress((this.handle = new Handle("ImageView")).ptr(), 0), 1)));
+        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new Handle("ImageView")).ptr()));
         deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple pipeline layout support

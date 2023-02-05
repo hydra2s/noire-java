@@ -3,7 +3,6 @@ package org.hydra2s.noire.descriptors;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
 
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.VK10.*;
 
 public class ImageCInfo extends BasicCInfo {

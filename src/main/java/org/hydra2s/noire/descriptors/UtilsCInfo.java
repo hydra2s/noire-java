@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.lwjgl.system.MemoryUtil.memAllocInt;
 import static org.lwjgl.vulkan.EXTConditionalRendering.VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT;
 import static org.lwjgl.vulkan.EXTTransformFeedback.VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT;
 import static org.lwjgl.vulkan.EXTTransformFeedback.VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT;
@@ -710,10 +709,10 @@ public abstract class UtilsCInfo {
 
     //
     public static class SurfaceCapability extends BasicCInfo  {
-        public IntBuffer surfaceSupport = null;//memAllocInt(1);
-        public IntBuffer presentModeCount = null;//memAllocInt(1);
-        public IntBuffer formatCount = null;//memAllocInt(1);
-        public IntBuffer presentModes = null;
+        public int[] surfaceSupport = null;//memAllocInt(1);
+        public int[] presentModeCount = null;//memAllocInt(1);
+        public int[] formatCount = null;//memAllocInt(1);
+        public int[] presentModes = null;
         public VkSurfaceCapabilities2KHR capabilities2 = null;
         public org.lwjgl.vulkan.VkSurfaceFormat2KHR.Buffer formats2 = null;
 

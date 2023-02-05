@@ -21,7 +21,6 @@ import java.nio.LongBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -95,6 +94,9 @@ public class CommandManagerObj extends BasicObj {
                 vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
             }
             this.allocId.put(0, 0L);
+            memFree(this.allocId);
+            memFree(this.offset);
+            this.createInfo.free();
             this.allocId = null;
             return this;
         }
@@ -276,13 +278,13 @@ public class CommandManagerObj extends BasicObj {
 
     // TODO: command agents support
     public static class CommandProfiler extends CommandAgent {
-        public LongBuffer queryPool = null;
+        public long[] queryPool = {};
 
         public long timeDiff = 0L;
 
         public CommandProfiler(CommandManagerObj manager, CommandWriter commandWriter) {
             super(manager, commandWriter);
-            this.queryPool = memAllocLong(1);
+            this.queryPool = new long[]{0L};
 
             //
             VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.calloc();
@@ -298,20 +300,20 @@ public class CommandManagerObj extends BasicObj {
         public CommandProfiler cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
 
             commandWriter.cmdAdd$("Command Profiler Begin Record", (cmdBuf)->{
-                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool.get(0), 0);
+                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 0);
                 return cmdBuf;
             });
             commandWriter.cmdAdd$(typeName, caller);
             commandWriter.cmdAdd$("Command Profiler End Record", (cmdBuf)->{
-                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool.get(0), 1);
+                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 1);
                 return cmdBuf;
             });
             commandWriter.addToFree(()->{
-                LongBuffer timestamps = memAllocLong(2);
-                vkGetQueryPoolResults(manager.deviceObj.device, queryPool.get(0), 0, 2, timestamps, 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-                vkDestroyQueryPool(manager.deviceObj.device, queryPool.get(0), null);
+                var timestamps = new long[]{0L, 0L};
+                vkGetQueryPoolResults(manager.deviceObj.device, queryPool[0], 0, 2, timestamps, 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+                vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
 
-                timeDiff = (timestamps.get(1) - timestamps.get(0));
+                timeDiff = (timestamps[1] - timestamps[0]);
                 System.out.println(typeName + " - command time stamp diff: " + ((double)timeDiff/(double)(1000*1000)) + " in milliseconds.");
             });
             return this;

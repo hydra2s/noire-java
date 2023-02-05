@@ -1,12 +1,10 @@
 package org.hydra2s.noire.descriptors;
 
 //
+
 import org.hydra2s.noire.objects.DeviceObj;
 
-import java.nio.LongBuffer;
 import java.util.ArrayList;
-
-import static org.lwjgl.system.MemoryUtil.memAllocLong;
 
 //
 public class DeviceCInfo extends BasicCInfo {
@@ -24,7 +22,7 @@ public class DeviceCInfo extends BasicCInfo {
         public ArrayList<Integer> commandPoolIndices = null;
 
         //
-        public LongBuffer cmdPool = null;//memAllocLong(10).put(0, 0);
+        public long[] cmdPool = {};//memAllocLong(10).put(0, 0);
         public ArrayList<DeviceObj.CommandPoolInfo> commandPoolInfo = null;
     };
 

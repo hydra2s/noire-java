@@ -439,8 +439,8 @@ abstract public class CommandUtils {
         var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageSet", imageSet)).orElse(null);;
 
         //
-        fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.remaining());
-        var Fs = fbLayout.formats.remaining();
+        fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.calloc(fbLayout.formats.length);
+        var Fs = fbLayout.formats.length;
         for (var I=0;I<Fs;I++) {
             fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
             fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
@@ -568,8 +568,8 @@ abstract public class CommandUtils {
                 vkCmdDrawMultiEXT(cmdBuf, cmdInfo.multiDraw, 1, 0, VkMultiDrawInfoEXT.SIZEOF);
             }
         } else {
-            var fbClearC = VkClearAttachment.calloc(fbLayout.formats.remaining());
-            var Fs = fbLayout.formats.remaining();
+            var fbClearC = VkClearAttachment.calloc(fbLayout.formats.length);
+            var Fs = fbLayout.formats.length;
             for (var I=0;I<Fs;I++) {
                 fbClearC.get(I).clearValue(fbLayout.attachmentInfos.get(I).clearValue());
                 fbClearC.get(I).aspectMask(directInfo.framebufferObj.writingImageViews.get(I).subresourceLayers(0).subresource.aspectMask());

@@ -23,7 +23,7 @@ public class MemoryAllocationObj extends BasicObj {
     public long memorySize = 0L;
 
     //
-    public PointerBuffer deviceMemory = memAllocPointer(1);
+    public long[] deviceMemory = {};
     public MemoryAllocatorObj.DeviceMemoryObj deviceMemoryObj = null;
 
     //
@@ -75,7 +75,7 @@ public class MemoryAllocationObj extends BasicObj {
         return deviceMemoryObj.Win32Handle;
     }
 
-    public IntBuffer getFdHandle() {
+    public int[] getFdHandle() {
         return deviceMemoryObj.FdHandle;
     }
 

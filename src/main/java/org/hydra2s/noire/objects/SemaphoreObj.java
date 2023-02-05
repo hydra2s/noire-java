@@ -3,13 +3,11 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.SemaphoreCInfo;
-import org.hydra2s.utils.Promise;
 import org.lwjgl.vulkan.*;
 
-import java.nio.LongBuffer;
-
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.memAllocLong;
+import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
 import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.vkGetSemaphoreWin32HandleKHR;
 import static org.lwjgl.vulkan.KHRTimelineSemaphore.VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -24,9 +22,7 @@ public class SemaphoreObj extends BasicObj {
 
     public VkSemaphoreTypeCreateInfo timelineInfo;
     public VkSemaphoreCreateInfo createInfo;
-    public LongBuffer timeline = null;
-
-
+    public long[] timeline = null;
 
     //
     public long lastTimeline = 0;
@@ -43,9 +39,9 @@ public class SemaphoreObj extends BasicObj {
         this.prevTimeline = cInfo.initialValue;
         this.lastTimeline = cInfo.initialValue;
         this.deleted = false;
-        this.timeline = memAllocLong(1).put(0, cInfo.initialValue);
+        this.timeline = new long[]{cInfo.initialValue};
         this.timelineInfo = VkSemaphoreTypeCreateInfo.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR).semaphoreType(cInfo.isTimeline ? VK_SEMAPHORE_TYPE_TIMELINE : VK_SEMAPHORE_TYPE_BINARY).initialValue(lastTimeline);
-        vkCheckStatus(vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, memLongBuffer(memAddress((this.handle = new Handle("Semaphore")).ptr(), 0), 1)));
+        vkCheckStatus(vkCreateSemaphore(deviceObj.device, this.createInfo = VkSemaphoreCreateInfo.calloc().pNext(VkExportSemaphoreCreateInfoKHR.calloc().pNext(this.timelineInfo.address()).sType(VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO).handleTypes(VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ).address()).sType(VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO), null, (this.handle = new Handle("Semaphore")).ptr()));
         vkCheckStatus(vkGetSemaphoreWin32HandleKHR(deviceObj.device, VkSemaphoreGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR).semaphore(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), this.Win32Handle = memAllocPointer(1)));
 
         if (cInfo.doRegister) {
@@ -68,7 +64,6 @@ public class SemaphoreObj extends BasicObj {
             if (cInfo.doRegister) {
                 deviceObj.handleMap.remove(handle);
             }
-            handle.ptr().put(0, 0L);
             this.deleted = true;
         };
 
@@ -147,7 +142,7 @@ public class SemaphoreObj extends BasicObj {
                 vkCheckStatus(vkGetSemaphoreCounterValue(deviceObj.device, this.handle.get(), this.timeline));
             }
         }
-        return this.timeline.get(0);
+        return this.timeline[0];
     }
 
     //

@@ -148,8 +148,8 @@ public class PhysicalDeviceObj extends BasicObj {
     public VkPhysicalDevice physicalDevice = null;
 
     //
-    protected IntBuffer queueFamilyCount;
-    protected IntBuffer extensionCount;
+    protected int[] queueFamilyCount;
+    protected int[] extensionCount;
 
     //
     public PhysicalDeviceObj(Handle base, Handle handle) {
@@ -164,12 +164,12 @@ public class PhysicalDeviceObj extends BasicObj {
         VK11.vkGetPhysicalDeviceFeatures2(this.physicalDevice, (this.features = new PhysicalDeviceFeatures()).features);
 
         //
-        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount = memAllocInt(1), null);
-        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount, this.queueFamilyProperties = VkQueueFamilyProperties.calloc(this.queueFamilyCount.get(0)));
+        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount = new int[]{0}, null);
+        VK11.vkGetPhysicalDeviceQueueFamilyProperties(this.physicalDevice, this.queueFamilyCount, this.queueFamilyProperties = VkQueueFamilyProperties.calloc(this.queueFamilyCount[0]));
 
         //
-        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount = memAllocInt(1), null);
-        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount, this.extensions = VkExtensionProperties.calloc(this.extensionCount.get(0)));
+        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount = new int[]{0}, null);
+        VK11.vkEnumerateDeviceExtensionProperties(this.physicalDevice, "", this.extensionCount, this.extensions = VkExtensionProperties.calloc(this.extensionCount[0]));
     }
 
     //
@@ -177,8 +177,8 @@ public class PhysicalDeviceObj extends BasicObj {
         UtilsCInfo.SurfaceCapability capability = new UtilsCInfo.SurfaceCapability();
 
         //
-        org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport = memAllocInt(1));
-        if (capability.surfaceSupport.get(0) != 0) {
+        org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfaceSupportKHR(this.physicalDevice, queueFamilyIndex, surface, capability.surfaceSupport = new int[]{0});
+        if (capability.surfaceSupport[0] != 0) {
             var surfaceInfo = VkPhysicalDeviceSurfaceInfo2KHR.calloc().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR).surface(surface);
 
             //
@@ -188,16 +188,16 @@ public class PhysicalDeviceObj extends BasicObj {
             );
 
             //
-            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount = memAllocInt(1), null);
-            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = memAllocInt(capability.presentModeCount.get(0)));
+            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount = new int[]{0}, null);
+            org.lwjgl.vulkan.KHRSurface.vkGetPhysicalDeviceSurfacePresentModesKHR(this.physicalDevice, surface, capability.presentModeCount, capability.presentModes = new int[capability.presentModeCount[0]]);
 
             //
             org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(
-                this.physicalDevice, surfaceInfo, capability.formatCount = memAllocInt(1),
+                this.physicalDevice, surfaceInfo, capability.formatCount = new int[]{0},
                 null);
 
             //
-            var formats = VkSurfaceFormat2KHR.calloc(capability.formatCount.get(0));
+            var formats = VkSurfaceFormat2KHR.calloc(capability.formatCount[0]);
             var Fs = formats.remaining();
             for (var I=0;I<Fs;I++) { formats.get(I).sType(VK_STRUCTURE_TYPE_SURFACE_FORMAT_2_KHR); };
             org.lwjgl.vulkan.KHRGetSurfaceCapabilities2.vkGetPhysicalDeviceSurfaceFormats2KHR(
@@ -217,7 +217,7 @@ public class PhysicalDeviceObj extends BasicObj {
     //
     public int searchQueueFamilyIndex(int bits) {
         int queueIndex = -1;
-        for (int I=0;I<this.queueFamilyCount.get();I++) {
+        for (int I=0;I<this.queueFamilyCount[0];I++) {
             if ((this.queueFamilyProperties.get(I).queueFlags() & bits) != 0) {
                 queueIndex = I; break;
             }

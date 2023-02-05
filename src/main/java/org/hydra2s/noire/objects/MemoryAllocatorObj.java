@@ -96,7 +96,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                                 .sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO)
                                 .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
                             .sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
-                        .address()), null, memLongBuffer(memAddress((this.handle = new Handle("DeviceMemory")).ptr(), 0), 1)));
+                        .address()), null, (this.handle = new Handle("DeviceMemory")).ptr()));
 
             // TODO: Linux support
             //vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.calloc().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
@@ -215,8 +215,8 @@ public class MemoryAllocatorObj extends BasicObj  {
         deviceMemory.allocations.add(memoryAllocationObj);
 
         //
-        if (cInfo.buffer != null && cInfo.buffer.get(0) != 0) { vkBindBufferMemory(deviceObj.device, cInfo.buffer.get(0), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
-        if (cInfo.image != null && cInfo.image.get(0) != 0) { vkBindImageMemory(deviceObj.device, cInfo.image.get(0), memoryAllocationObj.deviceMemory.get(0), memoryAllocationObj.memoryOffset); };
+        if (cInfo.buffer != null && cInfo.buffer[0] != 0) { vkBindBufferMemory(deviceObj.device, cInfo.buffer[0], memoryAllocationObj.deviceMemory[0], memoryAllocationObj.memoryOffset); };
+        if (cInfo.image != null && cInfo.image[0] != 0) { vkBindImageMemory(deviceObj.device, cInfo.image[0], memoryAllocationObj.deviceMemory[0], memoryAllocationObj.memoryOffset); };
 
         //
         return memoryAllocationObj;

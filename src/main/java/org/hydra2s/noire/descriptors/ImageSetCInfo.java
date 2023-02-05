@@ -18,7 +18,7 @@ public class ImageSetCInfo extends BasicCInfo  {
     public long memoryAllocator = 0L;
 
     //
-    public IntBuffer formats = null;
+    public int[] formats = {};
     public ArrayList<Integer> layerCounts = new ArrayList<Integer>();
     public ArrayList<VkExtent3D> extents = new ArrayList<VkExtent3D>();
 
@@ -281,17 +281,6 @@ public class ImageSetCInfo extends BasicCInfo  {
 
         // TODO: bound with vertex state
         public boolean cullState = true;
-
-        //
-        public VkImageMemoryBarrier2 depthStencilBarrier = VkImageMemoryBarrier2.calloc()
-                .sType(VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2)
-                .srcStageMask(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT)
-                .srcAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .dstStageMask(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT)
-                .dstAccessMask(VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
-                .srcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-                .dstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
-
         //
         public FBLayout() {
 
@@ -303,25 +292,14 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.memoryAllocator = original.memoryAllocator;
 
             //
-            this.formats = memAllocInt(original.formats.remaining());//original.formats;
-            for (var I=0;I<original.formats.remaining();I++) {
-                this.formats.put(I, original.formats.get(I));
+            this.formats = original.formats;//original.formats;
+            for (var I=0;I<original.formats.length;I++) {
+                this.formats[I] = original.formats[I];
             }
 
             //
-            this.layerCounts = new ArrayList<Integer>();
-            this.extents = new ArrayList<VkExtent3D>();
-
-            //
-            original.layerCounts.forEach((L)->{
-                this.layerCounts.add(L);
-            });
-
-            //
-            original.extents.forEach((E)->{
-                this.extents.add(E);
-            });
-
+            this.layerCounts = new ArrayList<Integer>(original.layerCounts);
+            this.extents = new ArrayList<VkExtent3D>(original.extents);
 
             // FBLayout statements
             this.cullState = original.cullState;

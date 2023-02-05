@@ -1,11 +1,9 @@
 package org.hydra2s.noire.descriptors;
 
 //
-import org.lwjgl.PointerBuffer;
+
 import org.lwjgl.vulkan.VkMemoryRequirements;
 import org.lwjgl.vulkan.VkMemoryRequirements2;
-
-import static org.lwjgl.system.MemoryUtil.memAllocPointer;
 
 //
 public class MemoryAllocationCInfo extends BasicCInfo {
@@ -18,9 +16,9 @@ public class MemoryAllocationCInfo extends BasicCInfo {
     public boolean isDevice = true;
 
     // for dedicated buffer allocation
-    public PointerBuffer buffer = null;
+    public long[] buffer = {};
     // for dedicated image allocation
-    public PointerBuffer image = null;
+    public long[] image = {};
 
     //
     public long memoryAllocator = 0L;

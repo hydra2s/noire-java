@@ -6,7 +6,6 @@ import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -74,7 +73,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, pipelineLayoutObj.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
+            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new Handle("Pipeline")).ptr()));
             deviceObj.handleMap.put$(this.handle, this);
 
             //
@@ -233,9 +232,10 @@ public class PipelineObj extends BasicObj  {
             //this.attachmentFormats.put();
             // TODO: depth only or stencil only support
             // TODO: dynamic depth and stencil state
+            var formats = memAllocInt(fbLayout.formats.length); for (int I=0;I<fbLayout.formats.length;I++) { formats.put(I, fbLayout.formats[I]); };
             this.dynamicRenderingPipelineInfo
                 .pNext(this.robustness.address())
-                .pColorAttachmentFormats(fbLayout.formats)
+                .pColorAttachmentFormats(formats)
                 .depthAttachmentFormat(fbLayout.depthStencilFormat)
                 .stencilAttachmentFormat(fbLayout.depthStencilFormat);
 
@@ -286,7 +286,7 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             // TODO: initial pipeline cache
-            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache.get(0), this.createInfo, null, memLongBuffer(memAddress((this.handle = new Handle("Pipeline")).ptr(), 0), 1)));
+            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new Handle("Pipeline")).ptr()));
             deviceObj.handleMap.put$(this.handle, this);
 
             //

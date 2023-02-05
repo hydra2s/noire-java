@@ -9,7 +9,6 @@ import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
-import java.nio.LongBuffer;
 import java.util.ArrayList;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -29,7 +28,7 @@ public class InstanceObj extends BasicObj {
     //
     public VkInstance instance = null;
     public VkDebugUtilsMessengerCallbackEXT callbackEXT = null;
-    public LongBuffer messagerEXT = null;
+    public long[] messagerEXT = {};
 
     //
     public VkExtensionProperties.Buffer availableExtensions = null;
@@ -45,10 +44,10 @@ public class InstanceObj extends BasicObj {
     protected PointerBuffer glfwExt = null;
     public VkInstanceCreateInfo instanceInfo = null;
     public VkApplicationInfo.Buffer appInfo = null;
-    protected IntBuffer extensionAmount = memAllocInt(1).put(0, 0);
-    protected IntBuffer layersAmount = memAllocInt(1).put(0, 0);
+    protected int[] extensionAmount = new int[]{0};
+    protected int[] layersAmount = new int[]{0};
     //
-    protected IntBuffer physicalDeviceAmount = memAllocInt(1).put(0, 0);
+    protected int[] physicalDeviceAmount = new int[]{0};
 
     public void PrintMessageType(int messageTypes) {
         //
@@ -92,9 +91,9 @@ public class InstanceObj extends BasicObj {
         this.layers.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_synchronization2")));
 
         //
-        this.layersAmount = memAllocInt(1);
+        this.layersAmount = new int[]{1};
         VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, null);
-        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.calloc(this.layersAmount.get(0)));
+        VK10.vkEnumerateInstanceLayerProperties(this.layersAmount, this.availableLayers = VkLayerProperties.calloc(this.layersAmount[0]));
 
         // Extensions
         this.glfwExt = GLFWVulkan.glfwGetRequiredInstanceExtensions();
@@ -106,9 +105,9 @@ public class InstanceObj extends BasicObj {
         }
 
         //
-        this.extensionAmount = memAllocInt(1);
+        this.extensionAmount = new int[]{0};
         VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, null);
-        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.calloc(this.extensionAmount.get(0)));
+        VK10.vkEnumerateInstanceExtensionProperties("", this.extensionAmount, this.availableExtensions = VkExtensionProperties.calloc(this.extensionAmount[0]));
 
         // TODO: Handle VkResult!!
         this.appInfo = VkApplicationInfo.calloc(1)
@@ -125,7 +124,8 @@ public class InstanceObj extends BasicObj {
                 // validator is BROKEN!
                 //.ppEnabledLayerNames(this.layers)
                 .get();
-        vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, (this.handle = new Handle("Instance")).ptr()));
+        vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, ptr));
+        this.handle = new Handle("Instance", ptr);
 
         //
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
@@ -211,12 +211,12 @@ public class InstanceObj extends BasicObj {
 
     //
     public ArrayList<PhysicalDeviceObj> enumeratePhysicalDevicesObj() {
-        if (this.physicalDeviceAmount == null || this.physicalDeviceAmount.get(0) <= 0) {
-            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount = memAllocInt(1), null);
-            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = memAllocPointer(1));
+        if (this.physicalDeviceAmount == null || this.physicalDeviceAmount[0] <= 0) {
+            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount = new int[]{0}, null);
+            VK10.vkEnumeratePhysicalDevices(this.instance, this.physicalDeviceAmount, this.physicalDevices = memAllocPointer(this.physicalDeviceAmount[0]));
 
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
-            var Ps = this.physicalDeviceAmount.remaining();
+            var Ps = this.physicalDeviceAmount.length;
             for (int I = 0; I < Ps; I++) {
                 this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new Handle("PhysicalDevice", this.physicalDevices.get(I))));
             }

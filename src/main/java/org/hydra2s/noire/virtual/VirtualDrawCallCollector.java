@@ -8,7 +8,6 @@ import org.hydra2s.noire.descriptors.DataCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.AccelerationStructureObj;
 import org.hydra2s.noire.objects.BufferObj;
-import org.hydra2s.noire.objects.CommandUtils;
 import org.hydra2s.noire.objects.MemoryAllocatorObj;
 import org.lwjgl.vulkan.*;
 
@@ -16,7 +15,8 @@ import java.util.ArrayList;
 
 import static java.lang.Math.min;
 import static org.lwjgl.system.MemoryUtil.*;
-import static org.lwjgl.vulkan.KHRAccelerationStructure.*;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.*;
 
