@@ -428,6 +428,7 @@ public class CommandManagerObj extends BasicObj {
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
+                    if (!directly && lazy) { memFree(payloadBackup); };
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -498,6 +499,7 @@ public class CommandManagerObj extends BasicObj {
                 if (status == 0) {
                     var allocOffset = allocation.offset.get(0);
                     memCopy(payloadBackup, manager.bufferHeap.map(payloadBackup.remaining(), allocOffset));
+                    if (!directly && lazy) { memFree(payloadBackup); };
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
