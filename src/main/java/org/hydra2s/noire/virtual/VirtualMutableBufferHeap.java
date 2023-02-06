@@ -277,7 +277,11 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                     PointerBuffer $allocId = stack.callocPointer(1);
                     LongBuffer $offset = stack.callocLong(1);
-                    res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset);
+                    res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).flags(
+                        VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT |
+                            VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT |
+                            VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT
+                    ).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset);
                     this.bufferOffset = $offset.get(0);
                     this.allocId = $allocId.get(0);
 

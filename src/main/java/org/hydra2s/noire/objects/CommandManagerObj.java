@@ -88,7 +88,11 @@ public class CommandManagerObj extends BasicObj {
             try ( MemoryStack stack = stackPush() ) {
                 PointerBuffer $allocId = stack.callocPointer(1);
                 LongBuffer $offset = stack.callocLong(1);
-                this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc(stack).flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).alignment(16L).size(range), $allocId, $offset));
+                this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc(stack).flags(
+                    VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT |
+                        VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT |
+                        VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT
+                ).alignment(16L).size(range), $allocId, $offset));
                 this.offset = $offset.get(0);
                 this.allocId = $allocId.get(0);
             }
