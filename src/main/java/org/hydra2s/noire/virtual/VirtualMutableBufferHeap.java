@@ -88,6 +88,10 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public VkDescriptorBufferInfo getBufferRange() {
             return VkDescriptorBufferInfo.create().set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
         }
+
+        public VkDescriptorBufferInfo getBufferRange(MemoryStack stack) {
+            return VkDescriptorBufferInfo.calloc(stack).set(this.bufferHeap.getHandle().get(), 0, ((BufferCInfo)this.bufferHeap.cInfo).size);
+        }
     }
 
     //
@@ -147,7 +151,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public static class VirtualMutableBufferObj extends VirtualGLObj {
         protected VirtualMemoryHeap heap = null;
         protected long allocId = 0L;//memAllocPointer(1).put(0, 0L);
-        protected long bufferOffset = 0L;//createLongBuffer(1).put(0, 0L);
+        public long bufferOffset = 0L;//createLongBuffer(1).put(0, 0L);
         protected long bufferSize = 0L;
         protected long blockSize = 0L;
         protected long address = 0L;
@@ -208,7 +212,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                 System.out.println("Bad Buffer Size of Virtual Mutable Buffer!");
                 throw new RuntimeException("Bad Buffer Size of Virtual Mutable Buffer!");
             };
-            return VkDescriptorBufferInfo.calloc(stack).set(this.heap.getBufferRange().buffer(), this.bufferOffset, this.bufferSize);
+            return VkDescriptorBufferInfo.calloc(stack).set(this.heap.getBufferRange(stack).buffer(), this.bufferOffset, this.bufferSize);
         }
 
         //
@@ -230,74 +234,75 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
         // TODO: morton coding support
         // TODO: support for memory type when allocation, not when create
-        public VirtualMutableBufferObj allocate(long bufferSize, VkCommandBuffer cmdBuf) throws Exception {
+        public VirtualMutableBufferObj allocate(long bufferSize, VkCommandBuffer cmdBuf) {
             final long MEM_BLOCK = 64L;
+            try ( MemoryStack stack = stackPush() ) {
 
-            //
-            VkDescriptorBufferInfo srcBufferRange = null;
-            var oldAlloc = this.allocId;
-            if (oldAlloc != 0L) {
-                srcBufferRange = this.getBufferRange();
-            }
-
-            //
-            if (bufferSize <= 0L) {
-                System.out.println("Allocation Failed, zero or less sized, not supported...");
-                throw new Exception("Allocation Failed, zero or less sized, not supported...");
-            }
-
-            //
-            this.bufferSize = bufferSize; bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
-
-            //
-            if (bufferSize <= 0L) {
-                System.out.println("Allocation Failed, zero or less sized, not supported...");
-                throw new Exception("Allocation Failed, zero or less sized, not supported...");
-            }
-
-            //
-            if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L))
-            {
-                //  add to black list
+                //
+                VkDescriptorBufferInfo srcBufferRange = null;
+                var oldAlloc = this.allocId;
                 if (oldAlloc != 0L) {
-                    heap.toFree.add(oldAlloc);
+                    srcBufferRange = this.getBufferRange(stack);
                 }
 
                 //
-                boolean earlyMapped = this.mapped != null;
-                this.mapped = null;
-                this.bufferOffset = 0L;
-                this.allocId = 0L;
+                if (bufferSize <= 0L) {
+                    System.out.println("Allocation Failed, zero or less sized, not supported...");
+                    throw new RuntimeException("Allocation Failed, zero or less sized, not supported...");
+                }
 
                 //
-                int res = -2;
-                try ( MemoryStack stack = stackPush() ) {
+                this.bufferSize = bufferSize;
+                bufferSize = roundUp(bufferSize, MEM_BLOCK) * MEM_BLOCK;
+
+                //
+                if (bufferSize <= 0L) {
+                    System.out.println("Allocation Failed, zero or less sized, not supported...");
+                    throw new RuntimeException("Allocation Failed, zero or less sized, not supported...");
+                }
+
+                //
+                if (bufferSize == 0 || this.blockSize < bufferSize || abs(bufferSize - this.blockSize) > (MEM_BLOCK * 96L)) {
+                    //  add to black list
+                    if (oldAlloc != 0L) {
+                        heap.toFree.add(oldAlloc);
+                    }
+
+                    //
+                    boolean earlyMapped = this.mapped != null;
+                    this.mapped = null;
+                    this.bufferOffset = 0L;
+                    this.allocId = 0L;
+
+                    //
+                    int res = -2;
+
                     PointerBuffer $allocId = stack.callocPointer(1);
                     LongBuffer $offset = stack.callocLong(1);
                     res = vkCheckStatus(vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset));
                     this.bufferOffset = $offset.get(0);
                     this.allocId = $allocId.get(0);
-                }
 
-                // if anyways, isn't allocated...
-                if (vkCheckStatus(res) != VK_SUCCESS) {
-                    this.bufferSize = 0L;
-                    this.address = 0L;
+                    // if anyways, isn't allocated...
+                    if (vkCheckStatus(res) != VK_SUCCESS) {
+                        this.bufferSize = 0L;
+                        this.address = 0L;
 
-                    //
-                    System.out.println("Allocation Failed, there is not free memory: " + res);
-                    throw new Exception("Allocation Failed, there is not free memory: " + res);
-                } else {
-                    // get device address from
-                    this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset;
-                    if (earlyMapped) {
-                        this.mapped = this.heap.bufferHeap.map(this.blockSize, this.bufferOffset);
-                    }
+                        //
+                        System.out.println("Allocation Failed, there is not free memory: " + res);
+                        throw new RuntimeException("Allocation Failed, there is not free memory: " + res);
+                    } else {
+                        // get device address from
+                        this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset;
+                        if (earlyMapped) {
+                            this.mapped = this.heap.bufferHeap.map(this.blockSize, this.bufferOffset);
+                        }
 
-                    //
-                    var dstBufferRange = this.getBufferRange();
-                    if (oldAlloc != 0 && cmdBuf != null && srcBufferRange.range() > 0 && dstBufferRange.range() > 0) {
-                        //CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                        //
+                        var dstBufferRange = this.getBufferRange(stack);
+                        if (oldAlloc != 0 && cmdBuf != null && srcBufferRange.range() > 0 && dstBufferRange.range() > 0) {
+                            //CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                        }
                     }
                 }
             }

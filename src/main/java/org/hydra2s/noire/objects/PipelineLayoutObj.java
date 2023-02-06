@@ -6,6 +6,7 @@ import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.BufferUtils.createLongBuffer;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.*;
 import static org.lwjgl.vulkan.EXTGraphicsPipelineLibrary.VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
@@ -499,26 +501,28 @@ public class PipelineLayoutObj extends BasicObj  {
     public PipelineLayoutObj cmdBindBuffers(VkCommandBuffer cmdBuf, int pipelineBindPoint, long[] uniformBufferAddress) {
         if (!useLegacyBindingSystem) {
             // TODO: better binding system
-            //var bufferBindings = VkDescriptorBufferBindingInfoEXT.create(uniformBufferAddress != null ? 4 : 3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
-            var bufferBindings = VkDescriptorBufferBindingInfoEXT.create(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
-            bufferBindings.get(0).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.resourceDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
-            bufferBindings.get(1).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.samplerDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT);
-            bufferBindings.get(2).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.uniformDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
+            try ( MemoryStack stack = stackPush() ) {
+                //var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(uniformBufferAddress != null ? 4 : 3, stack).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
+                var bufferBindings = VkDescriptorBufferBindingInfoEXT.calloc(3, stack).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT);
+                bufferBindings.get(0).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.resourceDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
+                bufferBindings.get(1).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.samplerDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT);
+                bufferBindings.get(2).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(this.uniformDescriptorBuffer.getDeviceAddress()).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
 
-            //
-            //if (uniformBufferAddress != null) {
+                //
+                //if (uniformBufferAddress != null) {
                 //bufferBindings.get(3).sType(VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT).address$(uniformBufferAddress.get(0)).usage(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT);
-            //}
+                //}
 
-            //
-            //IntBuffer bufferIndices = createIntBuffer(3).put(0, 0).put(1, 1).put(2, 2);//.put(3, uniformBufferAddress != null ? 3 : 2);
-            //LongBuffer offsets = createLongBuffer(3).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
-            int[] bufferIndices = new int[]{0, 1, 2};
-            long[] offsets = new long[]{0L, 0L, 0L};
+                //
+                //IntBuffer bufferIndices = createIntBuffer(3).put(0, 0).put(1, 1).put(2, 2);//.put(3, uniformBufferAddress != null ? 3 : 2);
+                //LongBuffer offsets = createLongBuffer(3).put(0, 0).put(1, 0).put(2, 0);//.put(3, 0);
+                int[] bufferIndices = new int[]{0, 1, 2};
+                long[] offsets = new long[]{0L, 0L, 0L};
 
-            //
-            vkCmdBindDescriptorBuffersEXT(cmdBuf, bufferBindings);
-            vkCmdSetDescriptorBufferOffsetsEXT(cmdBuf, pipelineBindPoint, this.handle.get(), 0, bufferIndices, offsets);
+                //
+                vkCmdBindDescriptorBuffersEXT(cmdBuf, bufferBindings);
+                vkCmdSetDescriptorBufferOffsetsEXT(cmdBuf, pipelineBindPoint, this.handle.get(), 0, bufferIndices, offsets);
+            }
         } else {
             // TODO: test descriptor set bound
             //this.descriptorSets.put(3, uniformBufferAddress != null ? uniformBufferAddress.get(0) : this.uniformDescriptorSet.get(0));

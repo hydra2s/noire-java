@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 
 import static java.lang.Math.min;
-import static org.lwjgl.BufferUtils.createIntBuffer;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.vkCmdSetLogicOpEXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState3.*;
@@ -555,8 +554,8 @@ abstract public class CommandUtils {
                 //
                 var Bs = fbLayout.blendStates.size();
                 var blendEquation = VkColorBlendEquationEXT.calloc(Bs, stack);
-                var blendAttachment = createIntBuffer(Bs);
-                var colorMask = createIntBuffer(Bs);
+                var blendAttachment = stack.callocInt(Bs);
+                var colorMask = stack.callocInt(Bs);
                 for (var I = 0; I < Bs; I++) {
                     blendAttachment.put(I, fbLayout.blendStates.get(I).enabled ? 1 : 0);
                     colorMask.put(I, fbLayout.colorMask.get(I).colorMask);

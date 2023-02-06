@@ -4,11 +4,13 @@ package org.hydra2s.noire.objects;
 
 import org.hydra2s.noire.descriptors.SemaphoreCInfo;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.BufferUtils.createLongBuffer;
 import static org.lwjgl.BufferUtils.createPointerBuffer;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
 import static org.lwjgl.vulkan.KHRExternalSemaphoreWin32.vkGetSemaphoreWin32HandleKHR;
 import static org.lwjgl.vulkan.KHRTimelineSemaphore.VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO_KHR;
@@ -154,10 +156,12 @@ public class SemaphoreObj extends BasicObj {
                 throw new Exception("Trying to signal timeline by destroyed or invalid semaphore.");
             }
             prevTimeline = lastTimeline; lastTimeline++;
-            vkCheckStatus(vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.create()
-                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
-                .semaphore(this.handle.get())
-                .value(lastTimeline)));
+            try ( MemoryStack stack = stackPush() ) {
+                vkCheckStatus(vkSignalSemaphore(deviceObj.device, VkSemaphoreSignalInfo.calloc(stack)
+                    .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO)
+                    .semaphore(this.handle.get())
+                    .value(lastTimeline)));
+            }
         }
         return this;
     }
@@ -169,12 +173,14 @@ public class SemaphoreObj extends BasicObj {
                 System.out.println("Trying to wait timeline a destroyed or invalid semaphore.");
                 throw new Exception("Trying to wait timeline a destroyed or invalid semaphore.");
             }
-            vkCheckStatus(vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.create()
-                .sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO)
-                .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
-                .pSemaphores(createLongBuffer(1).put(0, this.handle.get()))
-                .semaphoreCount(1)
-                .pValues(createLongBuffer(1).put(0, prevTimeline = lastTimeline)), 9007199254740991L));
+            try ( MemoryStack stack = stackPush() ) {
+                vkCheckStatus(vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc(stack)
+                    .sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO)
+                    .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
+                    .pSemaphores(createLongBuffer(1).put(0, this.handle.get()))
+                    .semaphoreCount(1)
+                    .pValues(createLongBuffer(1).put(0, prevTimeline = lastTimeline)), 9007199254740991L));
+            }
         }
         return this;
     }
