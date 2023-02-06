@@ -8,6 +8,7 @@ import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
@@ -28,6 +29,7 @@ import static java.lang.Math.min;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.hydra2s.noire.virtual.VirtualMutableBufferHeap.VirtualMutableBufferObj.roundUp;
 import static org.lwjgl.BufferUtils.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
@@ -52,8 +54,10 @@ public class CommandManagerObj extends BasicObj {
     public static class VirtualAllocation {
         public long virtualBlock = 0L;
         public long range = 0L;
-        public PointerBuffer allocId = null;//memAllocPointer(1).put(0, 0L);
-        public LongBuffer offset = null;//createLongBuffer(1).put(0, 0L);
+
+        public long allocId = 0L;//memAllocPointer(1).put(0, 0L);
+        public long offset = 0L;//createLongBuffer(1).put(0, 0L);
+
         protected VmaVirtualAllocationCreateInfo createInfo = null;
         protected int status = -2;
 
@@ -78,10 +82,16 @@ public class CommandManagerObj extends BasicObj {
 
             //
             this.virtualBlock = virtualBlock;
-            this.allocId = createPointerBuffer(1).put(0, 0L);
-            this.offset = createLongBuffer(1).put(0, 0L);
             this.range = range;
-            this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.create().alignment(16L).size(range), this.allocId, this.offset));
+
+            //
+            try ( MemoryStack stack = stackPush() ) {
+                PointerBuffer $allocId = stack.callocPointer(1);
+                LongBuffer $offset = stack.callocLong(1);
+                this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(range), $allocId, $offset));
+                this.offset = $offset.get(0);
+                this.allocId = $allocId.get(0);
+            }
         }
 
         //
@@ -91,11 +101,9 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public VirtualAllocation free() {
-            if (this.allocId.get(0) != 0L) {
-                vmaVirtualFree(this.virtualBlock, this.allocId.get(0));
+            if (this.allocId != 0L) {
+                vmaVirtualFree(this.virtualBlock, this.allocId);
             }
-            this.allocId.put(0, 0L);
-            this.allocId = null;
             return this;
         }
     }
@@ -337,7 +345,7 @@ public class CommandManagerObj extends BasicObj {
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 allocations.add(allocation);
                 if (status == 0) {
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
                     throw new Exception("Allocation Failed: " + status + ", memory probably ran out...");
@@ -366,7 +374,7 @@ public class CommandManagerObj extends BasicObj {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                     var imageInfo = imageInfo_.get();
 
                     if (allocation.range <= 0L) {
@@ -389,7 +397,7 @@ public class CommandManagerObj extends BasicObj {
             this.addToFree(()->{
                 var allocation = allocation_.get();
                 if (status.get() == 0) {
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                     memCopy(manager.bufferHeap.map(allocation.range, allocOffset), data);
                 }
             });
@@ -424,7 +432,7 @@ public class CommandManagerObj extends BasicObj {
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 allocations.add(allocation);
                 if (status == 0) {
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                     memCopy(payloadBackup, manager.bufferHeap.map(allocation.range, allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
@@ -450,7 +458,7 @@ public class CommandManagerObj extends BasicObj {
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                     var imageInfo = imageInfo_.get();
 
                     if (allocation.range <= 0L) {
@@ -479,12 +487,12 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy) throws Exception {
+        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Function<MemoryStack, VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy) throws Exception {
             return this.cmdCopyFromHostToBuffer(data, bufferRangeLazy, lazy, false);
         }
 
         //
-        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Callable<VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy, boolean directly) throws Exception {
+        public CommandWriter cmdCopyFromHostToBuffer(ByteBuffer data, Function<MemoryStack, VkDescriptorBufferInfo> bufferRangeLazy, boolean lazy, boolean directly) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<VkDescriptorBufferInfo> bufferRange_ = new AtomicReference<>();
             var payloadBackup = (directly || !lazy) ? data : createByteBuffer(data.remaining()); if (!directly && lazy) { memCopy(data, payloadBackup); };
@@ -494,7 +502,7 @@ public class CommandManagerObj extends BasicObj {
                 var allocation = allocation_.get(); var status = allocation.getStatus();
                 allocations.add(allocation);
                 if (status == 0) {
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
                     memCopy(payloadBackup, manager.bufferHeap.map(payloadBackup.remaining(), allocOffset));
                 } else {
                     System.out.println("Allocation Failed: " + status + ", memory probably ran out...");
@@ -514,20 +522,16 @@ public class CommandManagerObj extends BasicObj {
                     }
                 };
                 if (status.get() == 0) {
-                    try {
-                        bufferRange_.set(bufferRangeLazy.call());
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    var bufferRange = bufferRange_.get();
                     var allocation = allocation_.get();
-                    var allocOffset = allocation.offset.get(0);
+                    var allocOffset = allocation.offset;
 
-                    if (bufferRange.range() <= 0L || allocation.range <= 0L) {
+                    if (allocation.range <= 0L) {
                         throw new RuntimeException("Command Writer Error (Host To Buffer): Bad Src or Dst Range");
                     };
 
-                    CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.create().set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRange);
+                    try ( MemoryStack stack = stackPush() ) {
+                        CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, VkDescriptorBufferInfo.calloc(stack).set(manager.bufferHeap.getHandle().get(), allocOffset, allocation.range), bufferRangeLazy.apply(stack));
+                    }
 
                     /*vkCmdPipelineBarrier2(cmdBuf, VkDependencyInfoKHR.create().sType(VK_STRUCTURE_TYPE_DEPENDENCY_INFO).pMemoryBarriers(VkMemoryBarrier2.create(1)
                         .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER_2)

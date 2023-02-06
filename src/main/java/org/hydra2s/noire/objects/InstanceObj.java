@@ -123,8 +123,8 @@ public class InstanceObj extends BasicObj {
                 // validator is BROKEN!
                 //.ppEnabledLayerNames(this.layers)
                 .get();
-        vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, ptr));
-        this.handle = new Handle("Instance", ptr);
+        vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, this.ptr = createPointerBuffer(1)));
+        this.handle = new Handle("Instance", this.ptr);
 
         //
         BasicObj.globalHandleMap.put$(this.handle.get(), this);

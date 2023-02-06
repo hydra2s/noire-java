@@ -65,7 +65,6 @@ public class BasicObj {
     public BasicObj(Handle base, Handle handle) {
         this.base = base;
         this.handle = handle;
-        this.ptr = createPointerBuffer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {
@@ -100,7 +99,6 @@ public class BasicObj {
     public BasicObj(Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
-        this.ptr = createPointerBuffer(1);//memAllocPointer(1);
 
         if (base != null) {
             if (base.getType() == "Device") {

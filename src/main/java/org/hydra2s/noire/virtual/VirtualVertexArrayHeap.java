@@ -5,6 +5,7 @@ package org.hydra2s.noire.virtual;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
 import org.hydra2s.noire.objects.BufferObj;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorBufferInfo;
@@ -135,6 +136,12 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         public VkDescriptorBufferInfo getBufferRange() {
             var heap = ((VirtualVertexArrayHeap)this.bound).bufferHeap;
             return VkDescriptorBufferInfo.create().set(heap.getHandle().get(), this.bufferOffset, vertexArrayStride);
+        }
+
+        //
+        public VkDescriptorBufferInfo getBufferRange(MemoryStack stack) {
+            var heap = ((VirtualVertexArrayHeap)this.bound).bufferHeap;
+            return VkDescriptorBufferInfo.calloc(stack).set(heap.getHandle().get(), this.bufferOffset, vertexArrayStride);
         }
 
         //

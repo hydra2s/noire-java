@@ -10,6 +10,7 @@ import org.hydra2s.noire.descriptors.SemaphoreCInfo;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.utils.Promise;
 import org.lwjgl.PointerBuffer;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.*;
 
@@ -24,6 +25,7 @@ import java.util.function.Function;
 import static java.lang.System.currentTimeMillis;
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.BufferUtils.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.KHRSwapchain.VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 import static org.lwjgl.vulkan.KHRSwapchain.vkQueuePresentKHR;
@@ -247,7 +249,7 @@ public class DeviceObj extends BasicObj {
                 .pQueueCreateInfos(this.queueFamiliesCInfo)
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers)
-                , null, this.ptr));
+                , null, this.ptr = createPointerBuffer(1)));
         this.handle = new Handle("Device", this.ptr);
 
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
@@ -656,10 +658,12 @@ public class DeviceObj extends BasicObj {
 
         // TODO: rarer fence creation
         submitCmd.fence = new long[]{0L};
-        vkCheckStatus(vkCreateFence(this.device, VkFenceCreateInfo.create().sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, submitCmd.fence));
-        vkCheckStatus(vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.create()
-            .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
-            .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)));
+        try ( MemoryStack stack = stackPush() ) {
+            vkCheckStatus(vkCreateFence(this.device, VkFenceCreateInfo.calloc(stack).sType(VK_STRUCTURE_TYPE_FENCE_CREATE_INFO), null, submitCmd.fence));
+            vkCheckStatus(vkBeginCommandBuffer(submitCmd.cmdBuf = this.allocateCommand(submitCmd.queueGroupIndex, submitCmd.commandPoolIndex), VkCommandBufferBeginInfo.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO)
+                .flags(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)));
+        }
         var profiling = new ProfilingUtilsObj();
         //profiling.recordBeginTime();
         fn.apply(submitCmd.cmdBuf);
