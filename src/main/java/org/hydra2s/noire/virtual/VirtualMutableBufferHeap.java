@@ -279,18 +279,21 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                     PointerBuffer $allocId = stack.callocPointer(1);
                     LongBuffer $offset = stack.callocLong(1);
-                    res = vkCheckStatus(vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset));
+                    res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset);
                     this.bufferOffset = $offset.get(0);
                     this.allocId = $allocId.get(0);
 
                     // if anyways, isn't allocated...
-                    if (vkCheckStatus(res) != VK_SUCCESS) {
+                    if (res != VK_SUCCESS) {
                         this.bufferSize = 0L;
                         this.address = 0L;
 
                         //
+                        var cInfo = (VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo)this.cInfo;
+                        System.out.println("Problematic Heap Index: " + cInfo.heapId);
                         System.out.println("Allocation Failed, there is not free memory: " + res);
                         throw new RuntimeException("Allocation Failed, there is not free memory: " + res);
+                        //vkCheckStatus(res);
                     } else {
                         // get device address from
                         this.address = this.heap.bufferHeap.getDeviceAddress() + this.bufferOffset;
