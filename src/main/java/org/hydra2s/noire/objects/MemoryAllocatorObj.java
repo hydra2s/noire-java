@@ -34,11 +34,11 @@ public class MemoryAllocatorObj extends BasicObj  {
         protected ArrayList<MemoryAllocationObj> allocations = null;
 
         //
-        public DeviceMemoryObj(Handle base, Handle handle) {
+        public DeviceMemoryObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
 
             //
-            this.handle = new Handle("DeviceMemory", MemoryUtil.memAddress(createLongBuffer(1)));
+            this.handle = new UtilsCInfo.Handle("DeviceMemory", MemoryUtil.memAddress(createLongBuffer(1)));
             this.allocations = new ArrayList<MemoryAllocationObj>();
 
             deviceObj.handleMap.put$(this.handle, this);
@@ -46,7 +46,7 @@ public class MemoryAllocatorObj extends BasicObj  {
         }
 
         //
-        public DeviceMemoryObj(Handle base, MemoryAllocationCInfo cInfo) {
+        public DeviceMemoryObj(UtilsCInfo.Handle base, MemoryAllocationCInfo cInfo) {
             super(base, cInfo);
 
             //
@@ -98,7 +98,7 @@ public class MemoryAllocatorObj extends BasicObj  {
                                 .sType(VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO)
                                 .handleTypes(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT).address())
                             .sType(VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO).address())
-                        .address()), null, (this.handle = new Handle("DeviceMemory")).ptr()));
+                        .address()), null, (this.handle = new UtilsCInfo.Handle("DeviceMemory")).ptr()));
 
             // TODO: Linux support
             //vkGetMemoryWin32HandleKHR(deviceObj.device, VkMemoryGetWin32HandleInfoKHR.create().sType(VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR).memory(this.handle.get()).handleType(VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT), Win32Handle = memAllocPointer(1));
@@ -185,18 +185,18 @@ public class MemoryAllocatorObj extends BasicObj  {
     }
 
     //
-    public MemoryAllocatorObj(Handle base, Handle handle) {
+    public MemoryAllocatorObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
-        handleMap = new UtilsCInfo.CombinedMap<Handle, BasicObj>();
+        handleMap = new UtilsCInfo.CombinedMap<UtilsCInfo.Handle, BasicObj>();
         rootMap = new UtilsCInfo.CombinedMap<Long, Long>();
         addressMap = new IntervalTree<>();
     }
 
     //
-    public MemoryAllocatorObj(Handle base, MemoryAllocatorCInfo cInfo) {
+    public MemoryAllocatorObj(UtilsCInfo.Handle base, MemoryAllocatorCInfo cInfo) {
         super(base, cInfo);
-        this.handle = new Handle("MemoryAllocator", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("MemoryAllocator", MemoryUtil.memAddress(createLongBuffer(1)));
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
     };
 

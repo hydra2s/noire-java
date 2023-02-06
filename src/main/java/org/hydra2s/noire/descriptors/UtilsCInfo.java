@@ -2,6 +2,7 @@ package org.hydra2s.noire.descriptors;
 
 //
 
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.VkFormatProperties;
 import org.lwjgl.vulkan.VkFormatProperties2;
 import org.lwjgl.vulkan.VkFormatProperties3;
@@ -31,60 +32,95 @@ import static org.lwjgl.vulkan.VK13.*;
 
 public abstract class UtilsCInfo {
 
+
+    public static class Handle {
+        protected long[] handle = {};
+        protected String type = "unknown";
+        private int cached = 0;
+
+        public Handle(String type) {
+            this.handle = new long[]{0L};
+            this.type = type;
+            this.cached = 0;
+        }
+
+        public Handle(String type, long[] handle2) {
+            this.handle = handle2;
+            this.type = type;
+            this.cached = 0;
+        }
+
+        public Handle(String type, long handle) {
+            this.handle = new long[]{handle};
+            this.type = type;
+            this.cached = 0;
+        }
+
+        public Handle(String type, PointerBuffer ptr) {
+            this.handle = new long[]{ptr.get(0)};
+            this.type = type;
+            this.cached = 0;
+        }
+
+        public String getType() {
+            return this.type;
+        }
+
+        public long get() {
+            return this.handle[0];
+        }
+
+        public long[] ptr() {
+            return handle;
+        }
+
+        //public long address() {
+        //return this.handle.address(0);
+        //}
+
+        @Override
+        public boolean equals(Object o) {
+            return (this.hashCode() == o.hashCode());
+            //return this.handle.get(0) == ((Handle)o).get() && this.type.equals(((Handle)o).getType());
+        }
+
+        @Override
+        public int hashCode() {
+            if (cached == 0) {
+                final int prime = 31;
+                cached = 1;
+                cached = prime * cached + this.type.hashCode();
+                cached = prime * cached + Long.hashCode(this.get());
+            }
+            return cached;
+        }
+    }
+
     public static class CombinedMap <K, V> extends HashMap<K, Optional<V>> {
-        //public NativeLRUCache<K, V> cache = null;
 
         public CombinedMap() {
             super();
-            //this.cache = new NativeLRUCache<K, V>(capacity);
         }
 
         public CombinedMap(int capacity) {
             super(capacity);
-            //this.cache = new NativeLRUCache<K, V>(capacity);
         }
 
         //
         public void put$(K key, V value) {
-            //cache.put(key, value);
             super.put(key, Optional.ofNullable(value));
         }
 
-        /*@Override
-        public Optional<V> get(Object key) {
-            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
-        }*/
-
         @Override
         public Optional<V> get(Object key) {
-            //return cache.containsKey((K) key) ? cache.get((K) key) : Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
-            return Optional.ofNullable(super.containsKey(key) ? super.get(key).orElse(null) : null);
+            var got = super.get(key);
+            return Optional.ofNullable(got != null ? got.orElse(null) : null);
         }
-
-        //@Override
-        //public Optional<V> put(K key, Optional<V> value) {
-        //cache.put(key, value.orElse(null));
-        //super.put(key, value);
-        //return value;
-        //}
 
         @Override
         public Optional<V> remove(Object key) {
-            //var a = cache.remove((K) key);
-            //var b = Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
-            //return Optional.ofNullable(a.orElse(b.orElse(null)));
-            return Optional.ofNullable(super.containsKey(key) ? super.remove(key).orElse(null) : null);
+            return Optional.ofNullable(super.remove(key).orElse(null));
         }
-
-        //@Override
-        //public boolean containsKey(Object key) {
-        //return (cache.containsKey((K) key) || super.containsKey(key));
-        //}
-
-        //@Override
-        //public int size() {
-        //return super.size();
-        //}
     }
 
     static public int

@@ -417,9 +417,9 @@ abstract public class CommandUtils {
     //
     public static void cmdDispatch(VkCommandBuffer cmdBuf, ComputeDispatchInfo cmdInfo) {
         var $deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
-        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new BasicObj.Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
+        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new UtilsCInfo.Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
         var $pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)$pipelineObj.cInfo).pipelineLayout;
-        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new BasicObj.Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
+        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
 
         cmdDispatch(cmdBuf, cmdInfo, new DirectAccessInfo(){{
             deviceObj = $deviceObj;
@@ -454,7 +454,7 @@ abstract public class CommandUtils {
     //
     public static void preInitializeFb(long device, long imageSet, ImageSetCInfo.FBLayout fbLayout) {
         var deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(device).orElse(null);;
-        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new BasicObj.Handle("ImageSet", imageSet)).orElse(null);;
+        var framebufferObj = (ImageSetObj.FramebufferObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageSet", imageSet)).orElse(null);;
 
         //
         fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.length);
@@ -485,10 +485,10 @@ abstract public class CommandUtils {
     //
     public static void cmdDraw(VkCommandBuffer cmdBuf, GraphicsDrawInfo cmdInfo) {
         var $deviceObj = (DeviceObj)BasicObj.globalHandleMap.get(cmdInfo.device).orElse(null);;
-        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new BasicObj.Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
+        var $pipelineObj = /*(cmdInfo.pipelineLayout == 0 || cmdInfo.fbLayout == null) ?*/ (PipelineObj)$deviceObj.handleMap.get(new UtilsCInfo.Handle("Pipeline", cmdInfo.pipeline)).orElse(null) /*: null*/;
         var $pipelineLayout = cmdInfo.pipelineLayout != 0 ? cmdInfo.pipelineLayout : ((PipelineCInfo.ComputePipelineCInfo)$pipelineObj.cInfo).pipelineLayout;
-        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new BasicObj.Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
-        var $framebufferObj = (ImageSetObj.FramebufferObj)$deviceObj.handleMap.get(new BasicObj.Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
+        var $pipelineLayoutObj = (PipelineLayoutObj)$deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", $pipelineLayout)).orElse(null);;
+        var $framebufferObj = (ImageSetObj.FramebufferObj)$deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageSet", cmdInfo.imageSet)).orElse(null);;
 
         //
         cmdDraw(cmdBuf, cmdInfo, new DirectAccessInfo(){{

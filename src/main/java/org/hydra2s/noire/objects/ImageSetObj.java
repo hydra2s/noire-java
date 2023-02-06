@@ -2,10 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.noire.descriptors.ImageCInfo;
-import org.hydra2s.noire.descriptors.ImageSetCInfo;
-import org.hydra2s.noire.descriptors.ImageViewCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkExtent3D;
@@ -30,10 +27,10 @@ public class ImageSetObj extends BasicObj  {
 
 
     //
-    public ImageSetObj(Handle base, Handle handle) {
+    public ImageSetObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
-    public ImageSetObj(Handle base, ImageSetCInfo cInfo) {
+    public ImageSetObj(UtilsCInfo.Handle base, ImageSetCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -98,7 +95,7 @@ public class ImageSetObj extends BasicObj  {
         }
 
         //
-        this.handle = new Handle("ImageSet", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("ImageSet", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 
@@ -156,10 +153,10 @@ public class ImageSetObj extends BasicObj  {
         public ImageViewObj readingDepthStencilImageView = null;
 
         //
-        public FramebufferObj(Handle base, Handle handle) {
+        public FramebufferObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
         }
-        public FramebufferObj(Handle base, ImageSetCInfo.FBLayout cInfo) {
+        public FramebufferObj(UtilsCInfo.Handle base, ImageSetCInfo.FBLayout cInfo) {
             super(base, cInfo);
 
             //

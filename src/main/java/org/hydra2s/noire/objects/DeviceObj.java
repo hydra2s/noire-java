@@ -112,7 +112,7 @@ public class DeviceObj extends BasicObj {
 
 
     //
-    public DeviceObj(Handle base, DeviceCInfo cInfo) {
+    public DeviceObj(UtilsCInfo.Handle base, DeviceCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -250,10 +250,10 @@ public class DeviceObj extends BasicObj {
                 .ppEnabledExtensionNames(this.extensions)
                 .ppEnabledLayerNames(this.layers)
                 , null, this.ptr = createPointerBuffer(1)));
-        this.handle = new Handle("Device", this.ptr);
+        this.handle = new UtilsCInfo.Handle("Device", this.ptr);
 
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
-        handleMap = new UtilsCInfo.CombinedMap<Handle, BasicObj>();
+        handleMap = new UtilsCInfo.CombinedMap<UtilsCInfo.Handle, BasicObj>();
         rootMap = new UtilsCInfo.CombinedMap<Long, Long>();
         addressMap = new IntervalTree<>();
 
@@ -288,7 +288,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public DeviceObj(Handle base, Handle handle) {
+    public DeviceObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 

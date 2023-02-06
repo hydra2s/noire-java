@@ -4,6 +4,7 @@ package org.hydra2s.noire.virtual;
 
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.noire.objects.BufferObj;
 import org.hydra2s.noire.objects.CommandUtils;
 import org.lwjgl.PointerBuffer;
@@ -45,8 +46,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         public ArrayList<Long> toFree = null;
 
         //
-        public VirtualMemoryHeap(Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
-            super(base, cInfo);
+        public VirtualMemoryHeap(UtilsCInfo.Handle base, VirtualMutableBufferHeapCInfo.VirtualMemoryHeapCInfo cInfo, long $memoryAllocator) {
+            super(cInfo);
 
             // TODO: add support for ResizableBAR! It's necessary!
             this.toFree = new ArrayList<>();
@@ -61,7 +62,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             }});
 
             //
-            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.create().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(cInfo.bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
+            vkCheckStatus(vmaCreateVirtualBlock(vbInfo = VmaVirtualBlockCreateInfo.create().size(cInfo.bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
         }
 
         //
@@ -98,16 +99,16 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
     public ArrayList<VirtualMemoryHeap> memoryHeaps = null;
 
     //
-    public VirtualMutableBufferHeap(Handle base, Handle handle) {
+    public VirtualMutableBufferHeap(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     // But before needs to create such system
-    public VirtualMutableBufferHeap(Handle base, VirtualMutableBufferHeapCInfo cInfo) {
+    public VirtualMutableBufferHeap(UtilsCInfo.Handle base, VirtualMutableBufferHeapCInfo cInfo) {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("VirtualMutableBufferHeap", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple heaps, one registry
@@ -121,18 +122,15 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
     //
     public VirtualMutableBufferObj createBuffer(int $heapId) {
-        return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
+        return new VirtualMutableBufferObj(this, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
             heapId = $heapId;
             registryHandle = handle.get();
         }});
     }
 
     //
-    public VirtualMutableBufferObj createBuffer(int $heapId, long size) throws Exception {
-        return new VirtualMutableBufferObj(this.base, new VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo(){{
-            heapId = $heapId;
-            registryHandle = handle.get();
-        }}).allocate(size);
+    public VirtualMutableBufferObj createBuffer(int $heapId, long size) {
+        return this.createBuffer($heapId).allocate(size);
     }
 
     @Override
@@ -158,8 +156,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         protected ByteBuffer mapped = null;
 
         //
-        public VirtualMutableBufferObj(Handle base, Handle handle) {
-            super(base, handle);
+        public VirtualMutableBufferObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
+            super(handle);
         }
 
         //
@@ -168,8 +166,8 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
         }
 
         //
-        public VirtualMutableBufferObj(Handle base, VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo cInfo) {
-            super(base, cInfo);
+        public VirtualMutableBufferObj(VirtualMutableBufferHeap directly, VirtualMutableBufferHeapCInfo.VirtualMutableBufferCInfo cInfo) {
+            super(cInfo);
 
             //
             this.bufferSize = 0;
@@ -179,13 +177,13 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             // TODO: bound with memoryHeap
 
             //
-            this.bound = (VirtualMutableBufferHeap)deviceObj.handleMap.get(new Handle("VirtualMutableBufferHeap", cInfo.registryHandle)).orElse(null);
+            this.bound = directly;
             assert this.bound != null;
-            this.heap = ((VirtualMutableBufferHeap)this.bound).memoryHeaps.get(cInfo.heapId);
+            this.heap = ((VirtualMutableBufferHeap) this.bound).memoryHeaps.get(cInfo.heapId);
 
             //
             this.DSC_ID = this.bound.registry.push(this);
-            this.virtualGL = this.DSC_ID+1;
+            this.virtualGL = this.DSC_ID + 1;
         }
 
         //
@@ -279,7 +277,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
 
                     PointerBuffer $allocId = stack.callocPointer(1);
                     LongBuffer $offset = stack.callocLong(1);
-                    res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset);
+                    res = vmaVirtualAllocate(this.heap.virtualBlock.get(0), VmaVirtualAllocationCreateInfo.calloc(stack).flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).alignment(16L).size(this.blockSize = bufferSize), $allocId, $offset);
                     this.bufferOffset = $offset.get(0);
                     this.allocId = $allocId.get(0);
 
@@ -312,7 +310,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
             return this;
         }
 
-        public VirtualMutableBufferObj allocate(long bufferSize) throws Exception {
+        public VirtualMutableBufferObj allocate(long bufferSize) {
             return this.allocate(bufferSize, null);
         }
 

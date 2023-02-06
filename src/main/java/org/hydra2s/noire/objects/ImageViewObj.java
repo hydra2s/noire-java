@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.ImageViewCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.VkCommandBuffer;
 import org.lwjgl.vulkan.VkDescriptorImageInfo;
 import org.lwjgl.vulkan.VkImageSubresourceLayers;
@@ -18,16 +19,16 @@ public class ImageViewObj extends BasicObj {
     public int DSC_ID = -1;
 
     // aka, known as ImageSubresourceRange
-    public ImageViewObj(Handle base, Handle handle) {
+    public ImageViewObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     // aka, known as ImageSubresourceRange
-    public ImageViewObj(Handle base, ImageViewCInfo cInfo) {
+    public ImageViewObj(UtilsCInfo.Handle base, ImageViewCInfo cInfo) {
         super(base, cInfo);
 
         //
-        var imageObj = (ImageObj)deviceObj.handleMap.get(new Handle("Image", cInfo.image)).orElse(null);
+        var imageObj = (ImageObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("Image", cInfo.image)).orElse(null);
         var imageT = imageObj.createInfo.imageType();
         var format = imageObj.createInfo.format();
 
@@ -38,12 +39,12 @@ public class ImageViewObj extends BasicObj {
         if (cInfo.isCubemap)            { imageViewType = (cInfo.subresourceRange.layerCount() > 6 ? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY : VK_IMAGE_VIEW_TYPE_CUBE); };
 
         //
-        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.create().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new Handle("ImageView")).ptr()));
+        vkCheckStatus(vkCreateImageView(deviceObj.device, this.createInfo = VkImageViewCreateInfo.create().sType(VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO).image(cInfo.image).format(format).viewType(imageViewType).subresourceRange(cInfo.subresourceRange).components(cInfo.compontentMapping), null, (this.handle = new UtilsCInfo.Handle("ImageView")).ptr()));
         deviceObj.handleMap.put$(this.handle, this);
 
         // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.resources.push(VkDescriptorImageInfo.create().imageView(this.handle.get()).imageLayout(cInfo.type == "storage" ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
             descriptorsObj.writeDescriptors();
         }
@@ -137,7 +138,7 @@ public class ImageViewObj extends BasicObj {
 
         //
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             descriptorsObj.resources.removeIndex(self.DSC_ID);
             self.DSC_ID = -1;
         }

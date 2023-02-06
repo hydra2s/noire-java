@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 import com.lodborg.intervaltree.Interval;
 import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.BufferCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
@@ -30,12 +31,12 @@ public class BufferObj extends BasicObj {
     public MemoryAllocationObj allocationObj = null;
 
     //
-    public BufferObj(Handle base, Handle handle) {
+    public BufferObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     // TODO: create buffer by allocator (such as VMA)
-    public BufferObj(Handle base, BufferCInfo cInfo) {
+    public BufferObj(UtilsCInfo.Handle base, BufferCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -56,10 +57,10 @@ public class BufferObj extends BasicObj {
         //
         int status = VK_NOT_READY;
         if (cInfo.buffer == null || cInfo.buffer.get(0) == 0) {
-            status = vkCreateBuffer(deviceObj.device, this.createInfo, null, (this.handle = new Handle("Buffer")).ptr());
+            status = vkCreateBuffer(deviceObj.device, this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Buffer")).ptr());
         } else {
             status = VK_SUCCESS;
-            this.handle = new Handle("Buffer", cInfo.buffer.get(0));
+            this.handle = new UtilsCInfo.Handle("Buffer", cInfo.buffer.get(0));
         }
         vkCheckStatus(status);
         deviceObj.handleMap.put$(this.handle, this);

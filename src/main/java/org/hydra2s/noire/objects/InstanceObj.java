@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.InstanceCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWVulkan;
 import org.lwjgl.system.MemoryUtil;
@@ -20,7 +21,7 @@ import static org.lwjgl.vulkan.EXTDeviceAddressBindingReport.VK_DEBUG_UTILS_MESS
 
 // An America!
 public class InstanceObj extends BasicObj {
-    public InstanceObj(Handle base, Handle handle) {
+    public InstanceObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
@@ -70,7 +71,7 @@ public class InstanceObj extends BasicObj {
     }
 
     //
-    public InstanceObj(Handle base, InstanceCInfo cInfo) {
+    public InstanceObj(UtilsCInfo.Handle base, InstanceCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -124,7 +125,7 @@ public class InstanceObj extends BasicObj {
                 //.ppEnabledLayerNames(this.layers)
                 .get();
         vkCheckStatus(VK10.vkCreateInstance(this.instanceInfo, null, this.ptr = createPointerBuffer(1)));
-        this.handle = new Handle("Instance", this.ptr);
+        this.handle = new UtilsCInfo.Handle("Instance", this.ptr);
 
         //
         BasicObj.globalHandleMap.put$(this.handle.get(), this);
@@ -217,7 +218,7 @@ public class InstanceObj extends BasicObj {
             this.physicalDevicesObj = new ArrayList<PhysicalDeviceObj>();
             var Ps = this.physicalDeviceAmount.length;
             for (int I = 0; I < Ps; I++) {
-                this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new Handle("PhysicalDevice", this.physicalDevices.get(I))));
+                this.physicalDevicesObj.add(new PhysicalDeviceObj(this.handle, new UtilsCInfo.Handle("PhysicalDevice", this.physicalDevices.get(I))));
             }
         }
         return this.physicalDevicesObj;

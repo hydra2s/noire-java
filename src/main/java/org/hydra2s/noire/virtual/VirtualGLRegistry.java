@@ -1,7 +1,9 @@
 package org.hydra2s.noire.virtual;
 
 //
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.noire.objects.BasicObj;
+import org.hydra2s.noire.objects.LightBasicObj;
 import org.hydra2s.noire.objects.PipelineLayoutObj;
 
 import java.util.TreeMap;
@@ -16,7 +18,7 @@ public class VirtualGLRegistry extends BasicObj {
     protected TreeMap<Long, VirtualGLObj> sorted = null;
 
     //
-    public VirtualGLRegistry(Handle base, Handle handle) {
+    public VirtualGLRegistry(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
 
         this.registry = new PipelineLayoutObj.OutstandingArray<>();
@@ -24,7 +26,7 @@ public class VirtualGLRegistry extends BasicObj {
     }
 
     //
-    public VirtualGLRegistry(Handle base, VirtualGLRegistryCInfo cInfo) {
+    public VirtualGLRegistry(UtilsCInfo.Handle base, VirtualGLRegistryCInfo cInfo) {
         super(base, cInfo);
 
         this.registry = new PipelineLayoutObj.OutstandingArray<>();
@@ -71,18 +73,18 @@ public class VirtualGLRegistry extends BasicObj {
     }
 
     //
-    static public class VirtualGLObj extends BasicObj {
+    static public class VirtualGLObj extends LightBasicObj {
         // virtual GL is always is `DSC_ID`+1
         public int DSC_ID = -1; // for shaders
         public int virtualGL = 0; // for virtual OpenGL
 
         //
         public VirtualGLRegistry bound = null;
-        public VirtualGLObj(Handle base, Handle handle) {
-            super(base, handle);
+        public VirtualGLObj(UtilsCInfo.Handle handle) {
+            super(handle);
         }
-        public VirtualGLObj(Handle base, VirtualGLRegistryCInfo.VirtualGLObjCInfo cInfo) {
-            super(base, cInfo);
+        public VirtualGLObj(VirtualGLRegistryCInfo.VirtualGLObjCInfo cInfo) {
+            super(cInfo);
         }
     }
 

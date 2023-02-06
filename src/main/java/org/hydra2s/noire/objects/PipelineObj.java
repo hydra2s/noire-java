@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.PipelineCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
@@ -28,10 +29,10 @@ import static org.lwjgl.vulkan.VK13.*;
 public class PipelineObj extends BasicObj  {
 
 
-    public PipelineObj(Handle base, Handle handle) {
+    public PipelineObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
-    public PipelineObj(Handle base, PipelineCInfo cInfo) {
+    public PipelineObj(UtilsCInfo.Handle base, PipelineCInfo cInfo) {
         super(base, cInfo);
     }
 
@@ -49,12 +50,12 @@ public class PipelineObj extends BasicObj  {
     public static class ComputePipelineObj extends PipelineObj {
         public VkPipelineRobustnessCreateInfoEXT robustness;
         public VkComputePipelineCreateInfo.Buffer createInfo = null;
-        public ComputePipelineObj(Handle base, Handle handle) {
+        public ComputePipelineObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
         }
 
         //
-        public ComputePipelineObj(Handle base, PipelineCInfo.ComputePipelineCInfo cInfo) {
+        public ComputePipelineObj(UtilsCInfo.Handle base, PipelineCInfo.ComputePipelineCInfo cInfo) {
             super(base, cInfo);
 
             //
@@ -74,8 +75,8 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             //
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
-            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new Handle("Pipeline")).ptr()));
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);;
+            vkCheckStatus(vkCreateComputePipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Pipeline")).ptr()));
             deviceObj.handleMap.put$(this.handle, this);
 
             //
@@ -119,16 +120,16 @@ public class PipelineObj extends BasicObj  {
         public VkGraphicsPipelineLibraryCreateInfoEXT library = null;
 
         //
-        public GraphicsPipelineObj(Handle base, Handle handle) {
+        public GraphicsPipelineObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
         }
 
         //
-        public GraphicsPipelineObj(Handle base, PipelineCInfo.GraphicsPipelineCInfo cInfo) {
+        public GraphicsPipelineObj(UtilsCInfo.Handle base, PipelineCInfo.GraphicsPipelineCInfo cInfo) {
             super(base, cInfo);
 
             //
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
 
             //
             var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
@@ -288,7 +289,7 @@ public class PipelineObj extends BasicObj  {
                 .layout(cInfo.pipelineLayout);
 
             // TODO: initial pipeline cache
-            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new Handle("Pipeline")).ptr()));
+            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Pipeline")).ptr()));
             deviceObj.handleMap.put$(this.handle, this);
 
             //

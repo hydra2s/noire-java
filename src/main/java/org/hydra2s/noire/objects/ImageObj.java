@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 
 import org.hydra2s.noire.descriptors.ImageCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.VkExternalMemoryImageCreateInfo;
 import org.lwjgl.vulkan.VkImageCreateInfo;
 import org.lwjgl.vulkan.VkImageMemoryRequirementsInfo2;
@@ -18,7 +19,7 @@ public class ImageObj extends BasicObj {
     public long allocationHandle = 0L;
 
     public VkImageCreateInfo createInfo = null;
-    public ImageObj(Handle base, Handle handle) {
+    public ImageObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
@@ -27,7 +28,7 @@ public class ImageObj extends BasicObj {
     public MemoryAllocationObj allocationObj = null;
 
     // TODO: create buffer by allocator (such as VMA)
-    public ImageObj(Handle base, ImageCInfo cInfo) {
+    public ImageObj(UtilsCInfo.Handle base, ImageCInfo cInfo) {
         super(base, cInfo);
 
         var extent = cInfo.extent3D;
@@ -61,10 +62,10 @@ public class ImageObj extends BasicObj {
         //
         int status = VK_NOT_READY;
         if (cInfo.image == null || cInfo.image.get(0) == 0) {
-            status = vkCreateImage(deviceObj.device, this.createInfo, null, (this.handle = new Handle("Image")).ptr());
+            status = vkCreateImage(deviceObj.device, this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Image")).ptr());
         } else {
             status = VK_SUCCESS;
-            this.handle = new Handle("Image", cInfo.image.get(0));
+            this.handle = new UtilsCInfo.Handle("Image", cInfo.image.get(0));
         }
         vkCheckStatus(status);
         deviceObj.handleMap.put$(this.handle, this);

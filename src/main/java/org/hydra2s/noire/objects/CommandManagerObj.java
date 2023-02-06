@@ -88,7 +88,7 @@ public class CommandManagerObj extends BasicObj {
             try ( MemoryStack stack = stackPush() ) {
                 PointerBuffer $allocId = stack.callocPointer(1);
                 LongBuffer $offset = stack.callocLong(1);
-                this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc(stack).alignment(16L).size(range), $allocId, $offset));
+                this.status = vkCheckStatus(vmaVirtualAllocate(virtualBlock, this.createInfo = VmaVirtualAllocationCreateInfo.calloc(stack).flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).alignment(16L).size(range), $allocId, $offset));
                 this.offset = $offset.get(0);
                 this.allocId = $allocId.get(0);
             }
@@ -563,7 +563,7 @@ public class CommandManagerObj extends BasicObj {
     protected VmaVirtualBlockCreateInfo vbInfo = null;
 
     //
-    public CommandManagerObj(Handle base, CommandManagerCInfo cInfo) {
+    public CommandManagerObj(UtilsCInfo.Handle base, CommandManagerCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -579,10 +579,10 @@ public class CommandManagerObj extends BasicObj {
         }});
 
         //
-        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.create().flags(VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_OFFSET_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_TIME_BIT | VMA_VIRTUAL_ALLOCATION_CREATE_STRATEGY_MIN_MEMORY_BIT).size(bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
+        vkCheckStatus(vmaCreateVirtualBlock(this.vbInfo = VmaVirtualBlockCreateInfo.create().size(bufferHeapSize), this.virtualBlock = createPointerBuffer(1).put(0, 0L)));
 
         //
-        this.handle = new Handle("CommandManager", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("CommandManager", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 

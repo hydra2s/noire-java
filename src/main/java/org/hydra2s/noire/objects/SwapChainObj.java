@@ -45,14 +45,14 @@ public class SwapChainObj extends BasicObj  {
     public PointerBuffer SemRenderWin32Handle = createPointerBuffer(1).put(0, 0);
 
     //
-    public SwapChainObj(Handle base, Handle handle) {
+    public SwapChainObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     public SwapChainObj generateImages(SwapChainCInfo cInfo) {
         
         
-        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+        var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
 
         //
         if (cInfo.surface != 0) {
@@ -104,7 +104,7 @@ public class SwapChainObj extends BasicObj  {
                     .oldSwapchain(0L);
 
             //
-            vkCheckStatus(vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, (this.handle = new Handle("SwapChain")).ptr()));
+            vkCheckStatus(vkCreateSwapchainKHR(deviceObj.device, this.createInfo, null, (this.handle = new UtilsCInfo.Handle("SwapChain")).ptr()));
             vkCheckStatus(vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain = new int[]{0}, null));
             vkCheckStatus(vkGetSwapchainImagesKHR(deviceObj.device, this.handle.get(), this.amountOfImagesInSwapchain, this.images = new long[this.amountOfImagesInSwapchain[0]]));
             this.imagesObj = new ArrayList<>();
@@ -187,7 +187,7 @@ public class SwapChainObj extends BasicObj  {
     }
 
     //
-    public SwapChainObj(Handle base, SwapChainCInfo cInfo) {
+    public SwapChainObj(UtilsCInfo.Handle base, SwapChainCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -238,7 +238,7 @@ public class SwapChainObj extends BasicObj  {
             return this;
         }
 
-        public SwapChainVirtual(Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
+        public SwapChainVirtual(UtilsCInfo.Handle base, SwapChainCInfo.VirtualSwapChainCInfo cInfo) {
             super(base, cInfo);
         }
 

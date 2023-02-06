@@ -149,7 +149,7 @@ public class PhysicalDeviceObj extends BasicObj {
     protected int[] extensionCount;
 
     //
-    public PhysicalDeviceObj(Handle base, Handle handle) {
+    public PhysicalDeviceObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
 
         //

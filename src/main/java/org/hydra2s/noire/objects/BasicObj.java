@@ -30,7 +30,7 @@ public class BasicObj {
     public long sharedPtr = 0;
 
     //
-    public Handle getHandle() {
+    public UtilsCInfo.Handle getHandle() {
         return handle;
     }
 
@@ -40,15 +40,15 @@ public class BasicObj {
 
     //
     protected PointerBuffer ptr = null;
-    protected Handle base = null;//new Handle("Unknown", 0);
-    protected Handle handle = null;//new Handle("Unknown", 0);
+    protected UtilsCInfo.Handle base = null;//new Handle("Unknown", 0);
+    protected UtilsCInfo.Handle handle = null;//new Handle("Unknown", 0);
     public BasicCInfo cInfo = null;
 
     //
     public static UtilsCInfo.CombinedMap<Long, BasicObj> globalHandleMap = new UtilsCInfo.CombinedMap<Long, BasicObj>();
 
     // TODO: make correct hashmap
-    public UtilsCInfo.CombinedMap<Handle, BasicObj> handleMap = null;
+    public UtilsCInfo.CombinedMap<UtilsCInfo.Handle, BasicObj> handleMap = null;
 
     // We prefer interval maps, for getting buffers, acceleration structures, etc. when it really needed...
     public IntervalTree<Long> addressMap = null;
@@ -62,7 +62,7 @@ public class BasicObj {
     }
 
     //
-    public BasicObj(Handle base, Handle handle) {
+    public BasicObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         this.base = base;
         this.handle = handle;
 
@@ -96,7 +96,7 @@ public class BasicObj {
     }
 
     //
-    public BasicObj(Handle base, BasicCInfo cInfo) {
+    public BasicObj(UtilsCInfo.Handle base, BasicCInfo cInfo) {
         this.base = base;
         this.cInfo = cInfo;
 
@@ -131,71 +131,8 @@ public class BasicObj {
     }
 
     //
-    public Handle getBase() {
+    public UtilsCInfo.Handle getBase() {
         return base;
-    }
-
-    public static class Handle {
-        protected long[] handle = {};
-        protected String type = "unknown";
-        private int cached = 0;
-
-        public Handle(String type) {
-            this.handle = new long[]{0L};
-            this.type = type;
-            this.cached = 0;
-        }
-
-        public Handle(String type, long[] handle2) {
-            this.handle = handle2;
-            this.type = type;
-            this.cached = 0;
-        }
-
-        public Handle(String type, long handle) {
-            this.handle = new long[]{handle};
-            this.type = type;
-            this.cached = 0;
-        }
-
-        public Handle(String type, PointerBuffer ptr) {
-            this.handle = new long[]{ptr.get(0)};
-            this.type = type;
-            this.cached = 0;
-        }
-
-        public String getType() {
-            return this.type;
-        }
-
-        public long get() {
-            return this.handle[0];
-        }
-
-        public long[] ptr() {
-            return handle;
-        }
-
-        //public long address() {
-            //return this.handle.address(0);
-        //}
-
-        @Override
-        public boolean equals(Object o) {
-            return (this.hashCode() == o.hashCode());
-            //return this.handle.get(0) == ((Handle)o).get() && this.type.equals(((Handle)o).getType());
-        }
-
-        @Override
-        public int hashCode() {
-            if (cached == 0) {
-                final int prime = 31;
-                cached = 1;
-                cached = prime * cached + this.type.hashCode();
-                cached = prime * cached + Long.hashCode(this.get());
-            }
-            return cached;
-        }
     }
 
     // TODO: add destructors support

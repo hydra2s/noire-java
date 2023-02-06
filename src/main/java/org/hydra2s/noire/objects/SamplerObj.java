@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.SamplerCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -16,19 +17,19 @@ public class SamplerObj extends BasicObj  {
     public int DSC_ID = -1;
 
     //
-    public SamplerObj(Handle base, Handle handle) {
+    public SamplerObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
-    public SamplerObj(Handle base, SamplerCInfo cInfo) {
+    public SamplerObj(UtilsCInfo.Handle base, SamplerCInfo cInfo) {
         super(base, cInfo);
 
         //
         this.createInfo = cInfo.createInfo;
-        vkCheckStatus(vkCreateSampler(deviceObj.device, this.createInfo, null, (this.handle = new Handle("Sampler")).ptr()));
+        vkCheckStatus(vkCreateSampler(deviceObj.device, this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Sampler")).ptr()));
 
         // TODO: multiple pipeline layout support
         if (cInfo.pipelineLayout != 0) {
-            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+            var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
             this.DSC_ID = descriptorsObj.samplers.push(createLongBuffer(1).put(0, this.handle.get()));
             descriptorsObj.writeDescriptors();
         }
@@ -64,7 +65,7 @@ public class SamplerObj extends BasicObj  {
         super.deleteDirectly();
         
         var cInfo = (SamplerCInfo)this.cInfo;
-        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+        var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
         var self = this;
 
         if (pipelineLayoutObj != null) {

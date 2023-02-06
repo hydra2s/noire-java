@@ -3,6 +3,7 @@ package org.hydra2s.noire.objects;
 //
 
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.system.MemoryUtil;
 
@@ -25,26 +26,26 @@ public class MemoryAllocationObj extends BasicObj {
     public MemoryAllocatorObj.DeviceMemoryObj deviceMemoryObj = null;
 
     //
-    public MemoryAllocationObj(Handle base, Handle handle) {
+    public MemoryAllocationObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
 
         //
         //deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
-        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 
     //
-    public MemoryAllocationObj(Handle base, MemoryAllocationCInfo cInfo) {
+    public MemoryAllocationObj(UtilsCInfo.Handle base, MemoryAllocationCInfo cInfo) {
         super(base, cInfo);
 
         //
         //deviceMemoryObj = (MemoryAllocatorObj.DeviceMemoryObj)deviceObj.handleMap.get(new Handle("DeviceMemory", this.deviceMemory)).orElse(null);
 
         //
-        this.handle = new Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("MemoryAllocation", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
     }
 

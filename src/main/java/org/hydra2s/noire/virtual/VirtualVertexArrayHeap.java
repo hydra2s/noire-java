@@ -4,6 +4,7 @@ package org.hydra2s.noire.virtual;
 
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.hydra2s.noire.objects.BufferObj;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -30,16 +31,16 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
     public ByteBuffer hostPayload = null;
 
     //
-    public VirtualVertexArrayHeap(Handle base, Handle handle) {
+    public VirtualVertexArrayHeap(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     // But before needs to create such system
-    public VirtualVertexArrayHeap(Handle base, VirtualVertexArrayHeapCInfo cInfo) {
+    public VirtualVertexArrayHeap(UtilsCInfo.Handle base, VirtualVertexArrayHeapCInfo cInfo) {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("VirtualVertexArrayHeap", MemoryUtil.memAddress(createLongBuffer(1)));
         deviceObj.handleMap.put$(this.handle, this);
 
         // device memory buffer with older GPU (Turing, etc.) or device memory with `map` and staging ops support.
@@ -99,17 +100,11 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
         protected long address = 0L;
 
         //
-        public VirtualVertexArrayObj(Handle base, Handle handle) {
-            super(base, handle);
-        }
-        public VirtualVertexArrayObj(Handle base, VirtualVertexArrayHeapCInfo.VirtualVertexArrayCInfo cInfo) {
-            super(base, cInfo);
+        public VirtualVertexArrayObj(VirtualVertexArrayHeap directly, VirtualVertexArrayHeapCInfo.VirtualVertexArrayCInfo cInfo) {
+            super(cInfo);
 
             //
-            var virtualVertexArrayHeap = (VirtualVertexArrayHeap)deviceObj.handleMap.get(new Handle("VirtualVertexArrayHeap", cInfo.registryHandle)).orElse(null);
-
-            //
-            this.bound = virtualVertexArrayHeap;
+            this.bound = directly;
 
             //
             assert this.bound != null;
@@ -118,8 +113,8 @@ public class VirtualVertexArrayHeap extends VirtualGLRegistry {
 
             //
             this.bindings = new HashMap<Integer, VirtualVertexArrayHeapCInfo.VertexBinding>(maxBindings);
-            this.bindingsMapped = memSlice(virtualVertexArrayHeap.hostPayload, (int) (this.bufferOffset = this.DSC_ID*vertexArrayStride), vertexArrayStride);//virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
-            this.address = virtualVertexArrayHeap.bufferHeap.getDeviceAddress() + this.bufferOffset;
+            this.bindingsMapped = memSlice(directly.hostPayload, (int) (this.bufferOffset = this.DSC_ID*vertexArrayStride), vertexArrayStride);//virtualVertexArrayHeap.bufferHeap.map(vertexArrayStride, this.bufferOffset = this.DSC_ID*vertexArrayStride);
+            this.address = directly.bufferHeap.getDeviceAddress() + this.bufferOffset;
             memSet(this.bindingsMapped, 0);
         }
 

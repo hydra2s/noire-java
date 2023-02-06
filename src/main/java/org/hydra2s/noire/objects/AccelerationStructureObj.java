@@ -7,6 +7,7 @@ import com.lodborg.intervaltree.LongInterval;
 import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.vulkan.*;
 
@@ -35,12 +36,12 @@ public class AccelerationStructureObj extends BasicObj {
     public long deviceAddress = 0L;
 
     // TODO: deferred allocation support
-    public AccelerationStructureObj(Handle base, Handle handle) {
+    public AccelerationStructureObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     // TODO: deferred allocation support
-    public AccelerationStructureObj(Handle base, AccelerationStructureCInfo cInfo) {
+    public AccelerationStructureObj(UtilsCInfo.Handle base, AccelerationStructureCInfo cInfo) {
         super(base, cInfo);
 
         // TODO: auto-detect AS level
@@ -111,7 +112,7 @@ public class AccelerationStructureObj extends BasicObj {
             .size(scratchSize);
 
         //
-        vkCheckStatus(vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(this.buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, (this.handle = new Handle("AccelerationStructure")).ptr()));
+        vkCheckStatus(vkCreateAccelerationStructureKHR(deviceObj.device, VkAccelerationStructureCreateInfoKHR.create().sType(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR).type(this.ASLevel).size(this.buildSizeInfo.accelerationStructureSize()).offset(0).buffer(this.ASStorageBuffer.handle.get()), null, (this.handle = new UtilsCInfo.Handle("AccelerationStructure")).ptr()));
         deviceObj.handleMap.put$(this.handle, this);
 
         //
@@ -217,11 +218,11 @@ public class AccelerationStructureObj extends BasicObj {
     static public class TopAccelerationStructureObj extends AccelerationStructureObj {
         public int ASLevel = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 
-        public TopAccelerationStructureObj(Handle base, Handle handle) {
+        public TopAccelerationStructureObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
         }
 
-        public TopAccelerationStructureObj(Handle base, AccelerationStructureCInfo.TopAccelerationStructureCInfo cInfo) {
+        public TopAccelerationStructureObj(UtilsCInfo.Handle base, AccelerationStructureCInfo.TopAccelerationStructureCInfo cInfo) {
             super(base, cInfo);
         }
     }
@@ -230,11 +231,11 @@ public class AccelerationStructureObj extends BasicObj {
     static public class BottomAccelerationStructureObj extends AccelerationStructureObj {
         public int ASLevel = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
-        public BottomAccelerationStructureObj(Handle base, Handle handle) {
+        public BottomAccelerationStructureObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
             super(base, handle);
         }
 
-        public BottomAccelerationStructureObj(Handle base, AccelerationStructureCInfo.BottomAccelerationStructureCInfo cInfo) {
+        public BottomAccelerationStructureObj(UtilsCInfo.Handle base, AccelerationStructureCInfo.BottomAccelerationStructureCInfo cInfo) {
             super(base, cInfo);
         }
 

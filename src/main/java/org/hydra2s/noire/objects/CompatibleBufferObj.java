@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.VkCommandBuffer;
 
 import java.nio.ByteBuffer;
@@ -11,12 +12,12 @@ public class CompatibleBufferObj extends BufferObj {
     public BufferObj hostBuffer = null;
 
     //
-    public CompatibleBufferObj(Handle base, Handle handle) {
+    public CompatibleBufferObj(UtilsCInfo.Handle base, UtilsCInfo.Handle handle) {
         super(base, handle);
     }
 
     //
-    public CompatibleBufferObj(Handle base, BufferCInfo cInfo) {
+    public CompatibleBufferObj(UtilsCInfo.Handle base, BufferCInfo cInfo) {
         super(base, cInfo);
 
         //

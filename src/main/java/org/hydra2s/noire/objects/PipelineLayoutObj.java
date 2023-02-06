@@ -2,10 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
-import org.hydra2s.noire.descriptors.BufferCInfo;
-import org.hydra2s.noire.descriptors.ImageViewCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
-import org.hydra2s.noire.descriptors.PipelineLayoutCInfo;
+import org.hydra2s.noire.descriptors.*;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.vulkan.*;
 
@@ -160,7 +157,7 @@ public class PipelineLayoutObj extends BasicObj  {
     public static final int samplerCount = 1024;
 
     //
-    public PipelineLayoutObj(Handle base, PipelineLayoutCInfo cInfo) {
+    public PipelineLayoutObj(UtilsCInfo.Handle base, PipelineLayoutCInfo cInfo) {
         super(base, cInfo);
 
         //
@@ -235,7 +232,7 @@ public class PipelineLayoutObj extends BasicObj  {
         this.samplers = new OutstandingArray<LongBuffer>();
         this.pConstRange = VkPushConstantRange.create(1).stageFlags(VK_SHADER_STAGE_ALL).offset(0).size(256);
         vkCheckStatus(vkCreatePipelineCache(deviceObj.device, VkPipelineCacheCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO).flags(VK_PIPELINE_CACHE_CREATE_EXTERNALLY_SYNCHRONIZED_BIT ), null, this.pipelineCache = new long[]{0L}));
-        vkCheckStatus(vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.create().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(pLayouts).pPushConstantRanges(this.pConstRange), null, (this.handle = new Handle("PipelineLayout")).ptr()));
+        vkCheckStatus(vkCreatePipelineLayout(deviceObj.device, VkPipelineLayoutCreateInfo.create().flags(VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT).sType(VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO).pSetLayouts(pLayouts).pPushConstantRanges(this.pConstRange), null, (this.handle = new UtilsCInfo.Handle("PipelineLayout")).ptr()));
         deviceObj.handleMap.put$(this.handle, this);
 
         //
@@ -410,7 +407,7 @@ public class PipelineLayoutObj extends BasicObj  {
                 if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
                     vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.create()
                         .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                        .type(((ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                        .type(((ImageViewCInfo) deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                         .data(VkDescriptorDataEXT.create().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets[0] + RSIZE * I), RSIZE));
                 }
             }
@@ -441,7 +438,7 @@ public class PipelineLayoutObj extends BasicObj  {
             // TODO: don't fill empty resources!
             for (var I = 0; I < Math.min(this.resources.size(), resourceCount); I++) {
                 if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
-                    var imageViewInfo = (ImageViewCInfo) deviceObj.handleMap.get(new Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo;
+                    var imageViewInfo = (ImageViewCInfo) deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo;
                     resourceInfo.get(I).set(this.resources.get(I));
                     resourceDescriptorSets.get(I)
                         .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)

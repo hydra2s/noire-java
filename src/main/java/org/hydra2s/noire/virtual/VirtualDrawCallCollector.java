@@ -2,10 +2,7 @@ package org.hydra2s.noire.virtual;
 
 //
 
-import org.hydra2s.noire.descriptors.AccelerationStructureCInfo;
-import org.hydra2s.noire.descriptors.BufferCInfo;
-import org.hydra2s.noire.descriptors.DataCInfo;
-import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
+import org.hydra2s.noire.descriptors.*;
 import org.hydra2s.noire.objects.AccelerationStructureObj;
 import org.hydra2s.noire.objects.BufferObj;
 import org.hydra2s.noire.objects.MemoryAllocatorObj;
@@ -64,11 +61,11 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     static final public boolean enableRayTracing = false;
 
     //
-    public VirtualDrawCallCollector(Handle base, VirtualDrawCallCollectorCInfo cInfo) throws Exception {
+    public VirtualDrawCallCollector(UtilsCInfo.Handle base, VirtualDrawCallCollectorCInfo cInfo) throws Exception {
         super(base, cInfo);
 
         //
-        this.handle = new Handle("VirtualDrawCallCollector", memAddress(createLongBuffer(1)));
+        this.handle = new UtilsCInfo.Handle("VirtualDrawCallCollector", memAddress(createLongBuffer(1)));
         this.memoryAllocatorObj = (MemoryAllocatorObj) globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
         deviceObj.handleMap.put$(this.handle, this);
 
@@ -153,7 +150,7 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
     //
     public VirtualDrawCallObj collectDrawCall(VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo drawCallInfo) {
         drawCallInfo.registryHandle = this.handle.get();
-        return new VirtualDrawCallObj(this.base, drawCallInfo);
+        return new VirtualDrawCallObj(this, drawCallInfo);
     }
 
     // TODO: multiple instance support
@@ -227,16 +224,15 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
         public VirtualDrawCallCollectorCInfo.BufferRange uniformBuffer = null;
 
         //
-        public VirtualDrawCallObj(Handle base, VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo cInfo) {
-            super(base, cInfo);
+        public VirtualDrawCallObj(VirtualDrawCallCollector directly, VirtualDrawCallCollectorCInfo.VirtualDrawCallCInfo cInfo) {
+            super(cInfo);
 
             //
-            var virtualDrawCallCollector = (VirtualDrawCallCollector)deviceObj.handleMap.get(new Handle("VirtualDrawCallCollector", cInfo.registryHandle)).orElse(null);
             var vertexArrayObj = cInfo.vertexArray;
             var vertexBinding0 = vertexArrayObj.bindings.get(0);
 
             //
-            this.bound = virtualDrawCallCollector;
+            this.bound = directly;
             assert this.bound != null;
             this.DSC_ID = this.bound.registry.push(this);
             this.virtualGL = this.DSC_ID+1;
@@ -262,15 +258,15 @@ public class VirtualDrawCallCollector extends VirtualGLRegistry {
 
             //
             this.uniformBuffer = new VirtualDrawCallCollectorCInfo.BufferRange() {{
-                offset = virtualDrawCallCollector.uniformDataBudget.offset;
+                offset = directly.uniformDataBudget.offset;
                 stride = ((VirtualDrawCallCollectorCInfo)bound.cInfo).drawCallUniformStride;
                 range = ((VirtualDrawCallCollectorCInfo)bound.cInfo).drawCallUniformStride;
-                address = virtualDrawCallCollector.uniformDataBudget.bufferObj.getDeviceAddress() + virtualDrawCallCollector.uniformDataBudget.offset;
-                handle = virtualDrawCallCollector.uniformDataBudget.bufferObj.getHandle().get();
+                address = directly.uniformDataBudget.bufferObj.getDeviceAddress() + directly.uniformDataBudget.offset;
+                handle = directly.uniformDataBudget.bufferObj.getHandle().get();
             }};
 
             //
-            virtualDrawCallCollector.uniformDataBudget.offset += this.uniformBuffer.range;
+            directly.uniformDataBudget.offset += this.uniformBuffer.range;
         }
 
         // DEPRECATED!
