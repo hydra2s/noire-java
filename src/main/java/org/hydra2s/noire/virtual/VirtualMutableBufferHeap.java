@@ -297,7 +297,7 @@ public class VirtualMutableBufferHeap extends VirtualGLRegistry {
                     //
                     var dstBufferRange = this.getBufferRange();
                     if (oldAlloc != 0 && cmdBuf != null && srcBufferRange.range() > 0 && dstBufferRange.range() > 0) {
-                        CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
+                        //CommandUtils.cmdCopyVBufferToVBuffer(cmdBuf, srcBufferRange, dstBufferRange);
                     }
                 }
             }
