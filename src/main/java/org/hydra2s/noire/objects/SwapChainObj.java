@@ -36,8 +36,8 @@ public class SwapChainObj extends BasicObj  {
     public ArrayList<ImageViewObj> imageViews = new ArrayList<ImageViewObj>();
 
     //
-    public SemaphoreObj semaphoreImageAvailable = null;
-    public SemaphoreObj semaphoreRenderingAvailable = null;
+    public ArrayList<SemaphoreObj> semaphoreImageAvailable = null;
+    public ArrayList<SemaphoreObj> semaphoreRenderingAvailable = null;
     public int[] imageIndex = {};
 
     //
@@ -179,8 +179,14 @@ public class SwapChainObj extends BasicObj  {
         
 
         // useless for pure Vulkan, for test only
-        this.semaphoreImageAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
-        this.semaphoreRenderingAvailable = new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
+        this.semaphoreImageAvailable = new ArrayList<>();//new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
+        this.semaphoreRenderingAvailable = new ArrayList<>();//new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }});
+
+        //
+        for (var I=0;I<((SwapChainCInfo)cInfo).imageCount;I++) {
+            this.semaphoreImageAvailable.add(new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }}));
+            this.semaphoreRenderingAvailable.add(new SemaphoreObj(this.base, new SemaphoreCInfo(){{ isTimeline = false; initialValue = 0; }}));
+        }
 
         //
         return this;
@@ -212,13 +218,13 @@ public class SwapChainObj extends BasicObj  {
 
     // TODO: more than one semaphore support
     public int acquireImageIndex(long semaphore) {
-        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.getHandle().get(), 0L, this.imageIndex);
+        vkAcquireNextImageKHR(deviceObj.device, this.handle.get(), 9007199254740991L, semaphore != 0 ? semaphore : this.semaphoreImageAvailable.get((imageIndex[0]+1)%this.getImageCount()).getHandle().get(), 0L, this.imageIndex);
         return this.imageIndex[0];
     }
 
     // TODO: more than one semaphore support
     public SwapChainObj present(int queueGroupIndex, long[] semaphore) {
-        this.deviceObj.present(queueGroupIndex, this.handle.get(), semaphore != null ? semaphore[0] : this.semaphoreRenderingAvailable.getHandle().get(), this.imageIndex);
+        this.deviceObj.present(queueGroupIndex, this.handle.get(), semaphore != null ? semaphore[0] : this.semaphoreRenderingAvailable.get(imageIndex[0]).getHandle().get(), this.imageIndex);
         return this;
     }
 
