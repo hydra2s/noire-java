@@ -610,7 +610,7 @@ public class DeviceObj extends BasicObj {
              cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
 
              //
-             vkCheckStatus(vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.create(1)
+             vkCheckStatus(vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.calloc(1, stack)
                  .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
                  .pCommandBufferInfos(cmdInfo)
                  .pSignalSemaphoreInfos(signalSemaphores)
@@ -683,7 +683,7 @@ public class DeviceObj extends BasicObj {
 
         //
         var pair = new UtilsCInfo.Pair<long[], VkCommandBuffer>(submitCmd.fence, submitCmd.cmdBuf);
-        if (submitCmd.onDone == null) { submitCmd.onDone = new Promise(); };
+        if (submitCmd.onDone == null) { submitCmd.onDone = new Promise<>(); };
         submitCmd.writable = fn;
         submitCmd.onDone.thenApply((status)->{
             commandPoolInfo.onceCmdBuffers.add(pair);
