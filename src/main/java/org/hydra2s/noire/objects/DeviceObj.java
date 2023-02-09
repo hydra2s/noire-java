@@ -382,7 +382,8 @@ public class DeviceObj extends BasicObj {
                  QI.waitSemaphores = new ArrayList<>(QI.waitSemaphores.stream().filter((semaphore)->{
                      var timeline = semaphore.first.getTimeline();
                      var prevTimeline = semaphore.second.value();//semaphore.first.prevTimeline;
-                     if (timeline < 0L || timeline == -1L || timeline == 0xffffffffffffffffL) { throw new RuntimeException("Device Lost when tried to get rid of outdated waiting semaphores!"); };
+                     semaphore.second.free();
+                     if (timeline < 0L) { throw new RuntimeException("Device Lost when tried to get rid of outdated waiting semaphores!"); };
                      boolean ready = timeline >= prevTimeline;
                      return !ready;
                  }).toList());
@@ -570,28 +571,9 @@ public class DeviceObj extends BasicObj {
          var directionalSubmitInfo = querySignalSubmitInfo;
 
          //
-         signalSemaphoreSubmitInfo.add(querySignalSubmitInfo);
-         //waitSemaphoreSubmitInfo.add(queryWaitSubmitInfo);
-         //signalSemaphoreSubmitInfo.add(directionalSubmitInfo);
-
-        //
-         for (int W : cmd.whatQueueGroupWillWait) {
-             if (W >= 0 && W != cmd.queueGroupIndex) {
-                 var whatQueueGroup = queueGroups.get(W);
-                 whatQueueGroup.queueIndices.forEach((idx)->{
-                     var whatQueueInfo = queueFamilies.get(whatQueueGroup.queueFamilyIndex).get().queueInfos.get(idx);
-                     whatQueueInfo.waitSemaphores.add(new UtilsCInfo.Pair<>(directionalSemaphore, directionalSubmitInfo));
-                     //directionalSemaphore.incrementShared(); // don't delete too early
-                 });
-             }
-         }
-         
-        //
-         //var toRemoveSemaphores = new ArrayList<SemaphoreObj>();
-         //toRemoveSemaphores.addAll(queueInfo.waitSemaphores);
-
          try ( MemoryStack stack = stackPush() ) {
              //
+             signalSemaphoreSubmitInfo.add(querySignalSubmitInfo);
              var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size(), stack);
              for (var I = 0; I < signalSemaphoreSubmitInfo.size(); I++) {
                  signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
@@ -599,10 +581,23 @@ public class DeviceObj extends BasicObj {
 
              //
              queueInfo.waitSemaphores.forEach((pair) -> { waitSemaphoreSubmitInfo.add(pair.second); });
-             queueInfo.waitSemaphores.clear();
              var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size(), stack);
              for (var I = 0; I < waitSemaphoreSubmitInfo.size(); I++) {
                  waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
+             }
+             queueInfo.waitSemaphores.forEach((pair) -> { pair.second.free(); });
+             queueInfo.waitSemaphores.clear();
+
+             //
+             for (int W : cmd.whatQueueGroupWillWait) {
+                 if (W >= 0 && W != cmd.queueGroupIndex) {
+                     var whatQueueGroup = queueGroups.get(W);
+                     whatQueueGroup.queueIndices.forEach((idx)->{
+                         var whatQueueInfo = queueFamilies.get(whatQueueGroup.queueFamilyIndex).get().queueInfos.get(idx);
+                         whatQueueInfo.waitSemaphores.add(new UtilsCInfo.Pair<>(directionalSemaphore, VkSemaphoreSubmitInfo.calloc().set(directionalSubmitInfo)));
+                         //directionalSemaphore.incrementShared(); // don't delete too early
+                     });
+                 }
              }
 
              //
