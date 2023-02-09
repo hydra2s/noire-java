@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.CommandManagerCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -139,6 +140,21 @@ public class CommandManagerObj extends BasicObj {
             this.agents = new ArrayList<>();
         }
 
+        // when skip rendering, needs to free unused resources
+        public CommandWriterBase clear() {
+            /*var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
+            var toFreeAlloc = new ArrayList<>(this.allocations);this.allocations.clear();
+            var toFreeAgents = new ArrayList<>(this.agents); this.agents.clear();
+            var callerCount = this.callers.size();
+            {
+                // free resources and collect profiling data
+                toFreeFn.forEach(Runnable::run); toFreeFn.clear();
+                toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
+            }*/
+            this.callers.clear();
+            return this;
+        }
+
         // TODO: correct naming
         protected CommandWriterBase cmdAdd$(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
             if (caller != null) {
@@ -170,7 +186,7 @@ public class CommandManagerObj extends BasicObj {
 
         //
         public DeviceObj.FenceProcess submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
-            if (this.callers.size() == 0) { return null; };
+            //if (this.callers.size() == 0) { return null; };
 
             //
             var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
@@ -549,6 +565,8 @@ public class CommandManagerObj extends BasicObj {
 
             return this;
         }
+
+
 
         //
         /*public CommandWriter freeResources() {
