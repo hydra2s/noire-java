@@ -283,9 +283,9 @@ public class SwapChainObj extends BasicObj  {
         }
 
         //
-        
+        vkDeviceWaitIdle(deviceObj.device);
         vkDestroySwapchainKHR(deviceObj.device, handle.get(), null);
-        deviceObj.handleMap.put$(handle, null);
+        deviceObj.handleMap.remove(handle);
 
         //
         return this;

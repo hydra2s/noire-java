@@ -91,6 +91,7 @@ public class ImageObj extends BasicObj {
             //
             var memoryAllocatorObj = (MemoryAllocatorObj) BasicObj.globalHandleMap.get(cInfo.memoryAllocator).orElse(null);
             allocationObj = new MemoryAllocationObj(this.base, cInfo.memoryAllocationInfo);
+            assert memoryAllocatorObj != null;
             memoryAllocatorObj.allocateMemory(cInfo.memoryAllocationInfo, allocationObj);
 
             //
@@ -126,9 +127,10 @@ public class ImageObj extends BasicObj {
 
         //
         vkDestroyImage(deviceObj.device, handle.get(), null);
-        deviceObj.handleMap.put$(handle, null);
+        deviceObj.handleMap.remove(handle);
 
         // TODO: Use Shared PTR (alike C++)
+        vkDeviceWaitIdle(deviceObj.device);
         allocationObj.deleteDirectly();
 
         //

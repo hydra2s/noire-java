@@ -139,10 +139,12 @@ public class ImageViewObj extends BasicObj {
         //
         if (cInfo.pipelineLayout != 0) {
             var descriptorsObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", cInfo.pipelineLayout)).orElse(null);
+            assert descriptorsObj != null;
             descriptorsObj.resources.removeIndex(self.DSC_ID);
             self.DSC_ID = -1;
         }
 
+        vkDeviceWaitIdle(deviceObj.device);
         vkDestroyImageView(deviceObj.device, handle.get(), null);
         deviceObj.handleMap.remove(handle);
 

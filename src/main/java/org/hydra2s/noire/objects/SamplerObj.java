@@ -8,8 +8,7 @@ import org.lwjgl.vulkan.VkSamplerCreateInfo;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
 import static org.lwjgl.BufferUtils.createLongBuffer;
-import static org.lwjgl.vulkan.VK10.vkCreateSampler;
-import static org.lwjgl.vulkan.VK10.vkDestroySampler;
+import static org.lwjgl.vulkan.VK10.*;
 
 //
 public class SamplerObj extends BasicObj  {
@@ -73,6 +72,7 @@ public class SamplerObj extends BasicObj  {
             self.DSC_ID = -1;
         }
 
+        vkDeviceWaitIdle(deviceObj.device);
         vkDestroySampler(deviceObj.device, handle.get(), null);
         deviceObj.handleMap.remove(handle);
 

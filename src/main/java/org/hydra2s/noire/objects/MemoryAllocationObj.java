@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 import static org.lwjgl.BufferUtils.createLongBuffer;
+import static org.lwjgl.vulkan.VK10.vkDeviceWaitIdle;
 
 // currently, is a part of device memory object
 // TODO: planned indirect copy support (for NVIDIA)
@@ -93,9 +94,9 @@ public class MemoryAllocationObj extends BasicObj {
     @Override // TODO: multiple queue family support
     public MemoryAllocationObj deleteDirectly() {
         var handle = this.handle;
-        
 
         // TODO: Use Shared PTR (alike C++)
+        vkDeviceWaitIdle(deviceObj.device);
         deviceMemoryObj.deleteDirectly();
         return this;
     }

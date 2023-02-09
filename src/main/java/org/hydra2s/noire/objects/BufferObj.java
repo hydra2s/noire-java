@@ -177,6 +177,7 @@ public class BufferObj extends BasicObj {
         deviceObj.handleMap.remove(handle);
 
         // TODO: Use Shared PTR (alike C++)
+        vkDeviceWaitIdle(deviceObj.device);
         allocationObj.deleteDirectly();
 
         return this;

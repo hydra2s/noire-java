@@ -70,6 +70,7 @@ public class SemaphoreObj extends BasicObj {
             throw new RuntimeException("Trying to destroy already destroyed semaphore.");
         };
         if (sharedPtr <= 0) {
+            vkDeviceWaitIdle(deviceObj.device);
             vkDestroySemaphore(deviceObj.device, handle.get(), null);
             if (cInfo.doRegister) {
                 deviceObj.handleMap.remove(handle);
