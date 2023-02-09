@@ -312,12 +312,15 @@ public class DeviceObj extends BasicObj {
     //
     public DeviceObj present(int queueGroupIndex, long SwapChain, long waitSemaphore, int[] imageIndex) {
         var queueGroup = this.queueGroups.get(queueGroupIndex);
-        var intBuf = createIntBuffer(1); intBuf.put(0, imageIndex[0]);
-        vkCheckStatus(vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.create()
-            .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
-            .pWaitSemaphores(waitSemaphore != 0 ? createLongBuffer(1).put(0, waitSemaphore) : null)
-            .pSwapchains(createLongBuffer(1).put(0, SwapChain)).swapchainCount(1)
-            .pImageIndices(intBuf)));
+        try ( MemoryStack stack = stackPush() ) {
+            var intBuf = stack.callocInt(1);
+            intBuf.put(0, imageIndex[0]);
+            vkCheckStatus(vkQueuePresentKHR(this.getQueue(queueGroup.queueFamilyIndex, queueGroup.queueIndices.get(0)), VkPresentInfoKHR.calloc(stack)
+                .sType(VK_STRUCTURE_TYPE_PRESENT_INFO_KHR)
+                .pWaitSemaphores(waitSemaphore != 0 ? stack.callocLong(1).put(0, waitSemaphore) : null)
+                .pSwapchains(stack.callocLong(1).put(0, SwapChain)).swapchainCount(1)
+                .pImageIndices(intBuf)));
+        }
         return this;
     }
 
@@ -343,9 +346,16 @@ public class DeviceObj extends BasicObj {
         commandPoolInfo.cmdBufBlock = null;
         var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
 
+        //
+        //pair.first[0] != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
+
+        //
+        var status = vkCheckStatus(vkWaitForFences(device, commandPoolInfo.onceCmdBuffers.stream().mapToLong((pair)->{
+            return pair.first[0];
+        }).toArray(), true, 9007199254740991L));
+
         // impossible to free command buffers, even sent once
         commandPoolInfo.onceCmdBuffers = new ArrayList<UtilsCInfo.Pair<long[], VkCommandBuffer>>(commandPoolInfo.onceCmdBuffers.stream().filter((pair)->{
-            var status = pair.first[0] != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
             if (status != VK_NOT_READY) {
                 // TODO: free command buffer allocation
                 if (status != VK_SUCCESS) { vkCheckStatus(status); };
@@ -515,12 +525,10 @@ public class DeviceObj extends BasicObj {
          // TODO: don't use clone operation
         //var signalSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
         //var waitSemaphoreSubmitInfo = (ArrayList<VkSemaphoreSubmitInfo>)(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo.clone() : new ArrayList<VkSemaphoreSubmitInfo>());
-         var signalSemaphoreSubmitInfo = new ArrayList<VkSemaphoreSubmitInfo>();
-         var waitSemaphoreSubmitInfo = new ArrayList<VkSemaphoreSubmitInfo>();
 
          //
-         signalSemaphoreSubmitInfo.addAll(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo : new ArrayList<VkSemaphoreSubmitInfo>());
-         waitSemaphoreSubmitInfo.addAll(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo : new ArrayList<VkSemaphoreSubmitInfo>());
+         var signalSemaphoreSubmitInfo = new ArrayList<VkSemaphoreSubmitInfo>(cmd.signalSemaphoreSubmitInfo != null ? cmd.signalSemaphoreSubmitInfo : new ArrayList<VkSemaphoreSubmitInfo>());
+         var waitSemaphoreSubmitInfo = new ArrayList<VkSemaphoreSubmitInfo>(cmd.waitSemaphoreSubmitInfo != null ? cmd.waitSemaphoreSubmitInfo : new ArrayList<VkSemaphoreSubmitInfo>());
 
          //
         var queueGroup = this.queueGroups.get(cmd.queueGroupIndex);
@@ -582,30 +590,33 @@ public class DeviceObj extends BasicObj {
          //var toRemoveSemaphores = new ArrayList<SemaphoreObj>();
          //toRemoveSemaphores.addAll(queueInfo.waitSemaphores);
 
-         //
-        var signalSemaphores = VkSemaphoreSubmitInfo.create(signalSemaphoreSubmitInfo.size());
-        for (var I=0;I<signalSemaphoreSubmitInfo.size();I++) {
-            signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
-        }
+         try ( MemoryStack stack = stackPush() ) {
+             //
+             var signalSemaphores = VkSemaphoreSubmitInfo.calloc(signalSemaphoreSubmitInfo.size(), stack);
+             for (var I = 0; I < signalSemaphoreSubmitInfo.size(); I++) {
+                 signalSemaphores.get(I).set(signalSemaphoreSubmitInfo.get(I));
+             }
 
-        //
-         queueInfo.waitSemaphores.forEach((pair)->{ waitSemaphoreSubmitInfo.add(pair.second); }); queueInfo.waitSemaphores.clear();
-        var waitSemaphores = VkSemaphoreSubmitInfo.create(waitSemaphoreSubmitInfo.size());
-        for (var I=0;I<waitSemaphoreSubmitInfo.size();I++) {
-            waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
-        }
+             //
+             queueInfo.waitSemaphores.forEach((pair) -> { waitSemaphoreSubmitInfo.add(pair.second); });
+             queueInfo.waitSemaphores.clear();
+             var waitSemaphores = VkSemaphoreSubmitInfo.calloc(waitSemaphoreSubmitInfo.size(), stack);
+             for (var I = 0; I < waitSemaphoreSubmitInfo.size(); I++) {
+                 waitSemaphores.get(I).set(waitSemaphoreSubmitInfo.get(I));
+             }
 
+             //
+             var cmdInfo = VkCommandBufferSubmitInfo.calloc(1, stack);
+             cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
 
-        //
-        var cmdInfo = VkCommandBufferSubmitInfo.create(1);
-        cmdInfo.get(0).sType(VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO).commandBuffer(cmd.cmdBuf).deviceMask(0);
+             //
+             vkCheckStatus(vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.create(1)
+                 .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
+                 .pCommandBufferInfos(cmdInfo)
+                 .pSignalSemaphoreInfos(signalSemaphores)
+                 .pWaitSemaphoreInfos(waitSemaphores), cmd.fence[0]));
 
-        //
-         vkCheckStatus(vkQueueSubmit2(this.getQueue(queueGroup.queueFamilyIndex, lessBusyQ), VkSubmitInfo2.create(1)
-            .sType(VK_STRUCTURE_TYPE_SUBMIT_INFO_2)
-            .pCommandBufferInfos(cmdInfo)
-            .pSignalSemaphoreInfos(signalSemaphores)
-            .pWaitSemaphoreInfos(waitSemaphores), cmd.fence[0]));
+         }
 
         //
         if (cmd.onDone == null) { cmd.onDone = new Promise(); };
@@ -613,7 +624,7 @@ public class DeviceObj extends BasicObj {
         //
          var timeline = querySignalSemaphore.getTimeline();
          var status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
-         if (timeline < 0L || timeline == -1L || timeline == 0xffffffffffffffffL) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
+         if (timeline < 0L) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
          if (status == VK_ERROR_DEVICE_LOST) { throw new RuntimeException("Status: " + status + "! Device Lost! (Semaphore Timeline: " + timeline + ")"); };
 
         //
