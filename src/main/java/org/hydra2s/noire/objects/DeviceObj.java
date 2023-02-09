@@ -341,10 +341,10 @@ public class DeviceObj extends BasicObj {
         //
         var queueGroup = this.queueGroups.get(queueGroupIndex);
         var commandPoolInfo = queueGroup.commandPoolInfo.get(commandPoolIndex);
-        commandPoolInfo.cmdBufIndex = 0;
-        commandPoolInfo.cmdBufCache.clear();
-        commandPoolInfo.cmdBufBlock = null;
         var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
+        //commandPoolInfo.cmdBufIndex = 0;
+        //commandPoolInfo.cmdBufCache.clear();
+        //commandPoolInfo.cmdBufBlock = null;
 
         //
         //pair.first[0] != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
