@@ -26,6 +26,7 @@ public class SemaphoreObj extends BasicObj {
 
     public VkSemaphoreTypeCreateInfo timelineInfo;
     public VkSemaphoreCreateInfo createInfo;
+    public VkSemaphoreSubmitInfo submitInfo;
     public long[] timeline = null;
 
     //
@@ -51,6 +52,11 @@ public class SemaphoreObj extends BasicObj {
         if (cInfo.doRegister) {
             deviceObj.handleMap.put$(this.handle, this);
         }
+
+        this.submitInfo = VkSemaphoreSubmitInfo.create()
+            .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
+            .semaphore(this.handle.get())
+            .value(lastTimeline);
     }
 
     @Override // TODO: multiple queue family support
@@ -115,11 +121,7 @@ public class SemaphoreObj extends BasicObj {
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
         prevTimeline = lastTimeline; if (!forWait) { lastTimeline++; };
-        return VkSemaphoreSubmitInfo.create()
-            .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
-            .semaphore(this.handle.get())
-            .value(lastTimeline)
-            .stageMask(stageMask);
+        return this.submitInfo.value(lastTimeline).stageMask(stageMask);
     }
 
     //
@@ -128,11 +130,7 @@ public class SemaphoreObj extends BasicObj {
             System.out.println("Invalid or destroyed semaphore making info.");
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
-        return VkSemaphoreSubmitInfo.create()
-            .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
-            .semaphore(this.handle.get())
-            .value(lastTimeline)
-            .stageMask(stageMask);
+        return this.submitInfo.value(0).stageMask(stageMask);
     }
 
     //
@@ -178,14 +176,15 @@ public class SemaphoreObj extends BasicObj {
                 vkCheckStatus(vkWaitSemaphores(deviceObj.device, VkSemaphoreWaitInfo.calloc(stack)
                     .sType(VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO)
                     .flags(any ? VK_SEMAPHORE_WAIT_ANY_BIT : 0)
-                    .pSemaphores(createLongBuffer(1).put(0, this.handle.get()))
+                    .pSemaphores(stack.callocLong(1).put(0, this.handle.get()))
                     .semaphoreCount(1)
-                    .pValues(createLongBuffer(1).put(0, prevTimeline = lastTimeline)), 9007199254740991L));
+                    .pValues(stack.callocLong(1).put(0, prevTimeline = lastTimeline)), 9007199254740991L));
             }
         }
         return this;
     }
 
+    //
     public SemaphoreObj incrementShared() {
         this.sharedPtr++;
         return this;
