@@ -622,7 +622,7 @@ public class DeviceObj extends BasicObj {
             deallocProcess = (_null_)->{
                 var timeline = querySignalSemaphore.getTimeline();
                 status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
-                if (timeline < 0L || timeline == -1L || timeline == 0xffffffffffffffffL) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
+                if (timeline < 0L) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
                 if (status != VK_NOT_READY) {
                     queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);
 

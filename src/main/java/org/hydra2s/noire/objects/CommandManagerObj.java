@@ -141,12 +141,19 @@ public class CommandManagerObj extends BasicObj {
         }
 
         // when skip rendering, needs to free unused resources
-        public CommandWriterBase clear() {
+        public CommandWriterBase clear$() {
             if (this.callers.size() == 0) { return null; };
             {
+                // NVIDIA GPU MALFUNCTION!
                 // free resources and collect profiling data
-                //toFree.forEach(Runnable::run); toFree.clear();
-                //allocations.forEach(VirtualAllocation::free); allocations.clear();
+                //var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
+                //var toFreeAlloc = new ArrayList<>(this.allocations);this.allocations.clear();
+                //var toFreeAgents = new ArrayList<>(this.agents); this.agents.clear();
+                //var callerCount = this.callers.size();
+
+                // free resources and collect profiling data
+                //toFreeFn.forEach(Runnable::run); toFreeFn.clear();
+                //toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
             }
             this.callers.clear();
             return this;
