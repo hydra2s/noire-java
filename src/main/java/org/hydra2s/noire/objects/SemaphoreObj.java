@@ -19,6 +19,7 @@ import static org.lwjgl.vulkan.VK10.VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 import static org.lwjgl.vulkan.VK10.vkCreateSemaphore;
 import static org.lwjgl.vulkan.VK11.*;
 import static org.lwjgl.vulkan.VK12.*;
+import static org.lwjgl.vulkan.VK13.VK_PIPELINE_STAGE_2_NONE;
 import static org.lwjgl.vulkan.VK13.VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
 
 //
@@ -54,8 +55,10 @@ public class SemaphoreObj extends BasicObj {
         }
 
         this.submitInfo = VkSemaphoreSubmitInfo.create()
+            .pNext(0)
             .sType(VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO)
             .semaphore(this.handle.get())
+            .stageMask(VK_PIPELINE_STAGE_2_NONE)
             .value(lastTimeline);
     }
 

@@ -383,9 +383,13 @@ public class DeviceObj extends BasicObj {
                  QI.waitSemaphores = new ArrayList<>(QI.waitSemaphores.stream().filter((semaphore)->{
                      var timeline = semaphore.first.getTimeline();
                      var prevTimeline = semaphore.second.value();//semaphore.first.prevTimeline;
-                     semaphore.second.free();
-                     if (timeline < 0L) { throw new RuntimeException("Device Lost when tried to get rid of outdated waiting semaphores!"); };
                      boolean ready = timeline >= prevTimeline;
+                     if (timeline < 0L) {
+                         throw new RuntimeException("Device Lost when tried to get rid of outdated waiting semaphores!");
+                     }
+                     if (ready) {
+                         semaphore.second.free();
+                     }
                      return !ready;
                  }).toList());
              });
