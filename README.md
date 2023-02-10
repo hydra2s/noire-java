@@ -15,7 +15,7 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 
 - Details will named later
 
-### WIP gen-v2.0 (unknown how many parts on the go)
+### WIP gen-v2.0 almost done
 
 - Timeline semaphores (finally).
 - Full-scale update - more FPS in some cases.
@@ -25,8 +25,8 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 - Command buffer manager, managment, writer, new utils, etc.
 - Multiple command pools (per queue group).
 - Mass refactoring, refinements.
-
-#### Currently, WIP part VI (profiling and debug update), in next stage (part VII) will finally fixing issues (I hope).
+- Frame skipping support (much more FPS or TPS).
+- Multi-draw centric and oriented.
 
 ## ~~Part of [manhack](https://github.com/hydra2s/manhack) project~~
 ## Planned for [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) project
