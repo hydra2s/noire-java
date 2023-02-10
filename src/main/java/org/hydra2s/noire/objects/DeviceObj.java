@@ -341,34 +341,22 @@ public class DeviceObj extends BasicObj {
         //
         var queueGroup = this.queueGroups.get(queueGroupIndex);
         var commandPoolInfo = queueGroup.commandPoolInfo.get(commandPoolIndex);
-        var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
-        //commandPoolInfo.cmdBufIndex = 0;
-        //commandPoolInfo.cmdBufCache.clear();
-        //commandPoolInfo.cmdBufBlock = null;
-
-        //
-        //pair.first[0] != 0L ? vkWaitForFences(device, pair.first, true, 9007199254740991L) : VK_ERROR_DEVICE_LOST;
-
-        //
-        if (commandPoolInfo.onceCmdBuffers.size() > 0) {
+        if (commandPoolInfo.onceCmdBuffers.size() >= 16) {
             var status = vkCheckStatus(vkWaitForFences(device, commandPoolInfo.onceCmdBuffers.stream().mapToLong((pair) -> pair.first[0]).toArray(), true, 9007199254740991L));
 
             // impossible to free command buffers, even sent once
             commandPoolInfo.onceCmdBuffers = new ArrayList<UtilsCInfo.Pair<long[], VkCommandBuffer>>(commandPoolInfo.onceCmdBuffers.stream().filter((pair) -> {
                 if (status != VK_NOT_READY) {
+                    var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
                     // TODO: free command buffer allocation
                     if (status != VK_SUCCESS) { vkCheckStatus(status); }
-                    ;
                     vkDestroyFence(device, pair.first[0], null);
                     vkFreeCommandBuffers(device, commandPool, pair.second);
                 }
                 return status == VK_NOT_READY;
             }).toList());
         }
-
-        // Corrupted and BROKEN function! (currently...)
-        //vkResetCommandPool(device, commandPool, /*VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT*/0);
-
+        
         //
         return this;
     }
