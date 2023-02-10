@@ -403,6 +403,7 @@ public class DeviceObj extends BasicObj {
         public Promise<Integer> promise = null; // for getting status
         public long[] fence = null;
         public int status = VK_NOT_READY;
+        public long prevTimeline = -1;
     }
 
     //
@@ -555,7 +556,7 @@ public class DeviceObj extends BasicObj {
          var querySignalSubmitInfo = querySignalSemaphore.makeSubmissionTimeline(cmd.whatWaitBySemaphore, false);
 
          //
-         var prevTimeline = querySignalSemaphore.prevTimeline;
+         var $prevTimeline = querySignalSemaphore.prevTimeline;
 
          //
          //var directionalSemaphore = createTempSemaphore();
@@ -611,17 +612,18 @@ public class DeviceObj extends BasicObj {
 
         //
          var timeline = querySignalSemaphore.getTimeline();
-         var status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
+         var status = (timeline <= $prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
          if (timeline < 0L) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
          if (status == VK_ERROR_DEVICE_LOST) { throw new RuntimeException("Status: " + status + "! Device Lost! (Semaphore Timeline: " + timeline + ")"); };
 
         //
         var ref = new FenceProcess() {{
             fence = cmd.fence;
+            prevTimeline = $prevTimeline;
             timelineSemaphore = querySignalSemaphore;
             deallocProcess = (_null_)->{
                 var timeline = querySignalSemaphore.getTimeline();
-                status = (timeline <= prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
+                status = (timeline <= $prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;
                 if (timeline < 0L) { status = VK_ERROR_DEVICE_LOST; }; // bad semaphore
                 if (status != VK_NOT_READY) {
                     queueGroup.queueBusy.set(lessBusy, queueGroup.queueBusy.get(lessBusy)-1);

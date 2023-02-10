@@ -13,10 +13,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.vma.VmaVirtualAllocationCreateInfo;
 import org.lwjgl.util.vma.VmaVirtualBlockCreateInfo;
-import org.lwjgl.vulkan.VkCommandBuffer;
-import org.lwjgl.vulkan.VkDescriptorBufferInfo;
-import org.lwjgl.vulkan.VkExtent3D;
-import org.lwjgl.vulkan.VkQueryPoolCreateInfo;
+import org.lwjgl.vulkan.*;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
@@ -35,6 +32,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
+import static org.lwjgl.vulkan.VK13.VK_PIPELINE_STAGE_2_NONE;
 
 // TODO: planned class in gen-v3 or gen-v2 part IV.
 // What planned?
@@ -130,6 +128,7 @@ public class CommandManagerObj extends BasicObj {
         public ArrayList<VirtualAllocation> allocations = null;
         public ArrayList<Runnable> toFree = null;
         public ArrayList<CommandAgent> agents = null;
+        public DeviceObj.FenceProcess previous = null;
 
         //
         public CommandWriterBase(CommandManagerObj manager, CommandWriterCInfo cInfo) {
@@ -141,21 +140,57 @@ public class CommandManagerObj extends BasicObj {
         }
 
         // when skip rendering, needs to free unused resources
-        public CommandWriterBase clear$() {
+        public CommandWriterBase clear$(DeviceObj.SubmitCmd cmd) throws Exception {
             if (this.callers.size() == 0) { return null; };
-            {
-                // NVIDIA GPU MALFUNCTION!
-                // free resources and collect profiling data
-                //var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
-                //var toFreeAlloc = new ArrayList<>(this.allocations);this.allocations.clear();
-                //var toFreeAgents = new ArrayList<>(this.agents); this.agents.clear();
-                //var callerCount = this.callers.size();
+            this.callers.clear();
+            //if (this.callers.size() == 0) { return null; };
+
+            //
+            var toFreeFn = new ArrayList<>(this.toFree); this.toFree.clear();
+            var toFreeAlloc = new ArrayList<>(this.allocations);this.allocations.clear();
+            var toFreeAgents = new ArrayList<>(this.agents); this.agents.clear();
+            var callerCount = this.callers.size();
+
+            //
+            cmd.onDone = cmd.onDone != null ? cmd.onDone : new Promise();
+            cmd.onDone.thenApply((status)->{
+                // debug and profiling info
+                //System.out.println("Begin collect data and free command resources.");
+                //System.out.println("Command writes: " + callerCount);
+                //System.out.println("Command free resources: " + toFreeAlloc.size());
+                //System.out.println("Command free commands (include profiling): " + toFreeFn.size());
 
                 // free resources and collect profiling data
-                //toFreeFn.forEach(Runnable::run); toFreeFn.clear();
-                //toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
+                toFreeFn.forEach(Runnable::run); toFreeFn.clear();
+                toFreeAlloc.forEach(VirtualAllocation::free); toFreeAlloc.clear();
+
+                // collect timings of commands
+                //AtomicLong fullCommandTime = new AtomicLong(0L);
+                //toFreeProfilers.forEach((profiler)->{
+                //fullCommandTime.addAndGet(profiler.timeDiff);
+                //}); toFreeProfilers.clear();
+
+                // debug and profiling info
+                //System.out.println("Full commands time: " + ((double)fullCommandTime.get())/(double)(1000*1000) + "in milliseconds.");
+                //System.out.println("End collect data and free command resources.");
+
+                //
+                return status;
+            });
+
+            //
+            if (previous != null) {
+                if (cmd.waitSemaphoreSubmitInfo == null) { cmd.waitSemaphoreSubmitInfo = new ArrayList<>(); };
+                // TODO: currently there is no trivial way to free such sh&t later.
+                // TODO: also, this sh&t are needed, due changes of timeline may just freeze game or OS.
+                cmd.waitSemaphoreSubmitInfo.add(VkSemaphoreSubmitInfo.create().set(previous.timelineSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_NONE, true)));
             }
-            this.callers.clear();
+            previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+                return null;
+            });
+
+            //
+            manager.deviceObj.doPolling();
             return this;
         }
 
@@ -226,13 +261,19 @@ public class CommandManagerObj extends BasicObj {
             });
 
             //
-            var fence = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+            if (previous != null) {
+                if (cmd.waitSemaphoreSubmitInfo == null) { cmd.waitSemaphoreSubmitInfo = new ArrayList<>(); };
+                // TODO: currently there is no trivial way to free such sh&t later.
+                // TODO: also, this sh&t are needed, due changes of timeline may just freeze game or OS.
+                cmd.waitSemaphoreSubmitInfo.add(VkSemaphoreSubmitInfo.create().set(previous.timelineSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_NONE, true)));
+            }
+            previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
                 cmdWrite(cmdBuf);
                 return null;
             });
 
             manager.deviceObj.doPolling();
-            return fence;
+            return previous;
 
             // DEBUG MODE!
             /*AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
