@@ -346,16 +346,26 @@ public class DeviceObj extends BasicObj {
             var status = vkCheckStatus(vkWaitForFences(device, commandPoolInfo.onceCmdBuffers.stream().mapToLong((pair) -> pair.first[0]).toArray(), true, 9007199254740991L));
 
             // impossible to free command buffers, even sent once
+            var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
+            var commands = new ArrayList<Long>();
             commandPoolInfo.onceCmdBuffers = new ArrayList<UtilsCInfo.Pair<long[], VkCommandBuffer>>(commandPoolInfo.onceCmdBuffers.stream().filter((pair) -> {
                 if (status != VK_NOT_READY) {
-                    var commandPool = getCommandPool(queueGroupIndex, commandPoolIndex);
                     // TODO: free command buffer allocation
                     if (status != VK_SUCCESS) { vkCheckStatus(status); }
                     vkDestroyFence(device, pair.first[0], null);
-                    vkFreeCommandBuffers(device, commandPool, pair.second);
+                    commands.add(pair.second.address());
                 }
                 return status == VK_NOT_READY;
             }).toList());
+
+            var CL = commands.size();
+            if (CL > 0) {
+                try (MemoryStack stack = stackPush()) {
+                    var buffer = stack.callocPointer(CL);
+                    for (var I=0;I<CL;I++) { buffer.put(I, commands.get(I)); };
+                    vkFreeCommandBuffers(device, commandPool, buffer);
+                }
+            }
         }
         
         //
