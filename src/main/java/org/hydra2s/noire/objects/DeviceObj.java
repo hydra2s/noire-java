@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import static java.lang.System.currentTimeMillis;
@@ -488,6 +489,10 @@ public class DeviceObj extends BasicObj {
         return waitFence(process, 10000);
     }
 
+    public int waitFence(Callable<FenceProcess> process) throws Exception {
+        return waitFence(process.call(), 10000);
+    }
+
      //
      public VkCommandBuffer allocateCommand(int queueGroupIndex, int commandPoolIndex) {
         var maxCommandBufferCache = 8;
@@ -654,7 +659,7 @@ public class DeviceObj extends BasicObj {
     }
 
     //
-    public FenceProcess submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, VkCommandBuffer> fn) throws Exception {
+    public Callable<FenceProcess> submitOnce(SubmitCmd submitCmd, Function<VkCommandBuffer, VkCommandBuffer> fn) throws Exception {
         if (submitCmd.queueGroupIndex < 0) { throw new Exception("Cmd Submission Error - Bad Queue Group Index!"); };
 
          // TODO: allocate command buffer with fence
@@ -685,7 +690,7 @@ public class DeviceObj extends BasicObj {
         });
 
         //
-        return submitCommand(submitCmd);
+        return ()->submitCommand(submitCmd);
     }
 
 }

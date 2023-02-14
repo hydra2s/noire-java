@@ -140,8 +140,8 @@ public class CommandManagerObj extends BasicObj {
         }
 
         // when skip rendering, needs to free unused resources
-        public CommandWriterBase clear$(DeviceObj.SubmitCmd cmd) throws Exception {
-            if (this.callers.size() == 0) { return null; };
+        public Callable<DeviceObj.FenceProcess> clear$(DeviceObj.SubmitCmd cmd) throws Exception {
+            //if (this.callers.size() == 0) { return null; };
             this.callers.clear();
             //if (this.callers.size() == 0) { return null; };
 
@@ -185,13 +185,15 @@ public class CommandManagerObj extends BasicObj {
                 // TODO: also, this sh&t are needed, due changes of timeline may just freeze game or OS.
                 cmd.waitSemaphoreSubmitInfo.add(VkSemaphoreSubmitInfo.create().set(previous.timelineSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_NONE, true)));
             }
-            previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
-                return null;
-            });
 
             //
-            manager.deviceObj.doPolling();
-            return this;
+            return ()->{
+                previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+                    return null;
+                }).call();
+                manager.deviceObj.doPolling();
+                return previous;
+            };
         }
 
         // TODO: correct naming
@@ -224,7 +226,7 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public DeviceObj.FenceProcess submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
+        public Callable<DeviceObj.FenceProcess> submitOnce(DeviceObj.SubmitCmd cmd) throws Exception {
             //if (this.callers.size() == 0) { return null; };
 
             //
@@ -267,13 +269,15 @@ public class CommandManagerObj extends BasicObj {
                 // TODO: also, this sh&t are needed, due changes of timeline may just freeze game or OS.
                 cmd.waitSemaphoreSubmitInfo.add(VkSemaphoreSubmitInfo.create().set(previous.timelineSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_NONE, true)));
             }
-            previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
-                cmdWrite(cmdBuf);
-                return null;
-            });
 
-            manager.deviceObj.doPolling();
-            return previous;
+            return ()->{
+                previous = manager.deviceObj.submitOnce(cmd, (cmdBuf)->{
+                    cmdWrite(cmdBuf);
+                    return null;
+                }).call();
+                manager.deviceObj.doPolling();
+                return previous;
+            };
 
             // DEBUG MODE!
             /*AtomicReference<DeviceObj.FenceProcess> last = new AtomicReference();
@@ -400,7 +404,7 @@ public class CommandManagerObj extends BasicObj {
         }
 
         //
-        public DeviceObj.FenceProcess cmdCopyFromImageToHost(Callable<HostImageStage> imageInfoLazy, ByteBuffer data, DeviceObj.SubmitCmd cmd) throws Exception {
+        public Callable<DeviceObj.FenceProcess> cmdCopyFromImageToHost(Callable<HostImageStage> imageInfoLazy, ByteBuffer data, DeviceObj.SubmitCmd cmd) throws Exception {
             AtomicReference<VirtualAllocation> allocation_ = new AtomicReference<>();
             AtomicReference<HostImageStage> imageInfo_ = new AtomicReference<>();
 
