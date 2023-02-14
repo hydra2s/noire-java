@@ -399,6 +399,7 @@ public class DeviceObj extends BasicObj {
     // you also needs `device.doPolling` or `device.waitFence`
     public static class FenceProcess {
         public SemaphoreObj timelineSemaphore = null;
+        public VkSemaphoreSubmitInfo submitInfo = null;
         public Function<Integer, Integer> deallocProcess = null;
         public Promise<Integer> promise = null; // for getting status
         public long[] fence = null;
@@ -426,7 +427,7 @@ public class DeviceObj extends BasicObj {
      public SemaphoreObj backTempSemaphore(SemaphoreObj tempSemaphore) /*throws Exception*/ {
         // bad-ass idea...
         //tempSemaphore.waitTimeline(true);
-        tempSemaphore.deleteDirectly();
+        //tempSemaphore.deleteDirectly();
         //if (reusableSemaphoreStack.size() < 1024) {
             //reusableSemaphoreStack.add(tempSemaphore);
         //}
@@ -443,6 +444,8 @@ public class DeviceObj extends BasicObj {
         var prevTimeline = querySignalSemaphore.prevTimeline;
         var ref = new FenceProcess() {{
             fence = fence_;
+            submitInfo = querySignalSemaphore.makeSubmissionTimeline(VK_PIPELINE_STAGE_2_NONE, true);
+            timelineSemaphore = querySignalSemaphore;
             deallocProcess = (result)->{
                 var fence_ = fence[0];
                 var timeline =  querySignalSemaphore.getTimeline();
@@ -621,6 +624,7 @@ public class DeviceObj extends BasicObj {
             fence = cmd.fence;
             prevTimeline = $prevTimeline;
             timelineSemaphore = querySignalSemaphore;
+            submitInfo = querySignalSubmitInfo;
             deallocProcess = (_null_)->{
                 var timeline = querySignalSemaphore.getTimeline();
                 status = (timeline <= $prevTimeline && timeline >= 0) ? VK_NOT_READY : VK_SUCCESS;

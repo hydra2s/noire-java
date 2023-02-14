@@ -31,8 +31,8 @@ public class SemaphoreObj extends BasicObj {
     public long[] timeline = null;
 
     //
-    public long lastTimeline = 0;
-    public long prevTimeline = 0;
+    public long lastTimeline = 1;
+    public long prevTimeline = 1;
 
     //
     public SemaphoreObj(UtilsCInfo.Handle base, SemaphoreCInfo cInfo) {
@@ -124,8 +124,8 @@ public class SemaphoreObj extends BasicObj {
             System.out.println("Invalid or destroyed semaphore making info.");
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
-        prevTimeline = lastTimeline; if (!forWait) { lastTimeline++; };
-        return this.submitInfo.value(lastTimeline).stageMask(stageMask);
+        if (!forWait) { prevTimeline = lastTimeline; lastTimeline++; };
+        return VkSemaphoreSubmitInfo.create().set(this.submitInfo.value(lastTimeline).stageMask(stageMask));
     }
 
     //
@@ -134,7 +134,7 @@ public class SemaphoreObj extends BasicObj {
             System.out.println("Invalid or destroyed semaphore making info.");
             throw new Exception("Invalid or destroyed semaphore making info.");
         }
-        return this.submitInfo.value(0).stageMask(stageMask);
+        return VkSemaphoreSubmitInfo.create().set(this.submitInfo.value(0).stageMask(stageMask));
     }
 
     //
