@@ -428,33 +428,37 @@ public class PipelineLayoutObj extends BasicObj  {
             this.samplerDescriptorBuffer.unmap();
             this.resourceDescriptorBuffer.unmap();
         } else {
-            // TODO: don't fill empty resources!
-            var resourceDescriptorSets = VkWriteDescriptorSet.create(Math.min(this.resources.size(), resourceCount));
+            //var resourceDescriptorSets = VkWriteDescriptorSet.create(Math.min(this.resources.size(), resourceCount));
+            var $resourceDescriptorSets = new ArrayList<VkWriteDescriptorSet>();
+
+            // TODO: don't fill empty samplers
             var samplerDescriptorSets = VkWriteDescriptorSet.create(1);
+
+            //
             var uniformDescriptorSets = VkWriteDescriptorSet.create(1);
 
             //
             var resourceInfo = VkDescriptorImageInfo.create(Math.min(this.resources.size(), resourceCount));
             var samplerInfo = VkDescriptorImageInfo.create(Math.min(this.samplers.size(), samplerCount));
 
-            // TODO: don't fill empty resources!
+            //
             for (var I = 0; I < Math.min(this.resources.size(), resourceCount); I++) {
                 if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
                     var imageView = deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null);
                     var cInfo = (ImageViewCInfo)imageView.cInfo;
                     resourceInfo.get(I).set(this.resources.get(I).imageLayout(this.resources.get(I).imageLayout() == VK_IMAGE_LAYOUT_UNDEFINED ? cInfo.imageLayout : this.resources.get(I).imageLayout()));
-                    resourceDescriptorSets.get(I)
+                    $resourceDescriptorSets.add(VkWriteDescriptorSet.create()
                         .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)
                         .descriptorType(cInfo.type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                         .descriptorCount(1)
                         .dstArrayElement(I)
                         .dstBinding(0)
                         .dstSet(this.descriptorSets[0])
-                        .pImageInfo(resourceInfo.slice(I, 1));
+                        .pImageInfo(resourceInfo.slice(I, 1)));
                 }
             }
 
-            //
+            // TODO: don't fill empty samplers
             for (var I = 0; I < Math.min(this.samplers.size(), samplerCount); I++) {
                 if (this.samplers.get(I) != null && this.samplers.get(I).get(0) != 0) {
                     samplerInfo.get(I).sampler(this.samplers.get(I).get(0));
@@ -484,7 +488,9 @@ public class PipelineLayoutObj extends BasicObj  {
                 .pBufferInfo(uniformWrite);
 
             //
-            if (this.resources.size() > 0) {
+            if (this.resources.size() > 0 && $resourceDescriptorSets.size() > 0) {
+                var resourceDescriptorSets = VkWriteDescriptorSet.create($resourceDescriptorSets.size());
+                for (var I=0;I<$resourceDescriptorSets.size();I++) { resourceDescriptorSets.put(I, $resourceDescriptorSets.get(I)); };
                 vkUpdateDescriptorSets(deviceObj.device, resourceDescriptorSets, null);
             }
             if (this.samplers.size() > 0) {
