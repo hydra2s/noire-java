@@ -42,7 +42,7 @@ public class PipelineLayoutObj extends BasicObj  {
     }
 
     //
-    public static final boolean useLegacyBindingSystem = false;
+    public static final boolean useLegacyBindingSystem = true;
 
     //
     public static class DescriptorSetLayoutInfo {
@@ -405,10 +405,12 @@ public class PipelineLayoutObj extends BasicObj  {
             //
             for (var I = 0; I < Math.min(this.resources.size(), resourceCount); I++) {
                 if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
+                    var imageView = deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null);
+                    var cInfo = (ImageViewCInfo)imageView.cInfo;
                     vkGetDescriptorEXT(deviceObj.device, VkDescriptorGetInfoEXT.create()
                         .sType(VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT)
-                        .type(((ImageViewCInfo) deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo).type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
-                        .data(VkDescriptorDataEXT.create().pSampledImage(this.resources.get(I))), RMAP.slice((int) (this.offsets[0] + RSIZE * I), RSIZE));
+                        .type(cInfo.type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                        .data(VkDescriptorDataEXT.create().pSampledImage(this.resources.get(I).imageLayout(this.resources.get(I).imageLayout() == VK_IMAGE_LAYOUT_UNDEFINED ? cInfo.imageLayout : this.resources.get(I).imageLayout()))), RMAP.slice((int) (this.offsets[0] + RSIZE * I), RSIZE));
                 }
             }
 
@@ -438,11 +440,12 @@ public class PipelineLayoutObj extends BasicObj  {
             // TODO: don't fill empty resources!
             for (var I = 0; I < Math.min(this.resources.size(), resourceCount); I++) {
                 if (this.resources.get(I) != null && this.resources.get(I).imageView() != 0) {
-                    var imageViewInfo = (ImageViewCInfo) deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null).cInfo;
-                    resourceInfo.get(I).set(this.resources.get(I));
+                    var imageView = deviceObj.handleMap.get(new UtilsCInfo.Handle("ImageView", this.resources.get(I).imageView())).orElse(null);
+                    var cInfo = (ImageViewCInfo)imageView.cInfo;
+                    resourceInfo.get(I).set(this.resources.get(I).imageLayout(this.resources.get(I).imageLayout() == VK_IMAGE_LAYOUT_UNDEFINED ? cInfo.imageLayout : this.resources.get(I).imageLayout()));
                     resourceDescriptorSets.get(I)
                         .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)
-                        .descriptorType(imageViewInfo.type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+                        .descriptorType(cInfo.type == "storage" ? VK_DESCRIPTOR_TYPE_STORAGE_IMAGE : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
                         .descriptorCount(1)
                         .dstArrayElement(I)
                         .dstBinding(0)

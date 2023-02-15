@@ -217,9 +217,10 @@ public class PipelineObj extends BasicObj  {
                     .put(3, 0.0F));
 
             //
+            this.representativeFragmentTestNV.representativeFragmentTestEnable(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest());
             this.robustness
                 .pNext(this.library
-                    .pNext(this.representativeFragmentTestNV.representativeFragmentTestEnable(true).address())
+                    .pNext(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest() ? this.representativeFragmentTestNV.address() : 0L)
                     .flags(
                     VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
                         VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |

@@ -148,7 +148,6 @@ public class ImageSetObj extends BasicObj  {
     public static class FramebufferObj extends ImageSetObj  {
         public ImageObj depthStencilImage = null;
         public ImageViewObj currentDepthStencilImageView = null;
-        public ImageViewObj writingDepthStencilImageView = null;
         public ImageViewObj previousDepthStencilImageView = null;
         public ImageViewObj readingDepthStencilImageView = null;
 
@@ -194,21 +193,6 @@ public class ImageSetObj extends BasicObj  {
                             .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
                             .levelCount(1)
                             .baseArrayLayer(layerCount * 0)
-                            .layerCount(layerCount);
-                    }
-                });
-
-                //
-                this.writingDepthStencilImageView = new ImageViewObj(this.base, new ImageViewCInfo() {
-                    {
-                        imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-                        pipelineLayout = cInfo.pipelineLayout;
-                        image = depthStencilImage.handle.get();
-                        type = "storage";
-                        subresourceRange = VkImageSubresourceRange.create()
-                            .aspectMask(VK_IMAGE_ASPECT_DEPTH_BIT).baseMipLevel(0)
-                            .levelCount(1)
-                            .baseArrayLayer(layerCount * 1)
                             .layerCount(layerCount);
                     }
                 });
@@ -266,7 +250,7 @@ public class ImageSetObj extends BasicObj  {
             var cInfo = ((ImageSetCInfo.FBLayout)this.cInfo);
             if (cInfo.depthStencilFormat != VK_FORMAT_UNDEFINED) {
                 var extent = VkExtent3D.create().width(cInfo.scissor.extent().width()).height(cInfo.scissor.extent().height()).depth(1);
-                CommandUtils.cmdCopyImageToImage(cmdBuf, writingDepthStencilImageView.subresourceLayers(0), currentDepthStencilImageView.subresourceLayers(0), extent);
+                CommandUtils.cmdCopyImageToImage(cmdBuf, readingDepthStencilImageView.subresourceLayers(0), currentDepthStencilImageView.subresourceLayers(0), extent);
             }
 
             return this;

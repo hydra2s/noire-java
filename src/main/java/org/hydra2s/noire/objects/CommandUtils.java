@@ -475,8 +475,8 @@ abstract public class CommandUtils {
         //
         if (hasDepthStencil) {
             fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.writingDepthStencilImageView.getHandle().get());
-            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.writingDepthStencilImageView.getImageLayout());
+            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.readingDepthStencilImageView.getHandle().get());
+            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.readingDepthStencilImageView.getImageLayout());
             fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
             fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         };
@@ -601,7 +601,7 @@ abstract public class CommandUtils {
                 if (hasDepthStencil && cmdInfo.clearDepthStencil) {
                     vkCmdClearAttachments(cmdBuf, VkClearAttachment.calloc(1, stack)
                         .clearValue(fbLayout.depthStencilAttachmentInfo.clearValue())
-                        .aspectMask(directInfo.framebufferObj.writingDepthStencilImageView.subresourceLayers(0).subresource.aspectMask())
+                        .aspectMask(directInfo.framebufferObj.readingDepthStencilImageView.subresourceLayers(0).subresource.aspectMask())
                         .colorAttachment(0), VkClearRect.calloc(1, stack).baseArrayLayer(0).layerCount(layerCount).rect(VkRect2D.calloc(stack).set(fbLayout.scissor)));
                 }
             }
