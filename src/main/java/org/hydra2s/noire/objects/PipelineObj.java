@@ -208,7 +208,7 @@ public class PipelineObj extends BasicObj  {
 
             //
             this.colorBlendInfo.logicOpEnable(false)
-                .logicOp(VK_LOGIC_OP_NO_OP)
+                .logicOp(fbLayout.logicOp.getLogicOp())
                 .pAttachments(blendAttachments)
                 .blendConstants(createFloatBuffer(4)
                     .put(0, 0.0F)
@@ -266,9 +266,10 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStateInfo.pDynamicStates(this.dynamicStates);
 
             //
-            this.depthStencilState.depthTestEnable(true)
-                .depthWriteEnable(true)
-                .depthCompareOp(VK_COMPARE_OP_LESS_OR_EQUAL)
+            this.depthStencilState
+                .depthTestEnable(fbLayout.depthState.depthTest)
+                .depthWriteEnable(fbLayout.depthState.depthMask)
+                .depthCompareOp(fbLayout.depthState.function)
                 .depthBoundsTestEnable(true)
                 .stencilTestEnable(false)
                 .minDepthBounds(0.0F)

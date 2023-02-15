@@ -271,9 +271,9 @@ public class ImageSetCInfo extends BasicCInfo  {
         public DepthBias depthBias = new DepthBias(false, 0.F, 0.F);
 
         public ArrayList<BlendState> blendStates = new ArrayList<>(){{
-            add(new BlendState(false, 0, 0, 0, 0));
+            add(new BlendState(DEFAULT_BLEND_STATE));
         }};
-        public LogicOpState logicOp = new LogicOpState(false, 0);
+        public LogicOpState logicOp = new LogicOpState(DEFAULT_LOGICOP_STATE);
         public ArrayList<ColorMask> colorMask = new ArrayList<>(){{
             add(new ColorMask(true, true, true, true));
         }};

@@ -460,11 +460,12 @@ abstract public class CommandUtils {
         fbLayout.attachmentInfos = fbLayout.attachmentInfos != null ? fbLayout.attachmentInfos : VkRenderingAttachmentInfo.create(fbLayout.formats.length);
         var Fs = fbLayout.formats.length;
         for (var I=0;I<Fs;I++) {
-            fbLayout.attachmentInfos.get(I).sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.attachmentInfos.get(I).imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout());
-            fbLayout.attachmentInfos.get(I).imageView(framebufferObj.writingImageViews.get(I).handle.get());
-            fbLayout.attachmentInfos.get(I).loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
-            fbLayout.attachmentInfos.get(I).storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            fbLayout.attachmentInfos.get(I)
+                .sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO)
+                .imageLayout(framebufferObj.writingImageViews.get(I).getImageLayout())
+                .imageView(framebufferObj.writingImageViews.get(I).handle.get())
+                .loadOp(VK_ATTACHMENT_LOAD_OP_LOAD)
+                .storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         }
 
         //
@@ -474,11 +475,12 @@ abstract public class CommandUtils {
 
         //
         if (hasDepthStencil) {
-            fbLayout.depthStencilAttachmentInfo.sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO);
-            fbLayout.depthStencilAttachmentInfo.imageView(framebufferObj.readingDepthStencilImageView.getHandle().get());
-            fbLayout.depthStencilAttachmentInfo.imageLayout(framebufferObj.readingDepthStencilImageView.getImageLayout());
-            fbLayout.depthStencilAttachmentInfo.loadOp(VK_ATTACHMENT_LOAD_OP_LOAD);
-            fbLayout.depthStencilAttachmentInfo.storeOp(VK_ATTACHMENT_STORE_OP_STORE);
+            fbLayout.depthStencilAttachmentInfo
+                .sType(VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO)
+                .imageView(framebufferObj.readingDepthStencilImageView.getHandle().get())
+                .imageLayout(framebufferObj.readingDepthStencilImageView.getImageLayout())
+                .loadOp(VK_ATTACHMENT_LOAD_OP_LOAD)
+                .storeOp(VK_ATTACHMENT_STORE_OP_STORE);
         };
     }
 
@@ -509,6 +511,7 @@ abstract public class CommandUtils {
             //
             var fbLayout = cmdInfo.fbLayout != null ? cmdInfo.fbLayout : ((PipelineCInfo.GraphicsPipelineCInfo) directInfo.pipelineObj.cInfo).fbLayout;
             int layerCount = Collections.min(fbLayout.layerCounts);
+            var physicalDeviceObj = directInfo.deviceObj.physicalDeviceObj;
 
             //
             boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
@@ -541,7 +544,7 @@ abstract public class CommandUtils {
                 vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
 
                 //
-                vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_FRONT_BIT : VK_CULL_MODE_NONE);
+                vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
                 vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
                 vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
                 vkCmdSetStencilTestEnable(cmdBuf, false);
@@ -550,6 +553,7 @@ abstract public class CommandUtils {
                 vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
                 vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1, stack).put(0, fbLayout.scissor));
                 vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1, stack).put(0, fbLayout.viewport));
+                vkCmdSetFrontFace(cmdBuf, VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
                 //
                 var Bs = fbLayout.blendStates.size();
@@ -571,12 +575,24 @@ abstract public class CommandUtils {
 
                 // not supported by RenderDoc
                 // requires dynamic state 3 or Vulkan API 1.4
-                vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
-                vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
-                vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
-                vkCmdSetVertexInputEXT(cmdBuf, null, null);
-                vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
-                vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
+                if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEquation()) {
+                    vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
+                }
+                if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEnable()) {
+                    vkCmdSetColorBlendEnableEXT(cmdBuf, 0, blendAttachment);
+                }
+                if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorWriteMask()) {
+                    vkCmdSetColorWriteMaskEXT(cmdBuf, 0, colorMask);
+                }
+                if (physicalDeviceObj.features.vertexInput.vertexInputDynamicState()) {
+                    vkCmdSetVertexInputEXT(cmdBuf, null, null);
+                }
+                if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3LogicOpEnable()) {
+                    vkCmdSetLogicOpEnableEXT(cmdBuf, fbLayout.logicOp.enabled);
+                }
+                if (physicalDeviceObj.features.dynamicState2.extendedDynamicState2LogicOp()) {
+                    vkCmdSetLogicOpEXT(cmdBuf, fbLayout.logicOp.getLogicOp());
+                }
             }
 
             if (cmdInfo.multiDraw != null && cmdInfo.pipeline != 0) {
