@@ -15,7 +15,7 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 
 - Details will named later
 
-### WIP gen-v2.0 almost done
+### Gen-v2.0 almost done
 
 - Timeline semaphores (finally).
 - Full-scale update - more FPS in some cases.
@@ -27,6 +27,18 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 - Mass refactoring, refinements.
 - Frame skipping support (much more FPS or TPS).
 - Multi-draw centric and oriented.
+
+### TODO Gen-2.0.1
+
+- Additional legacy support (vendor-related).
+- Optional ray-tracing (and enabled).
+- New draw-grouping and collection.
+- Fix common issues and problems.
+- Probably, rework swapchain system.
+- Feature set for SSLR, shadows, etc.
+- Feature set for ray-tracing (chunks, entity, etc.). 
+- Dynamically configurable. 
+- More feature checking (for MultiDraw, etc.).
 
 ## ~~Part of [manhack](https://github.com/hydra2s/manhack) project~~
 ## Planned for [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) project
