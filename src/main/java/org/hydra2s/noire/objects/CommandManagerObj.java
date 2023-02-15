@@ -2,7 +2,6 @@ package org.hydra2s.noire.objects;
 
 //
 
-import net.vulkanmod.next.RendererObj;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.CommandManagerCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -645,7 +644,7 @@ public class CommandManagerObj extends BasicObj {
             memoryAllocator = cInfo.memoryAllocator;
             memoryAllocationInfo = new MemoryAllocationCInfo() {{
                 isHost = true;
-                isDevice = false;
+                isDevice = true;
             }};
         }});
 
