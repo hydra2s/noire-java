@@ -86,9 +86,10 @@ public class InstanceObj extends BasicObj {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         // Layers
-        this.layers = createPointerBuffer(2);
-        this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_validation")));
-        this.layers.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_synchronization2")));
+        this.layers = createPointerBuffer(1);
+        this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_LUNARG_gfxreconstruct")));
+        //this.layers.put(0, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_validation")));
+        //this.layers.put(1, MemoryUtil.memAddress(MemoryUtil.memUTF8("VK_LAYER_KHRONOS_synchronization2")));
 
         //
         this.layersAmount = new int[]{1};
