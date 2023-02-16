@@ -99,6 +99,34 @@ public class ImageSetCInfo extends BasicCInfo  {
     }
 
     //
+    public static class StencilState {
+        public int[] stencilOp = new int[]{ VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP, VK_STENCIL_OP_KEEP };
+        public int reference = 2333;
+        public int compareOp = VK_COMPARE_OP_ALWAYS;
+        public byte writeMask = (byte)0xFF;
+        public byte compareMask = (byte)0xFF;
+        public boolean enabled = false;
+
+        public StencilState() {
+
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StencilState state = (StencilState)o;
+            if(this.enabled != state.enabled) return false;
+            return stencilOp == state.stencilOp && reference == state.reference && compareOp == state.compareOp && writeMask == state.writeMask && compareMask == state.compareMask;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, stencilOp, reference, compareOp, writeMask, compareMask);
+        }
+    }
+
+    //
     public static class BlendState {
         public boolean enabled = false;
         public int srcRgbFactor;
@@ -278,6 +306,8 @@ public class ImageSetCInfo extends BasicCInfo  {
     //
     static public class FBLayout extends ImageSetCInfo {
 
+        public StencilState stencilState;
+
         // planned a auto-detection
         public int depthStencilFormat = 0;
         public VkRenderingAttachmentInfo depthStencilAttachmentInfo = null;
@@ -339,6 +369,17 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.depthStencilFormat = original.depthStencilFormat;
             this.depthStencilAttachmentInfo = VkRenderingAttachmentInfo.create().set(original.depthStencilAttachmentInfo);
 
+            // TODO: stencil state constructor
+            this.stencilState = new StencilState();
+            this.stencilState.compareMask = original.stencilState.compareMask;
+            this.stencilState.compareOp = original.stencilState.compareOp;
+            this.stencilState.stencilOp[0] = original.stencilState.stencilOp[0];
+            this.stencilState.stencilOp[1] = original.stencilState.stencilOp[1];
+            this.stencilState.stencilOp[2] = original.stencilState.stencilOp[2];
+            this.stencilState.writeMask = original.stencilState.writeMask;
+            this.stencilState.reference = original.stencilState.reference;
+            this.stencilState.enabled = original.stencilState.enabled;
+
             //
             if (original.scissor != null) this.scissor = VkRect2D.create().set(original.scissor);
             if (original.viewport != null) this.viewport = VkViewport.create().set(original.viewport);
@@ -348,7 +389,7 @@ public class ImageSetCInfo extends BasicCInfo  {
         // TODO: full hash with formats
         @Override
         public int hashCode() {
-            return Objects.hash(cullState, colorMask, blendStates, logicOp, depthBias, depthState, depthStencilFormat);
+            return Objects.hash(cullState, colorMask, blendStates, logicOp, depthBias, depthState, depthStencilFormat, stencilState);
         }
 
         // TODO: full hash with formats

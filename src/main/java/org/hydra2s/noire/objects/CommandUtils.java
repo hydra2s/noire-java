@@ -17,6 +17,7 @@ import static org.lwjgl.vulkan.EXTMultiDraw.vkCmdDrawMultiEXT;
 import static org.lwjgl.vulkan.EXTVertexInputDynamicState.vkCmdSetVertexInputEXT;
 import static org.lwjgl.vulkan.VK10.VK_QUEUE_FAMILY_IGNORED;
 import static org.lwjgl.vulkan.VK13.*;
+import static org.lwjgl.vulkan.VK13.vkCmdSetStencilOp;
 
 // GRIB!
 // TODO: support for queue families
@@ -549,10 +550,20 @@ abstract public class CommandUtils {
                 vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
                 vkCmdSetDepthBiasEnable(cmdBuf, fbLayout.depthBias.enabled);
                 vkCmdSetDepthBias(cmdBuf, fbLayout.depthBias.units, 0.0f, fbLayout.depthBias.factor);
-                vkCmdSetStencilTestEnable(cmdBuf, false);
+
+                // boss fight
+                vkCmdSetStencilTestEnable(cmdBuf, fbLayout.stencilState.enabled);
+                vkCmdSetStencilOp(cmdBuf, 0xFF, fbLayout.stencilState.stencilOp[0], fbLayout.stencilState.stencilOp[1], fbLayout.stencilState.stencilOp[2], fbLayout.stencilState.compareOp) ;
+                vkCmdSetStencilReference(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.reference);
+                vkCmdSetStencilCompareMask(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.compareMask);
+                vkCmdSetStencilWriteMask(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.writeMask);
+
+                //
                 vkCmdSetDepthWriteEnable(cmdBuf, fbLayout.depthState.depthMask);
                 vkCmdSetDepthTestEnable(cmdBuf, fbLayout.depthState.depthTest);
                 vkCmdSetDepthCompareOp(cmdBuf, fbLayout.depthState.function);
+
+                //
                 vkCmdSetScissorWithCount(cmdBuf, VkRect2D.calloc(1, stack).put(0, fbLayout.scissor));
                 vkCmdSetViewportWithCount(cmdBuf, VkViewport.calloc(1, stack).put(0, fbLayout.viewport));
                 vkCmdSetFrontFace(cmdBuf, VK_FRONT_FACE_COUNTER_CLOCKWISE);

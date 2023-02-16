@@ -262,6 +262,9 @@ public class PipelineObj extends BasicObj  {
                     add(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
                     add(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
                     add(VK_DYNAMIC_STATE_STENCIL_OP);
+                    add(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
+                    add(VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK);
+                    add(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
                     add(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
                     add(VK_DYNAMIC_STATE_CULL_MODE);
                     add(VK_DYNAMIC_STATE_FRONT_FACE);
@@ -285,14 +288,25 @@ public class PipelineObj extends BasicObj  {
                 this.dynamicStateInfo.pDynamicStates(this.dynamicStates = createIntBuffer(dynamicStates.size()).put(0, dynamicStates.stream().mapToInt((I) -> I).toArray()));
 
                 //
+                var stencilState = VkStencilOpState.create();
+                stencilState.failOp(fbLayout.stencilState.stencilOp[0]);
+                stencilState.passOp(fbLayout.stencilState.stencilOp[1]);
+                stencilState.depthFailOp(fbLayout.stencilState.stencilOp[2]);
+                stencilState.compareOp(fbLayout.stencilState.compareOp);
+                stencilState.writeMask(fbLayout.stencilState.writeMask);
+                stencilState.reference(fbLayout.stencilState.reference);
+
+                //
                 this.depthStencilState
                     .depthTestEnable(fbLayout.depthState.depthTest)
                     .depthWriteEnable(fbLayout.depthState.depthMask)
                     .depthCompareOp(fbLayout.depthState.function)
                     .depthBoundsTestEnable(true)
-                    .stencilTestEnable(false)
+                    .stencilTestEnable(fbLayout.stencilState.enabled)
                     .minDepthBounds(0.0F)
-                    .maxDepthBounds(1.0F);
+                    .maxDepthBounds(1.0F)
+                    .front(stencilState)
+                    .back(stencilState);
 
                 //
                 this.createInfo
