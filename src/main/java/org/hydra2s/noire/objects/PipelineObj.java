@@ -2,11 +2,16 @@ package org.hydra2s.noire.objects;
 
 //
 
+import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
+import org.hydra2s.noire.descriptors.ImageSetCInfo;
 import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -125,23 +130,197 @@ public class PipelineObj extends BasicObj  {
         }
 
         //
+        //public Long2IntOpenHashMap stateMap = new Long2IntOpenHashMap();
+        public Int2LongOpenHashMap stateMap = new Int2LongOpenHashMap();
+
+        //
+        public long getStatePipeline(ImageSetCInfo.FBLayout fbLayout) {
+            // if supported full set, doesn't needed to make absent pipeline
+            // TODO: tracking changes
+            if (
+                this.handle != null &&
+                physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEnable() &&
+                physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEquation() &&
+                physicalDeviceObj.features.dynamicState3.extendedDynamicState3LogicOpEnable() &&
+                physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorWriteMask() &&
+                physicalDeviceObj.features.dynamicState2.extendedDynamicState2LogicOp())
+            {
+                return this.handle.get();
+            }
+
+            //
+            if (stateMap.get(fbLayout.hashCode()) <= 0) {
+                boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+                boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+                boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
+
+                //
+                var cInfo = (PipelineCInfo.GraphicsPipelineCInfo) this.cInfo;
+                var pipelineLayoutObj = (PipelineLayoutObj) deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo) this.cInfo).pipelineLayout)).orElse(null);
+                ;
+
+
+                //
+                this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
+                AtomicInteger N = new AtomicInteger();
+                cInfo.sourceMap.forEach((stage, source) -> {
+                    this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
+                });
+
+                //
+                this.inputAssemblyStateInfo
+                    .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+                    .primitiveRestartEnable(false);
+
+                //
+                this.conservativeRasterInfo
+                    .conservativeRasterizationMode(VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
+
+                //
+                this.rasterizationInfo
+                    .pNext(this.conservativeRasterInfo.address())
+                    .depthClampEnable(false)
+                    .rasterizerDiscardEnable(false)
+                    .polygonMode(VK_POLYGON_MODE_FILL)
+                    .cullMode(VK_CULL_MODE_NONE)
+                    .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
+                    .depthBiasEnable(true)
+                    .depthBiasConstantFactor(0.0F)
+                    .depthBiasClamp(0.0F)
+                    .depthBiasSlopeFactor(0.0F)
+                    .lineWidth(1.0F);
+
+                //
+                this.multisampleInfo
+                    .rasterizationSamples(VK_SAMPLE_COUNT_1_BIT)
+                    .minSampleShading(1.0F)
+                    .alphaToCoverageEnable(false)
+                    .alphaToOneEnable(false);
+
+                //
+                var blendAttachments = VkPipelineColorBlendAttachmentState.create(fbLayout.blendStates.size());
+                for (var I = 0; I < fbLayout.blendStates.size(); I++) {
+                    var blendState = fbLayout.blendStates.get(I);
+                    blendAttachments.get(I).set(
+                        blendState.enabled,
+                        blendState.srcRgbFactor,
+                        blendState.dstRgbFactor,
+                        blendState.blendOp, // TODO: support for RGB and alpha blend op
+                        blendState.srcAlphaFactor,
+                        blendState.dstAlphaFactor,
+                        blendState.blendOp, // TODO: support for RGB and alpha blend op
+                        fbLayout.colorMask.get(I).colorMask
+                    );
+                }
+
+                //
+                this.colorBlendInfo.logicOpEnable(false)
+                    .logicOp(fbLayout.logicOp.getLogicOp())
+                    .pAttachments(blendAttachments)
+                    .blendConstants(createFloatBuffer(4)
+                        .put(0, 0.0F)
+                        .put(1, 0.0F)
+                        .put(2, 0.0F)
+                        .put(3, 0.0F));
+
+                //
+                this.representativeFragmentTestNV.representativeFragmentTestEnable(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest());
+                this.robustness
+                    .pNext(this.library
+                        .pNext(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest() ? this.representativeFragmentTestNV.address() : 0L)
+                        .flags(
+                            VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
+                                VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
+                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
+                                VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
+                        ).address())
+                    .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                    .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                    .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
+                    .images(VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT);
+
+                //
+                //this.attachmentFormats.put();
+                // TODO: depth only or stencil only support
+                // TODO: dynamic depth and stencil state
+                var formats = createIntBuffer(fbLayout.formats.length);
+                for (int I = 0; I < fbLayout.formats.length; I++) { formats.put(I, fbLayout.formats[I]); }
+                ;
+                this.dynamicRenderingPipelineInfo
+                    .pNext(this.robustness.address())
+                    .pColorAttachmentFormats(formats)
+                    .depthAttachmentFormat(fbLayout.depthStencilFormat)
+                    .stencilAttachmentFormat(fbLayout.depthStencilFormat);
+
+                //
+                var dynamicStates = new ArrayList<Integer>() {{
+                    add(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+                    add(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+                    add(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+                    add(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+                    add(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+                    add(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP);
+                    add(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
+                    add(VK_DYNAMIC_STATE_STENCIL_OP);
+                    add(VK_DYNAMIC_STATE_BLEND_CONSTANTS);
+                    add(VK_DYNAMIC_STATE_CULL_MODE);
+                    add(VK_DYNAMIC_STATE_FRONT_FACE);
+                    add(VK_DYNAMIC_STATE_DEPTH_BIAS);
+                    add(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
+
+                    // TODO: tracking changes
+                    if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEnable())
+                        add(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+                    if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEquation())
+                        add(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+                    if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3LogicOpEnable())
+                        add(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+                    if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorWriteMask())
+                        add(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+                    if (physicalDeviceObj.features.dynamicState2.extendedDynamicState2LogicOp())
+                        add(VK_DYNAMIC_STATE_LOGIC_OP_EXT);
+                }};
+
+                // TODO: dynamic depth and stencil state
+                this.dynamicStateInfo.pDynamicStates(this.dynamicStates = createIntBuffer(dynamicStates.size()).put(0, dynamicStates.stream().mapToInt((I) -> I).toArray()));
+
+                //
+                this.depthStencilState
+                    .depthTestEnable(fbLayout.depthState.depthTest)
+                    .depthWriteEnable(fbLayout.depthState.depthMask)
+                    .depthCompareOp(fbLayout.depthState.function)
+                    .depthBoundsTestEnable(true)
+                    .stencilTestEnable(false)
+                    .minDepthBounds(0.0F)
+                    .maxDepthBounds(1.0F);
+
+                //
+                this.createInfo
+                    .pNext(this.dynamicRenderingPipelineInfo.address())
+                    .flags((PipelineLayoutObj.useLegacyBindingSystem ? 0 : VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
+                    .pStages(this.shaderStageInfo)
+                    .pVertexInputState(this.vertexInputInfo)
+                    .pColorBlendState(this.colorBlendInfo)
+                    .pDepthStencilState(this.depthStencilState)
+                    .pViewportState(this.viewportStateInfo)
+                    .pInputAssemblyState(this.inputAssemblyStateInfo)
+                    .pRasterizationState(this.rasterizationInfo)
+                    .pMultisampleState(this.multisampleInfo)
+                    .pDynamicState(this.dynamicStateInfo)
+                    .layout(cInfo.pipelineLayout);
+
+                // TODO: initial pipeline cache
+                var pipeline = new long[]{0L};
+                assert pipelineLayoutObj != null;
+                vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, pipeline));
+                stateMap.put(fbLayout.hashCode(), pipeline[0]);
+            }
+            return stateMap.get(fbLayout.hashCode());
+        }
+
+        //
         public GraphicsPipelineObj(UtilsCInfo.Handle base, PipelineCInfo.GraphicsPipelineCInfo cInfo) {
             super(base, cInfo);
-
-            //
-            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
-
-            //
-            var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
-            boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-            boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-            boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
-
-            //
-            this.shaderStageInfo = VkPipelineShaderStageCreateInfo.create(cInfo.sourceMap.size()).sType(VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO); AtomicInteger N = new AtomicInteger();
-            cInfo.sourceMap.forEach((stage, source)->{
-                this.shaderStageInfo.put(N.getAndIncrement(), createShaderModuleInfo(deviceObj.createShaderModule(source), stage, "main"));
-            });
 
             //
             this.representativeFragmentTestNV = VkPipelineRepresentativeFragmentTestStateCreateInfoNV.create().sType(VK_STRUCTURE_TYPE_PIPELINE_REPRESENTATIVE_FRAGMENT_TEST_STATE_CREATE_INFO_NV);
@@ -158,141 +337,13 @@ public class PipelineObj extends BasicObj  {
             this.dynamicStateInfo = VkPipelineDynamicStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO);
             this.depthStencilState = VkPipelineDepthStencilStateCreateInfo.create().sType(VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO);
             this.createInfo = VkGraphicsPipelineCreateInfo.create(1).sType(VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO);
-            this.dynamicStates = createIntBuffer(18); // HARDCORE!
 
             //
-            this.inputAssemblyStateInfo
-                .topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-                .primitiveRestartEnable(false);
+            var pipelineLayoutObj = (PipelineLayoutObj)deviceObj.handleMap.get(new UtilsCInfo.Handle("PipelineLayout", ((PipelineCInfo.GraphicsPipelineCInfo)this.cInfo).pipelineLayout)).orElse(null);;
+            var fbLayout = ((PipelineCInfo.GraphicsPipelineCInfo)cInfo).fbLayout;
 
             //
-            this.conservativeRasterInfo
-                .conservativeRasterizationMode(VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT);
-
-            //
-            this.rasterizationInfo
-                .pNext(this.conservativeRasterInfo.address())
-                .depthClampEnable(false)
-                .rasterizerDiscardEnable(false)
-                .polygonMode(VK_POLYGON_MODE_FILL)
-                .cullMode(VK_CULL_MODE_NONE)
-                .frontFace(VK_FRONT_FACE_COUNTER_CLOCKWISE)
-                .depthBiasEnable(true)
-                .depthBiasConstantFactor(0.0F)
-                .depthBiasClamp(0.0F)
-                .depthBiasSlopeFactor(0.0F)
-                .lineWidth(1.0F);
-
-            //
-            this.multisampleInfo
-                .rasterizationSamples(VK_SAMPLE_COUNT_1_BIT)
-                .minSampleShading(1.0F)
-                .alphaToCoverageEnable(false)
-                .alphaToOneEnable(false);
-
-            //
-            var blendAttachments = VkPipelineColorBlendAttachmentState.create(fbLayout.blendStates.size());
-            for (var I=0;I<fbLayout.blendStates.size();I++) {
-                var blendState = fbLayout.blendStates.get(I);
-                blendAttachments.get(I).set(
-                    blendState.enabled,
-                    blendState.srcRgbFactor,
-                    blendState.dstRgbFactor,
-                    blendState.blendOp, // TODO: support for RGB and alpha blend op
-                    blendState.srcAlphaFactor,
-                    blendState.dstAlphaFactor,
-                    blendState.blendOp, // TODO: support for RGB and alpha blend op
-                    fbLayout.colorMask.get(I).colorMask
-                );
-            }
-
-            //
-            this.colorBlendInfo.logicOpEnable(false)
-                .logicOp(fbLayout.logicOp.getLogicOp())
-                .pAttachments(blendAttachments)
-                .blendConstants(createFloatBuffer(4)
-                    .put(0, 0.0F)
-                    .put(1, 0.0F)
-                    .put(2, 0.0F)
-                    .put(3, 0.0F));
-
-            //
-            this.representativeFragmentTestNV.representativeFragmentTestEnable(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest());
-            this.robustness
-                .pNext(this.library
-                    .pNext(physicalDeviceObj.features.representativeFragmentTestNV.representativeFragmentTest() ? this.representativeFragmentTestNV.address() : 0L)
-                    .flags(
-                    VK_GRAPHICS_PIPELINE_LIBRARY_VERTEX_INPUT_INTERFACE_BIT_EXT |
-                        VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT |
-                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
-                        VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT
-                ).address())
-                .storageBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
-                .uniformBuffers(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
-                .vertexInputs(VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_DISABLED_EXT)
-                .images(VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_DISABLED_EXT);
-
-            //
-            //this.attachmentFormats.put();
-            // TODO: depth only or stencil only support
-            // TODO: dynamic depth and stencil state
-            var formats = createIntBuffer(fbLayout.formats.length); for (int I=0;I<fbLayout.formats.length;I++) { formats.put(I, fbLayout.formats[I]); };
-            this.dynamicRenderingPipelineInfo
-                .pNext(this.robustness.address())
-                .pColorAttachmentFormats(formats)
-                .depthAttachmentFormat(fbLayout.depthStencilFormat)
-                .stencilAttachmentFormat(fbLayout.depthStencilFormat);
-
-            // TODO: dynamic depth and stencil state
-            this.dynamicStates
-                .put(0, VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
-                .put(1, VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
-                .put(2, VK_DYNAMIC_STATE_VERTEX_INPUT_EXT)
-                .put(3, VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE)
-                .put(4, VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)
-                .put(5, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP)
-                .put(6, VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE)
-                .put(7, VK_DYNAMIC_STATE_STENCIL_OP)
-                .put(8, VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)
-                .put(9, VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT)
-                .put(10, VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)
-                .put(11, VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)
-                .put(12, VK_DYNAMIC_STATE_BLEND_CONSTANTS)
-                .put(13, VK_DYNAMIC_STATE_CULL_MODE)
-                .put(14, VK_DYNAMIC_STATE_FRONT_FACE)
-                .put(15, VK_DYNAMIC_STATE_LOGIC_OP_EXT)
-                .put(16, VK_DYNAMIC_STATE_DEPTH_BIAS)
-                .put(17, VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE);
-            this.dynamicStateInfo.pDynamicStates(this.dynamicStates);
-
-            //
-            this.depthStencilState
-                .depthTestEnable(fbLayout.depthState.depthTest)
-                .depthWriteEnable(fbLayout.depthState.depthMask)
-                .depthCompareOp(fbLayout.depthState.function)
-                .depthBoundsTestEnable(true)
-                .stencilTestEnable(false)
-                .minDepthBounds(0.0F)
-                .maxDepthBounds(1.0F);
-
-            //
-            this.createInfo
-                .pNext(this.dynamicRenderingPipelineInfo.address())
-                .flags((PipelineLayoutObj.useLegacyBindingSystem ? 0 : VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) | VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT | VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT)
-                .pStages(this.shaderStageInfo)
-                .pVertexInputState(this.vertexInputInfo)
-                .pColorBlendState(this.colorBlendInfo)
-                .pDepthStencilState(this.depthStencilState)
-                .pViewportState(this.viewportStateInfo)
-                .pInputAssemblyState(this.inputAssemblyStateInfo)
-                .pRasterizationState(this.rasterizationInfo)
-                .pMultisampleState(this.multisampleInfo)
-                .pDynamicState(this.dynamicStateInfo)
-                .layout(cInfo.pipelineLayout);
-
-            // TODO: initial pipeline cache
-            vkCheckStatus(vkCreateGraphicsPipelines(deviceObj.device, pipelineLayoutObj.pipelineCache[0], this.createInfo, null, (this.handle = new UtilsCInfo.Handle("Pipeline")).ptr()));
-            deviceObj.handleMap.put$(this.handle, this);
+            deviceObj.handleMap.put$(this.handle = new UtilsCInfo.Handle("Pipeline", this.getStatePipeline(fbLayout)), this);
 
             //
             /*if (cInfo.memoryAllocator != 0) {

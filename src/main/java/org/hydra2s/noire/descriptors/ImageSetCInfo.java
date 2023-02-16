@@ -39,6 +39,19 @@ public class ImageSetCInfo extends BasicCInfo  {
             this.units = depthBias.units;
             this.factor = depthBias.factor;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DepthBias that = (DepthBias) o;
+            return enabled == that.enabled && units == that.units && factor == that.factor;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, units, factor);
+        }
     }
 
     //
@@ -242,6 +255,12 @@ public class ImageSetCInfo extends BasicCInfo  {
                 (a ? VK_COLOR_COMPONENT_A_BIT : 0);
         }
 
+        //
+        @Override
+        public int hashCode() {
+            return Integer.hashCode(colorMask);
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -324,6 +343,28 @@ public class ImageSetCInfo extends BasicCInfo  {
             if (original.scissor != null) this.scissor = VkRect2D.create().set(original.scissor);
             if (original.viewport != null) this.viewport = VkViewport.create().set(original.viewport);
 
+        }
+
+        // TODO: full hash with formats
+        @Override
+        public int hashCode() {
+            return Objects.hash(cullState, colorMask, blendStates, logicOp, depthBias, depthState, depthStencilFormat);
+        }
+
+        // TODO: full hash with formats
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            FBLayout layout = (FBLayout) o;
+            return
+                cullState == layout.cullState &&
+                colorMask.equals(layout.colorMask) &&
+                blendStates.equals(layout.blendStates) &&
+                logicOp.equals(layout.logicOp) &&
+                depthBias.equals(layout.depthBias) &&
+                depthState.equals(layout.depthState) &&
+                depthStencilFormat == layout.depthStencilFormat;
         }
 
     }

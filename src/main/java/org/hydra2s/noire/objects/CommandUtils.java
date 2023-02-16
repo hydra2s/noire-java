@@ -540,8 +540,10 @@ abstract public class CommandUtils {
             }
 
             //
-            if (cmdInfo.pipeline != 0) {
-                vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, cmdInfo.pipeline);
+            //assert directInfo.pipelineObj != null;
+            var pipeline = directInfo.pipelineObj != null ? ((PipelineObj.GraphicsPipelineObj)directInfo.pipelineObj).getStatePipeline(fbLayout) : 0L;
+            if (pipeline != 0) {
+                vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
                 //
                 vkCmdSetCullMode(cmdBuf, fbLayout.cullState ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
@@ -575,6 +577,7 @@ abstract public class CommandUtils {
 
                 // not supported by RenderDoc
                 // requires dynamic state 3 or Vulkan API 1.4
+                // TODO: tracking changes
                 if (physicalDeviceObj.features.dynamicState3.extendedDynamicState3ColorBlendEquation()) {
                     vkCmdSetColorBlendEquationEXT(cmdBuf, 0, blendEquation);
                 }
