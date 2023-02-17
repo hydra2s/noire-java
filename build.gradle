@@ -12,7 +12,7 @@ project.ext.lwjglVersion = "3.3.2-SNAPSHOT"
 project.ext.lwjglNatives = "natives-windows"
 
 group 'org.hydra2s'
-version 'main-SNAPSHOT'
+version '0.0.1-SNAPSHOT'
 
 wrapper {
     gradleVersion = '8.1-20221230234309+0000'
