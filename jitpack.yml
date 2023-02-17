@@ -6,4 +6,4 @@ before_install:
 install:
    - chmod +x gradlew
    - ./gradlew build
-   - ./gradlew install
+   - ./gradlew publishToMavenLocal
