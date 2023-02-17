@@ -14,6 +14,8 @@ As for the version, yes, I probably made the dumbest mistake in that regard. The
 
 Earlier I wanted to make a separate confession about the use of code. Actually, not all source code is exclusively mine (including external libraries or some elements outside "noire.java", they are even labeled differently than the mine). Yes, I may have forgotten to add labels about where the author's code is (in the case of VulkanMod) and where my corrections or innovations are. I'll try to fix that in the future. 
 
+Based on all of the above, I give permission to use my code and my work. I give you my rights and permissions to do so, as well as the distribution in the final or intermediate products. But you should understand that there is my version and there is a version from third-party developers, and they may have their own rights. 
+
 ## Features (incomplete list)
 
 - 📱 [Vulkan API 1.3.236](https://registry.khronos.org/vulkan/)
