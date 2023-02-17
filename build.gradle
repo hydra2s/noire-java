@@ -57,6 +57,11 @@ publishing {
             groupId = 'org.hydra2s'
             artifactId = 'noire'
             version = '0.0.1-SNAPSHOT'
+            
+            pom.withXml {
+                def pomFile = file("${project.buildDir}/generated-pom.xml")
+                writeTo(pomFile)
+            }
         }
     }
 }
