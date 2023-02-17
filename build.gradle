@@ -1,5 +1,7 @@
 plugins {
+    id 'java'
     id 'java-library'
+    id 'maven-publish'
     id "org.jetbrains.kotlin.jvm" version "1.8.0"
 }
 
@@ -7,7 +9,7 @@ project.ext.lwjglVersion = "3.3.2-SNAPSHOT"
 project.ext.lwjglNatives = "natives-windows"
 
 group 'org.hydra2s'
-version '0.0.1-SNAPSHOT'
+version 'main-SNAPSHOT'
 
 wrapper {
     gradleVersion = '8.1-20221230234309+0000'
@@ -23,20 +25,20 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 
-    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-    implementation group: 'org.bytedeco', name: 'javacpp', version: '1.5.9-SNAPSHOT'
-    implementation "org.lwjgl:lwjgl"
-    implementation "org.lwjgl:lwjgl-assimp"
-    implementation "org.lwjgl:lwjgl-glfw"
-    implementation "org.lwjgl:lwjgl-openal"
-    implementation "org.lwjgl:lwjgl-stb"
-    implementation "org.lwjgl:lwjgl-vma"
-    implementation "org.lwjgl:lwjgl-vulkan"
-    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-openal::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-vma::$lwjglNatives"
+    implementation(platform("org.lwjgl:lwjgl-bom:$lwjglVersion"))
+    implementation(group: 'org.bytedeco', name: 'javacpp', version: '1.5.9-SNAPSHOT')
+    implementation("org.lwjgl:lwjgl")
+    implementation("org.lwjgl:lwjgl-assimp")
+    implementation("org.lwjgl:lwjgl-glfw")
+    implementation("org.lwjgl:lwjgl-openal")
+    implementation("org.lwjgl:lwjgl-stb")
+    implementation("org.lwjgl:lwjgl-vma")
+    implementation("org.lwjgl:lwjgl-vulkan")
+    runtimeOnly("org.lwjgl:lwjgl::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-assimp::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-glfw::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-openal::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-stb::$lwjglNatives")
+    runtimeOnly("org.lwjgl:lwjgl-vma::$lwjglNatives")
 
 }
