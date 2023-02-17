@@ -40,8 +40,15 @@ New renderer engine for Java and Minecraft mod. Also, this is, probably, final p
 - 📌 Dynamically configurable. 
 - 📌 More feature checking (for MultiDraw, etc.).
 
-## ~~Part of [manhack](https://github.com/hydra2s/manhack) project~~
-## Planned for [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) project
+## About drama around [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) and [VulkanMod](https://github.com/xCollateral/VulkanMod) project
+
+I did not want to mislead anyone, I even changed the name a bit in VMH, yes I took as a basis, and besides I wanted to fix a lot of problems with the original mod. I did not want to engage in self-promotion... Plus I wanted to make something that the original mod probably was not, and probably will not be for a long time. I wanted to apologize for everything. Yes, I admit that this is not the official version, a fan build.
+
+And now I will be forced to withdraw from production test snapshots and builds, testing is over and went badly, needs revision. For all questions about this mod, please do not contact the authors of the original VulkanMod. And vice versa, for questions about the original, it is better not to contact me yet.
+
+Also, I can stop supporting this fork or unofficial version at any time. Depending on whether I have enough resources to develop and support it. At the moment, the pace of development has slowed down a lot, and even I myself can see that. And besides, I have circumstances, and I'm also very tired of all this already.
+
+As for the version, yes, I probably made the dumbest mistake in that regard. There were just so many changes that I wanted to give that meaning. My misguided actions have caused sway and heat, and a potential threat to the hype of both projects. The original version of VulkanMod alone got 10,000 downloads and extra stars on Github (essentially unwitting advertising for both projects). As well as additional waves of forks (including in the future). And this is actually bad, because in addition to positive reactions, it also entails negative reactions and evaluations, as well as unnecessary criticism. 
 
 ## Timing of development
 
