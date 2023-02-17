@@ -1,10 +1,6 @@
 package org.hydra2s.noire.objects;
 
 //
-
-import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import org.hydra2s.noire.descriptors.ImageSetCInfo;
 import org.hydra2s.noire.descriptors.PipelineCInfo;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
@@ -12,6 +8,7 @@ import org.lwjgl.vulkan.*;
 
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hydra2s.noire.descriptors.UtilsCInfo.vkCheckStatus;
@@ -131,7 +128,7 @@ public class PipelineObj extends BasicObj  {
 
         //
         //public Long2IntOpenHashMap stateMap = new Long2IntOpenHashMap();
-        public Int2LongOpenHashMap stateMap = new Int2LongOpenHashMap();
+        public HashMap<Integer, Long> stateMap = new HashMap<Integer, Long>();
 
         //
         public long getStatePipeline(ImageSetCInfo.FBLayout fbLayout) {
@@ -149,7 +146,7 @@ public class PipelineObj extends BasicObj  {
             }
 
             //
-            if (stateMap.get(fbLayout.hashCode()) <= 0) {
+            if (stateMap.get(fbLayout.hashCode()) == null || stateMap.get(fbLayout.hashCode()) <= 0) {
                 boolean hasDepthStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
                 boolean hasDepth = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;
                 boolean hasStencil = fbLayout.depthStencilFormat != VK_FORMAT_UNDEFINED;

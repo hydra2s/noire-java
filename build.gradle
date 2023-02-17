@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id "org.jetbrains.kotlin.jvm" version "1.8.0"
 }
 
@@ -7,7 +7,7 @@ project.ext.lwjglVersion = "3.3.2-SNAPSHOT"
 project.ext.lwjglNatives = "natives-windows"
 
 group 'org.hydra2s'
-version '1.0-SNAPSHOT'
+version '0.0.1-SNAPSHOT'
 
 wrapper {
     gradleVersion = '8.1-20221230234309+0000'
