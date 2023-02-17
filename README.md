@@ -12,6 +12,8 @@ Also, I can stop supporting this fork or unofficial version at any time. Dependi
 
 As for the version, yes, I probably made the dumbest mistake in that regard. There were just so many changes that I wanted to give that meaning. My misguided actions have caused sway and heat, and a potential threat to the hype of both projects. The original version of VulkanMod alone got 10,000 downloads and extra stars on Github (essentially unwitting advertising for both projects). As well as additional waves of forks (including in the future). And this is actually bad, because in addition to positive reactions, it also entails negative reactions and evaluations, as well as unnecessary and/or undesirable criticism. I really didn't want to do any black PR or anti-advertising on this whole thing. 
 
+Earlier I wanted to make a separate confession about the use of code. Actually, not all source code is exclusively mine (including external libraries or some elements outside "noire.java", they are even labeled differently than the mine). Yes, I may have forgotten to add labels about where the author's code is (in the case of VulkanMod) and where my corrections or innovations are. I'll try to fix that in the future. 
+
 ## Features (incomplete list)
 
 - 📱 [Vulkan API 1.3.236](https://registry.khronos.org/vulkan/)
