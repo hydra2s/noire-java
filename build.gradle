@@ -50,3 +50,13 @@ dependencies {
     runtimeOnly("org.lwjgl:lwjgl-vma::$lwjglNatives")
 
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'org.hydra2s'
+            artifactId = 'noire'
+            version = '0.0.1'
+        }
+    }
+}
