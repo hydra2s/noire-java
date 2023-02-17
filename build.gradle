@@ -12,7 +12,7 @@ project.ext.lwjglVersion = "3.3.2-SNAPSHOT"
 project.ext.lwjglNatives = "natives-windows"
 
 group 'org.hydra2s'
-version '0.0.1-SNAPSHOT'
+version '0.0.2-SNAPSHOT'
 
 wrapper {
     gradleVersion = '8.1-20221230234309+0000'
@@ -56,10 +56,10 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'org.hydra2s'
             artifactId = 'noire'
-            version = '0.0.1-SNAPSHOT'
+            version = '0.0.2-SNAPSHOT'
             
             pom.withXml {
-                def pomFile = file("${project.buildDir}/noire-0.0.1-SNAPSHOT-pom.xml")
+                def pomFile = file("${project.buildDir}/noire-0.0.2-SNAPSHOT-pom.xml")
                 writeTo(pomFile)
             }
         }

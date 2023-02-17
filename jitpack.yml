@@ -7,5 +7,5 @@ install:
    - chmod +x gradlew
    - ./gradlew build
    - ./gradlew publishToMavenLocal
-   - FILE="-Dfile=build/libs/noire-0.0.1-SNAPSHOT.jar"
+   - FILE="-Dfile=build/libs/noire-0.0.2-SNAPSHOT.jar"
    - mvn install:install-file $FILE -DgroupId=com.github.hydra2s -DartifactId=repo -Dversion=1.0 -Dpackaging=jar -DgeneratePom=true
