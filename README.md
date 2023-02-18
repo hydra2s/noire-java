@@ -36,6 +36,8 @@ Based on all of the above, I give permission to use my code and my work. I give 
 
 ### TODO Gen-2.0.1
 
+- 📌 Conditional rendering (from buffer, WIP), occlusion query (to buffer, WIP). 
+- 📌 New and better command agent system (WIP).
 - 📌 Full stencil support (WIP).
 - 📌 Additional legacy support (vendor-related).
 - 📌 Optional ray-tracing (and enabled).

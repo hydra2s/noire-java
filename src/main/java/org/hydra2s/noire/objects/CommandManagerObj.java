@@ -2,6 +2,7 @@ package org.hydra2s.noire.objects;
 
 //
 
+import com.mojang.brigadier.Command;
 import org.hydra2s.noire.descriptors.BufferCInfo;
 import org.hydra2s.noire.descriptors.CommandManagerCInfo;
 import org.hydra2s.noire.descriptors.MemoryAllocationCInfo;
@@ -17,6 +18,7 @@ import org.lwjgl.vulkan.*;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,6 +31,7 @@ import static org.lwjgl.BufferUtils.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.util.vma.Vma.*;
+import static org.lwjgl.vulkan.EXTConditionalRendering.*;
 import static org.lwjgl.vulkan.KHRAccelerationStructure.VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 import static org.lwjgl.vulkan.VK10.*;
 import static org.lwjgl.vulkan.VK13.VK_PIPELINE_STAGE_2_NONE;
@@ -209,9 +212,12 @@ public class CommandManagerObj extends BasicObj {
         }
 
         // TODO: correct naming
-        public CommandWriterBase cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller, CommandAgent cmdAgent) {
-            cmdAgent.cmdAdd(typeName, caller);
-            agents.add(cmdAgent);
+        public CommandWriterBase cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller, CommandAgent... nested) {
+            if (nested.length <= 1) {
+                nested[0].cmdAdd(typeName, caller);
+            } else {
+                nested[nested.length-1].cmdAdd(typeName, caller, Arrays.copyOf(nested, nested.length-1));
+            }
             return this;
         }
 
@@ -340,7 +346,35 @@ public class CommandManagerObj extends BasicObj {
         public CommandWriter commandWriter = null;
 
         public CommandAgent cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
+            this.cmdReset().cmdBegin();
             commandWriter.cmdAdd$(typeName, caller);
+            this.cmdEnd().cmdResolve();
+            return this;
+        }
+
+        public CommandAgent cmdBegin() {
+            return this;
+        }
+
+        public CommandAgent cmdEnd() {
+            return this;
+        }
+
+        public CommandAgent cmdReset() {
+            return this;
+        }
+
+        public CommandAgent cmdResolve() {
+            commandWriter.agents.add(this);
+            return this;
+        }
+
+        public CommandAgent cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller, CommandAgent... nested) {
+            if (nested.length <= 1 && nested[0] == this) {
+                this.cmdAdd(typeName, caller);
+            } else {
+                nested[nested.length-1].cmdReset().cmdBegin().cmdAdd(typeName, caller, nested.length == 1 ? new CommandAgent[]{this} : Arrays.copyOf(nested, nested.length-1)).cmdEnd().cmdResolve();
+            }
             return this;
         }
 
@@ -349,6 +383,130 @@ public class CommandManagerObj extends BasicObj {
             this.commandWriter = commandWriter;
         }
     }
+
+
+    //
+    public static class CommandOcclusionQuery extends CommandAgent {
+        public long[] queryPool = {};
+        public VirtualAllocation occlusionBuffer = null;
+        public int occlusionCounter = 0;
+
+        public CommandOcclusionQuery(CommandManagerObj manager, CommandWriter commandWriter, int occlusions) {
+            super(manager, commandWriter);
+            this.queryPool = new long[]{0L};
+            this.occlusionCounter = 0;
+            this.occlusionBuffer = new VirtualAllocation(manager.virtualBlock.get(0), occlusions * 4L);
+
+            //
+            VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.create();
+            queryPoolCreateInfo.sType(VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO);
+            queryPoolCreateInfo.queryType(VK_QUERY_TYPE_OCCLUSION);
+            queryPoolCreateInfo.queryCount(occlusions);
+            vkCreateQueryPool(manager.deviceObj.device, queryPoolCreateInfo, null, this.queryPool);
+        }
+
+        //
+        public VkDescriptorBufferInfo getBufferRange() {
+            return VkDescriptorBufferInfo.create().buffer(manager.deviceHeap.handle.get()).offset(occlusionBuffer.offset).range(occlusionBuffer.range);
+        }
+
+        @Override
+        public CommandOcclusionQuery cmdReset() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdFillBuffer(cmdBuf, manager.deviceHeap.handle.get(), occlusionBuffer.offset, occlusionCounter*4L, 0);
+                occlusionCounter = 0;
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandOcclusionQuery cmdBegin() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdBeginQuery(cmdBuf, queryPool[0], occlusionCounter, 0);
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandOcclusionQuery cmdEnd() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdEndQuery(cmdBuf, queryPool[0], occlusionCounter++);
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandOcclusionQuery cmdResolve() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdCopyQueryPoolResults(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, occlusionCounter, manager.deviceHeap.handle.get(), occlusionBuffer.offset, 4, VK_QUERY_RESULT_WAIT_BIT );
+                return cmdBuf;
+            });
+            commandWriter.addToFree(()->{
+
+            });
+            return this;
+        }
+    }
+
+    //
+    public static class CommandConditionalRendering extends CommandAgent {
+        public VkDescriptorBufferInfo bufferRange = null;
+        public int conditionCounter = 0;
+
+        public CommandConditionalRendering(CommandManagerObj manager, CommandWriter commandWriter, VkDescriptorBufferInfo bufferRange) {
+            super(manager, commandWriter);
+            this.bufferRange = bufferRange;
+        }
+
+        @Override
+        public CommandConditionalRendering cmdReset() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                conditionCounter = 0;
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandConditionalRendering cmdBegin() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdBeginConditionalRenderingEXT(cmdBuf, VkConditionalRenderingBeginInfoEXT.create()
+                    .sType(VK_STRUCTURE_TYPE_CONDITIONAL_RENDERING_BEGIN_INFO_EXT)
+                    .buffer(bufferRange.buffer())
+                    .offset(bufferRange.offset() + conditionCounter* 4L)
+                    .flags(0));
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandConditionalRendering cmdEnd() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                vkCmdEndConditionalRenderingEXT(cmdBuf);
+                conditionCounter++;
+                return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandConditionalRendering cmdResolve() {
+            commandWriter.cmdAdd$("", (cmdBuf)->{
+                conditionCounter = 0;
+                return cmdBuf;
+            });
+            commandWriter.addToFree(()->{
+
+            });
+            return this;
+        }
+    }
+
+
 
     // TODO: command agents support
     public static class CommandProfiler extends CommandAgent {
@@ -371,27 +529,37 @@ public class CommandManagerObj extends BasicObj {
         }
 
         @Override
-        public CommandProfiler cmdAdd(String typeName, Function<VkCommandBuffer, VkCommandBuffer> caller) {
-
+        public CommandProfiler cmdBegin() {
             commandWriter.cmdAdd$("Command Profiler Begin Record", (cmdBuf)->{
                 vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 0);
                 return cmdBuf;
             });
-            commandWriter.cmdAdd$(typeName, caller);
-            commandWriter.cmdAdd$("Command Profiler End Record", (cmdBuf)->{
-                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 1);
-                return cmdBuf;
-            });
+            return this;
+        }
+
+        @Override
+        public CommandProfiler cmdResolve() {
             commandWriter.addToFree(()->{
                 var timestamps = new long[]{0L, 0L};
                 vkGetQueryPoolResults(manager.deviceObj.device, queryPool[0], 0, 2, timestamps, 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
                 vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
 
                 timeDiff = (timestamps[1] - timestamps[0]);
-                System.out.println(typeName + " - command time stamp diff: " + ((double)timeDiff/(double)(1000*1000)) + " in milliseconds.");
+                System.out.println("...command time stamp diff: " + ((double)timeDiff/(double)(1000*1000)) + " in milliseconds.");
             });
             return this;
         }
+
+        @Override
+        public CommandProfiler cmdEnd() {
+            commandWriter.cmdAdd$("Command Profiler End Record", (cmdBuf)->{
+                vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 1);
+                return cmdBuf;
+            });
+            return this;
+        }
+
+
     }
 
     //
@@ -629,6 +797,7 @@ public class CommandManagerObj extends BasicObj {
     //
     public PointerBuffer virtualBlock = null;
     public BufferObj bufferHeap = null;
+    public BufferObj deviceHeap = null;
     public ArrayList<CommandWriter> writers = null;
     protected VmaVirtualBlockCreateInfo vbInfo = null;
 
@@ -644,6 +813,16 @@ public class CommandManagerObj extends BasicObj {
             memoryAllocator = cInfo.memoryAllocator;
             memoryAllocationInfo = new MemoryAllocationCInfo() {{
                 isHost = true;
+                isDevice = true;
+            }};
+        }});
+
+        this.deviceHeap = new BufferObj(base, new BufferCInfo() {{
+            size = 1024L * 1024L * 4L;
+            usage = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            memoryAllocator = cInfo.memoryAllocator;
+            memoryAllocationInfo = new MemoryAllocationCInfo() {{
+                isHost = false;
                 isDevice = true;
             }};
         }});
