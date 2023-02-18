@@ -1,1 +1,29 @@
+pluginManagement {
+
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url 'https://jitpack.io' }
+
+        mavenCentral()
+        gradlePluginPortal()
+
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "Modrinth"
+                    url = "https://api.modrinth.com/maven"
+                }
+            }
+            filter {
+                includeGroup "maven.modrinth"
+            }
+        }
+    }
+
+}
+
 rootProject.name = 'noire'

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "noire-java",
+  "version": "0.0.2-SNAPSHOT",
+  "name": "noire-library",
+  "description": "Vulkan API library wrapper, library or framework...",
+  "authors": [
+    "unknown",
+    "deceased",
+    "hydra2s"
+  ],
+  "contact": {
+    "homepage": "",
+    "sources": "https://github.com/hydra2s/noire-java"
+  },
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.14.13",
+    "minecraft": "1.19.3",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
