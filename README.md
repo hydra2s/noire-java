@@ -2,6 +2,10 @@
 
 New renderer engine for Java and Minecraft mod. Also, this is, probably, final project of and in my life (i.e. finale of my 2023 year).
 
+### 🐞 Status of Debug 🐞
+
+I was able to run both GFXreconstruct (but with a flag) and NVIDIA Nsight. There is a problem with the last one, because I can't export it. And with the first one, the problem is with the exorbitant file size (almost a gigabyte). Also, GFXreconstruct (replay) just plays at a very fast speed, as if under rewind. In general, I managed to achieve compatibility with stable drivers from NVIDIA a few days ago.  So I had a tremendous amount of data to analyze, but I lost it.
+
 ## About drama around [VulkanModHybrid](https://github.com/hydra2s/VulkanModHybrid) and [VulkanMod](https://github.com/xCollateral/VulkanMod) project
 
 I did not want to mislead anyone, I even changed the name a bit in VMH, yes I took as a basis, and besides I wanted to fix a lot of problems with the original mod. I did not want to engage in self-promotion... Plus I wanted to make something that the original mod probably was not, and probably will not be for a long time. I wanted to apologize for everything. Yes, I admit that this is not the official version, a fan build.
