@@ -5,6 +5,7 @@ package org.hydra2s.noire.objects;
 import org.hydra2s.noire.descriptors.UtilsCInfo;
 import org.lwjgl.vulkan.*;
 
+import static org.lwjgl.vulkan.EXTConditionalRendering.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT;
 import static org.lwjgl.vulkan.EXTDescriptorBuffer.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT;
 import static org.lwjgl.vulkan.EXTExtendedDynamicState2.VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
@@ -43,6 +44,7 @@ import static org.lwjgl.vulkan.VK13.*;
 public class PhysicalDeviceObj extends BasicObj {
 
     public static class PhysicalDeviceFeatures {
+        public VkPhysicalDeviceConditionalRenderingFeaturesEXT conditionalRendering = null;
         public VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV representativeFragmentTestNV = null;
         public VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT fragmentInterlocking = null;
         public VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR globalPriority = null;
@@ -77,7 +79,8 @@ public class PhysicalDeviceObj extends BasicObj {
 
         public PhysicalDeviceFeatures() {
             // TODO: unify into one object
-            this.representativeFragmentTestNV = VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV);
+            this.conditionalRendering = VkPhysicalDeviceConditionalRenderingFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONDITIONAL_RENDERING_FEATURES_EXT);
+            this.representativeFragmentTestNV = VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_REPRESENTATIVE_FRAGMENT_TEST_FEATURES_NV).pNext(this.conditionalRendering.address());
             this.fragmentInterlocking = VkPhysicalDeviceFragmentShaderInterlockFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT).pNext(this.representativeFragmentTestNV.address());
             this.globalPriority = VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GLOBAL_PRIORITY_QUERY_FEATURES_KHR).pNext(this.fragmentInterlocking.address());
             this.pageableMemory = VkPhysicalDevicePageableDeviceLocalMemoryFeaturesEXT.create().sType(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PAGEABLE_DEVICE_LOCAL_MEMORY_FEATURES_EXT).pNext(this.globalPriority.address());

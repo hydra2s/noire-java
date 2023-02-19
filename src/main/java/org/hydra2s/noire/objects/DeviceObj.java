@@ -151,6 +151,7 @@ public class DeviceObj extends BasicObj {
             "VK_KHR_global_priority",
             "VK_EXT_fragment_shader_interlock",
             "VK_EXT_device_address_binding_report",
+            "VK_EXT_conditional_rendering",
 
             "VK_KHR_external_semaphore",
             "VK_KHR_external_semaphore_win32",
