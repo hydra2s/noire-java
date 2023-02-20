@@ -57,6 +57,13 @@ public class CommandAgentObj {
             this.manager = manager;
             this.commandWriter = commandWriter;
         }
+
+        public CommandAgent delete() {
+            return this;
+        }
+        public CommandAgent deleteDirectly() {
+            return this;
+        }
     }
 
 
@@ -124,6 +131,22 @@ public class CommandAgentObj {
             });
             return this;
         }
+
+        @Override
+        public CommandOcclusionQuery deleteDirectly() {
+            vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
+            occlusionBuffer.free();
+            return this;
+        }
+
+        @Override
+        public CommandOcclusionQuery delete() {
+            commandWriter.addToFree(()->{
+                vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
+                occlusionBuffer.free();
+            });
+            return this;
+        }
     }
 
     //
@@ -179,6 +202,18 @@ public class CommandAgentObj {
             });
             return this;
         }
+
+        @Override
+        public CommandConditionalRendering deleteDirectly() {
+
+            return this;
+        }
+
+        @Override
+        public CommandConditionalRendering delete() {
+
+            return this;
+        }
     }
 
     // TODO: correct naming
@@ -215,7 +250,6 @@ public class CommandAgentObj {
             commandWriter.addToFree(()->{
                 var timestamps = new long[]{0L, 0L};
                 vkGetQueryPoolResults(manager.deviceObj.device, queryPool[0], 0, 2, timestamps, 8, VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-                vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
 
                 timeDiff = (timestamps[1] - timestamps[0]);
                 System.out.println("...command time stamp diff: " + ((double)timeDiff/(double)(1000*1000)) + " in milliseconds.");
@@ -228,6 +262,20 @@ public class CommandAgentObj {
             commandWriter.cmdAdd$("Command Profiler End Record", (cmdBuf)->{
                 vkCmdWriteTimestamp(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, this.queryPool[0], 1);
                 return cmdBuf;
+            });
+            return this;
+        }
+
+        @Override
+        public CommandProfiler deleteDirectly() {
+            vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
+            return this;
+        }
+
+        @Override
+        public CommandProfiler delete() {
+            commandWriter.addToFree(()->{
+                vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
             });
             return this;
         }
