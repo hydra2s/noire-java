@@ -553,7 +553,7 @@ abstract public class CommandUtils {
 
                 // boss fight
                 vkCmdSetStencilTestEnable(cmdBuf, fbLayout.stencilState.enabled);
-                vkCmdSetStencilOp(cmdBuf, 0xFF, fbLayout.stencilState.stencilOp[0], fbLayout.stencilState.stencilOp[1], fbLayout.stencilState.stencilOp[2], fbLayout.stencilState.compareOp) ;
+                vkCmdSetStencilOp(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.stencilOp[0], fbLayout.stencilState.stencilOp[1], fbLayout.stencilState.stencilOp[2], fbLayout.stencilState.compareOp) ;
                 vkCmdSetStencilReference(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.reference);
                 vkCmdSetStencilCompareMask(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.compareMask);
                 vkCmdSetStencilWriteMask(cmdBuf, VK_STENCIL_FACE_FRONT_AND_BACK, fbLayout.stencilState.writeMask);

@@ -72,12 +72,13 @@ public class CommandAgentObj {
         public long[] queryPool = {};
         public CommandManagerObj.VirtualAllocation occlusionBuffer = null;
         public int occlusionCounter = 0;
+        public int occlusions = 0;
 
         public CommandOcclusionQuery(CommandManagerObj manager, CommandManagerObj.CommandWriter commandWriter, int occlusions) {
             super(manager, commandWriter);
             this.queryPool = new long[]{0L};
             this.occlusionCounter = 0;
-            this.occlusionBuffer = new CommandManagerObj.VirtualAllocation(manager.virtualBlock.get(0), occlusions * 4L);
+            this.occlusionBuffer = new CommandManagerObj.VirtualAllocation(manager.virtualBlock.get(0), (this.occlusions = occlusions) * 4L);
 
             //
             VkQueryPoolCreateInfo queryPoolCreateInfo = VkQueryPoolCreateInfo.create();
@@ -94,9 +95,10 @@ public class CommandAgentObj {
 
         @Override
         public CommandOcclusionQuery cmdReset() {
+            var $occlusionCounter = occlusionCounter; occlusionCounter = 0;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                vkCmdFillBuffer(cmdBuf, manager.deviceHeap.handle.get(), occlusionBuffer.offset, occlusionCounter*4L, 0);
-                occlusionCounter = 0;
+                vkCmdFillBuffer(cmdBuf, manager.deviceHeap.handle.get(), occlusionBuffer.offset, occlusionBuffer.range, 0);
+                vkCmdResetQueryPool(cmdBuf, queryPool[0], 0, occlusions);
                 return cmdBuf;
             });
             return this;
@@ -104,8 +106,9 @@ public class CommandAgentObj {
 
         @Override
         public CommandOcclusionQuery cmdBegin() {
+            var $occlusionCounter = occlusionCounter;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                vkCmdBeginQuery(cmdBuf, queryPool[0], occlusionCounter, 0);
+                vkCmdBeginQuery(cmdBuf, queryPool[0], $occlusionCounter, 0);
                 return cmdBuf;
             });
             return this;
@@ -113,8 +116,9 @@ public class CommandAgentObj {
 
         @Override
         public CommandOcclusionQuery cmdEnd() {
+            var $occlusionCounter = occlusionCounter; occlusionCounter++;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                vkCmdEndQuery(cmdBuf, queryPool[0], occlusionCounter++);
+                vkCmdEndQuery(cmdBuf, queryPool[0], $occlusionCounter);
                 return cmdBuf;
             });
             return this;
@@ -122,8 +126,9 @@ public class CommandAgentObj {
 
         @Override
         public CommandOcclusionQuery cmdResolve() {
+            var $occlusionCounter = occlusionCounter;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                vkCmdCopyQueryPoolResults(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, occlusionCounter, manager.deviceHeap.handle.get(), occlusionBuffer.offset, 4, VK_QUERY_RESULT_WAIT_BIT );
+                vkCmdCopyQueryPoolResults(cmdBuf, queryPool[0], 0, $occlusionCounter, manager.deviceHeap.handle.get(), occlusionBuffer.offset, 4, VK_QUERY_RESULT_WAIT_BIT );
                 return cmdBuf;
             });
             commandWriter.addToFree(()->{
@@ -134,14 +139,20 @@ public class CommandAgentObj {
 
         @Override
         public CommandOcclusionQuery deleteDirectly() {
+            var occlusion = new int[occlusionCounter];
+            vkGetQueryPoolResults(manager.deviceObj.device, queryPool[0], 0, occlusionCounter, occlusion, 4, VK_QUERY_RESULT_WAIT_BIT);
             vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
+            occlusionCounter = 0;
             occlusionBuffer.free();
             return this;
         }
 
         @Override
         public CommandOcclusionQuery delete() {
+            var $occlusionCounter = occlusionCounter; occlusionCounter = 0;
             commandWriter.addToFree(()->{
+                var occlusion = new int[$occlusionCounter];
+                vkGetQueryPoolResults(manager.deviceObj.device, queryPool[0], 0, $occlusionCounter, occlusion, 4, VK_QUERY_RESULT_WAIT_BIT);
                 vkDestroyQueryPool(manager.deviceObj.device, queryPool[0], null);
                 occlusionBuffer.free();
             });
@@ -161,8 +172,8 @@ public class CommandAgentObj {
 
         @Override
         public CommandConditionalRendering cmdReset() {
+            var $conditionCounter = conditionCounter; conditionCounter = 0;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                conditionCounter = 0;
                 return cmdBuf;
             });
             return this;
@@ -183,9 +194,9 @@ public class CommandAgentObj {
 
         @Override
         public CommandConditionalRendering cmdEnd() {
+            var $conditionCounter = conditionCounter; conditionCounter++;
             commandWriter.cmdAdd$("", (cmdBuf)->{
                 vkCmdEndConditionalRenderingEXT(cmdBuf);
-                conditionCounter++;
                 return cmdBuf;
             });
             return this;
@@ -193,8 +204,8 @@ public class CommandAgentObj {
 
         @Override
         public CommandConditionalRendering cmdResolve() {
+            var $conditionCounter = conditionCounter; conditionCounter = 0;
             commandWriter.cmdAdd$("", (cmdBuf)->{
-                conditionCounter = 0;
                 return cmdBuf;
             });
             commandWriter.addToFree(()->{
